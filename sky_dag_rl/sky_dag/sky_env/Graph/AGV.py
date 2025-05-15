@@ -1,8 +1,8 @@
 from typing import Optional, Tuple
 import math
 
-from sky_dag.sky_env.Graph.Operation import Operation
-from sky_dag.sky_env.Graph.Machine import Machine
+from .Operation import Operation
+from .Machine import Machine
 
 class AGV:
     def __init__(self, id_: int, x: float, y: float, velocity: float):
@@ -81,3 +81,13 @@ class AGV:
             self.set_operation(machine_op)
 
         machine.work()
+
+
+if __name__ == '__main__':
+    k=10
+    agvs = []
+    for i in range(k):
+        x = float(1)
+        y = float(1)
+        velocity = float(1)
+        agvs.append(AGV(i, x, y, velocity))

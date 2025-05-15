@@ -1,6 +1,6 @@
 from typing import List
 
-from sky_dag.sky_env.Graph.Operation import Operation
+from .Operation import Operation
 
 class Job:
     def __init__(self, job_id: int, operations: List[Operation], target_count=None):

@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 
-from sky_dag.sky_env.Graph.Operation import Operation
+from .Operation import Operation
 
 class Machine:
     def __init__(self, machine_id: int, x: float, y: float, operation: Optional[Operation]):

@@ -34,6 +34,35 @@ class Operation:
 
         self.status = None
 
+    def __repr__(self):
+        # 格式化持续时间列表（最多显示前3个）
+        durations_str = "[...]"
+        if self.durations:
+            durations_short = self.durations[:3]
+            durations_str = ", ".join([f"({m_id}, {dur:.1f})" for m_id, dur in durations_short])
+            if len(self.durations) > 3:
+                durations_str += ", ..."
+            durations_str = f"[{durations_str}]"
+
+        # 获取已处理物品数量
+        items_count = len(self.processed_item_list)
+
+        # 格式化状态信息
+        progress_str = f"{self.progress:.1%}"
+        assigned_node = self.assigned_node if self.assigned_node is not None else "None"
+
+        return (
+            f"<{self.__class__.__name__} "
+            f"id={self.id} "
+            f"time={self.process_time:.1f} "
+            f"durations={durations_str} "
+            f"state={self.state} "
+            f"progress={progress_str} "
+            f"items={items_count} "
+            f"node={assigned_node}>"
+        )
+
+
     def get_process_time(self) -> float:
         return self.process_time
 

@@ -1,8 +1,8 @@
 from typing import Optional, Tuple
 import math
 
-from sky_dag.sky_env.Graph.Operation import Operation
-from sky_dag.sky_env.Graph.Machine import Machine
+from .Operation import Operation
+from .Machine import Machine
 
 class AGV:
     def __init__(self, id_: int, x: float, y: float, velocity: float):
@@ -18,6 +18,20 @@ class AGV:
         self.timer: float = 0.0
         self.velocity: float = velocity
         self.operation: Optional[Operation] = None
+
+    def __repr__(self):
+        # 获取当前操作的名称（如果有）
+        operation_name = self.operation.id if self.operation else "None"
+
+        # 格式化坐标和速度，保留两位小数
+        return (
+            f"<{self.__class__.__name__} "
+            f"id={self.id} "
+            f"pos=({self.x:.2f}, {self.y:.2f}) "
+            f"v={self.velocity:.2f} "
+            f"timer={self.timer:.2f} "
+            f"operation={operation_name}>"
+        )
 
     def get_id(self) -> int:
         return self.id
@@ -89,3 +103,13 @@ class AGV:
             self.set_operation(machine_operation)
 
         machine.work()
+
+
+if __name__ == '__main__':
+    k=10
+    agvs = []
+    for i in range(k):
+        x = float(1)
+        y = float(1)
+        velocity = float(1)
+        agvs.append(AGV(i, x, y, velocity))

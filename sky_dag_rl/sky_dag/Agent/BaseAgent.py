@@ -1,5 +1,10 @@
 from abc import ABC, abstractmethod
 
+# Agent:
+# input: 状态
+# output: [(Operation, AGV, Machine), ...] （job可以混合）
+
+
 class BaseAgent(ABC):
     def __init__(self, name=None, agent_id=None, context=None):
         """

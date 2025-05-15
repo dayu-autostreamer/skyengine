@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 
-from sky_dag.sky_env.Graph.Operation import Operation
+from .Operation import Operation
 
 class Machine:
     def __init__(self, machine_id: int, x: float, y: float, operation: Optional[Operation]):
@@ -15,6 +15,9 @@ class Machine:
         self.y: float = y
         self.timer: float = 0.0
         self.operation: Optional[Operation] = operation
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} id={self.agent_id} name={self.name}>"
 
     def get_id(self) -> int:
         return self.id

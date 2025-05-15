@@ -25,6 +25,9 @@ class BaseAgent(ABC):
     def step(self, *args, **kwargs):
         """Agent 的主要逻辑，每次环境更新时调用"""
         pass
-
+    @abstractmethod
+    def sample(self, *args, **kwargs):
+        """Agent 采样"""
+        pass
     def __repr__(self):
         return f"<{self.__class__.__name__} id={self.agent_id} name={self.name}>"

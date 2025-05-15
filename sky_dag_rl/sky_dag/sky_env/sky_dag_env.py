@@ -50,7 +50,7 @@ class SkyDagEnv(ParallelEnv):
         刷新当前环境的graph和agv
         :return:
         """
-        self.jobs,self.machines,self.agvs=util.read_agv_instance_data()
+        self.jobs, self.machines, self.agvs = util.read_agv_instance_data()
         print("Environment Initialized Successfully.")
 
     def deal_event(self, event_list):
@@ -69,19 +69,14 @@ class SkyDagEnv(ParallelEnv):
         truncations = {}
         infos = {}
 
-        # === 0. 处理全局时间 ===
-        self.env_timeline += 1
-        obs = self._get_obs()
+        # === 0. Agent 决策动作（支持 Job 或 Central）===
+        decision, agent_sample_time = self.agent.sample()
 
-        # === 1. Agent 动作处理（支持 Job 或 Central）===
-        if actions:
-            self.apply_agent_actions()
-
-        # === 2. 处理 EventQueue 中的事件 ===
+        # === 1. 处理 EventQueue 中的事件 ===
         current_event_list = self.event_queue.pop_ready_events(self.env_timeline)
         self.deal_event(current_event_list)
 
-        # === 3. 提取state,发送给状态转移函数并返回 ===
+        # === 2. 提取state,发送给状态转移函数并返回 ===
         for node in self.nodes.values():
             finished_ops = node.step(self.env_timeline)
             for op in finished_ops:
@@ -91,7 +86,7 @@ class SkyDagEnv(ParallelEnv):
                     payload=op
                 ))
 
-        # === 4. 统计 Job 完成状态，计算奖励 ===
+        # === 3. 统计 Job 完成状态，计算奖励 ===
         for job in self.jobs:
             done = job.is_finished()
             job_id = job.id
@@ -101,6 +96,12 @@ class SkyDagEnv(ParallelEnv):
             infos[job_id] = {}
             if done:
                 self.done_flags[job_id] = True
+
+        # === 4. 处理全局时间 ===
+        # step_time = max(currentTime + AgentExecuteTime, nextEventTime)
+        self.env_timeline += 1
+
+        obs=self._get_obs()
 
         return obs, rewards, terminations, truncations, infos
 

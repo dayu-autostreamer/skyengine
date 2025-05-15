@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple
 from sky_dag_rl.sky_dag.sky_env.Graph.Machine import Machine
 from sky_dag_rl.sky_dag.sky_env.Graph.Operation import Operation
 from sky_dag_rl.sky_dag.sky_env.Graph.AGV import AGV
-
+import time
 
 class GreedAgent(BaseAgent):
     def __init__(self, name=None, agent_id=None, context=None):
@@ -37,6 +37,7 @@ class GreedAgent(BaseAgent):
         """
         返回本次采样结果
         """
+        time_start=time.time()
         current_sample = []
         total_timer = 0.0
         for i, job in enumerate(jobs):
@@ -62,5 +63,5 @@ class GreedAgent(BaseAgent):
                 current_sample.append([op, min_agv, machine])
                 if machine:
                     total_timer = max(total_timer, machine.get_timer())
-
-        return current_sample
+        time_end=time.time()
+        return current_sample,time_end-time_start

@@ -6,6 +6,7 @@ import numpy as np
 from sky_dag_rl.sky_dag.Agent import BaseAgent
 from .Graph.Node import Node
 from .Graph.Job import Job
+from .Graph.Machine import Machine
 from .Graph.Operation import Operation
 from .Graph.AGV import AGV
 from .Utils import util

@@ -39,11 +39,10 @@ class SkyDagEnv(ParallelEnv):
         self.agent = agent
 
     # ---------- 自定义状态更新函数 ----------
-    def set_env_timeline(self, count):
-        assert count >= 0 and isinstance(count, int)
-        self.env_timeline = count
+    def set_env_timeline(self, env_timeline: float):
+        self.env_timeline = env_timeline
 
-    def get_env_timeline(self) -> int:
+    def get_env_timeline(self) -> float:
         return self.env_timeline
 
     def refresh_status(self):
@@ -67,7 +66,7 @@ class SkyDagEnv(ParallelEnv):
     def env_step(self, actions: List[Tuple[AGV, Operation, Machine]], step_time: float) -> None:
         current_time = self.env_timeline
         final_time = current_time + step_time
-        
+
         for agv, operation, machine in actions:
             last_machine = operation.get_current_machine()
             if last_machine is None:
@@ -79,7 +78,12 @@ class SkyDagEnv(ParallelEnv):
 
             print(f"Operation {operation.id}: AGV={agv.get_id()}, Machine={machine.get_id()}, Duration={operation.get_duration(machine.get_id())}")
 
-        # todo: 将所有的AGV和Machine的Timer更新到final_time
+        for machine in self.machines:
+            machine.work(final_time)
+            machine.set_timer(final_time)
+        for agv in self.agvs:
+            agv.set_timer(final_time)
+        
 
     def step(self, actions=None):
         rewards = {}

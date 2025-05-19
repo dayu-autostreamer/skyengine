@@ -62,7 +62,7 @@ class GreedyAgent(BaseAgent):
                             machine = new_machine
                 print(
                     f"Job {i}, Operation {j}: AGV={min_agv.get_id() if min_agv else -1}, Machine={machine.get_id() if machine else -1}, Duration={op.get_duration(machine.get_id()) if op and machine else 0}")
-                current_sample.append([op, min_agv, machine])
+                current_sample.append((op, min_agv, machine))
                 if machine:
                     total_timer = max(total_timer, machine.get_timer())
         time_end = time.time()

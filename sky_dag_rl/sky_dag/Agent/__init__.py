@@ -1,2 +1,4 @@
-from BaseAgent import *
-from GreedyAgent import *
+from .BaseAgent import *
+from .GreedyAgent import *
+
+__all__ = ['BaseAgent', 'GreedyAgent']

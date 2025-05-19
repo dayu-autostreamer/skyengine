@@ -1,8 +1,8 @@
 from typing import Optional, Tuple
 import math
 
-from .Operation import Operation
-from .Machine import Machine
+from sky_dag_rl.sky_dag.sky_env.Graph.Operation import Operation
+from sky_dag_rl.sky_dag.sky_env.Graph.Machine import Machine
 
 class AGV:
     def __init__(self, id_: int, x: float, y: float, velocity: float):

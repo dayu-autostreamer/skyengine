@@ -15,8 +15,7 @@ env = sky_dag_v0.SkyDagEnv(agent=greedy_Agent)
 observations = env.reset()
 
 # 运行一个 episode（直到结束）
-done = {agent: False for agent in env.agents}
-while not all(done.values()):
+while greedy_Agent:
     # 传入agent在内部决策,外部不需要主动传入action了
     observations, rewards, terminations, truncations, infos = env.step()
 

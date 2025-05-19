@@ -1,4 +1,4 @@
-from BaseAgent import BaseAgent
+from .BaseAgent import BaseAgent
 from typing import List, Optional, Tuple
 from sky_dag_rl.sky_dag.sky_env.Graph.Machine import Machine
 from sky_dag_rl.sky_dag.sky_env.Graph.Operation import Operation
@@ -34,6 +34,10 @@ class GreedyAgent(BaseAgent):
                 min_agv = agv
         return min_agv
 
+    def reward(self, *args, **kwargs):
+        """Agent 计算自身的reward"""
+        pass
+
     def sample(self, agvs, machines, jobs):
         """
         返回本次采样结果
@@ -50,14 +54,11 @@ class GreedyAgent(BaseAgent):
                 min_agv = self.get_min_agv(agvs)
                 if j == 0 and min_agv and op and machine:
                     min_agv.set_operation(op)
-                    min_agv.unload(machine)
                 elif min_agv and machine:
-                    min_agv.load(machine)
                     current_op = min_agv.get_operation()
                     if current_op:
                         new_machine = self.get_min_machine(machines, current_op)
                         if new_machine:
-                            min_agv.unload(new_machine)
                             machine = new_machine
                 print(
                     f"Job {i}, Operation {j}: AGV={min_agv.get_id() if min_agv else -1}, Machine={machine.get_id() if machine else -1}, Duration={op.get_duration(machine.get_id()) if op and machine else 0}")

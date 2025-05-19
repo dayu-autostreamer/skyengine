@@ -1,11 +1,12 @@
 from typing import List, Optional, Tuple
 
-from sky_dag.sky_env.Graph.Machine import Machine
-from sky_dag.sky_env.Graph.AGV import AGV
-from sky_dag.sky_env.Graph.Operation import Operation
-from sky_dag.sky_env.Graph.Job import Job
+from sky_dag_rl.sky_dag.sky_env.Graph.Machine import Machine
+from sky_dag_rl.sky_dag.sky_env.Graph.AGV import AGV
+from sky_dag_rl.sky_dag.sky_env.Graph.Operation import Operation
+from sky_dag_rl.sky_dag.sky_env.Graph.Job import Job
 
 INF = float("inf")
+
 
 def get_min_machine(machines: List[Machine], operation: Operation) -> Machine:
     min_timer = INF
@@ -34,21 +35,28 @@ def main():
     print(data)
     idx = 0
 
-    n = int(data[idx]); idx += 1
-    m = int(data[idx]); idx += 1
-    k = int(data[idx]); idx += 1
+    n = int(data[idx])
+    idx += 1
+    m = int(data[idx])
+    idx += 1
+    k = int(data[idx])
+    idx += 1
 
     jobs: List[Job] = []
     operation_count = 0
     for job_id in range(n):
-        num_operations = int(data[idx]); idx += 1
+        num_operations = int(data[idx])
+        idx += 1
         operations: List[Operation] = []
         for _ in range(num_operations):
-            num_machines = int(data[idx]); idx += 1
+            num_machines = int(data[idx])
+            idx += 1
             durations: List[Tuple[int, float]] = []
             for _ in range(num_machines):
-                machine_id = int(data[idx]); idx += 1
-                duration = float(data[idx]); idx += 1
+                machine_id = int(data[idx])
+                idx += 1
+                duration = float(data[idx])
+                idx += 1
                 durations.append((machine_id, duration))
             operations.append(Operation(operation_count, 0.0, durations))
             operation_count += 1
@@ -56,15 +64,20 @@ def main():
 
     machines: List[Machine] = []
     for i in range(m):
-        x = float(data[idx]); idx += 1
-        y = float(data[idx]); idx += 1
+        x = float(data[idx])
+        idx += 1
+        y = float(data[idx])
+        idx += 1
         machines.append(Machine(i, x, y, None))
 
     agvs: List[AGV] = []
     for i in range(k):
-        x = float(data[idx]); idx += 1
-        y = float(data[idx]); idx += 1
-        velocity = float(data[idx]); idx += 1
+        x = float(data[idx])
+        idx += 1
+        y = float(data[idx])
+        idx += 1
+        velocity = float(data[idx])
+        idx += 1
         agvs.append(AGV(i, x, y, velocity))
 
     total_timer = 0.0
@@ -88,7 +101,8 @@ def main():
                     if new_machine:
                         min_agv.unload(new_machine)
                         machine = new_machine
-            print(f"Job {i}, Operation {j}: AGV={min_agv.get_id() if min_agv else -1}, Machine={machine.get_id() if machine else -1}, Duration={op.get_duration(machine.get_id()) if op and machine else 0}")
+            print(
+                f"Job {i}, Operation {j}: AGV={min_agv.get_id() if min_agv else -1}, Machine={machine.get_id() if machine else -1}, Duration={op.get_duration(machine.get_id()) if op and machine else 0}")
 
             if machine:
                 total_timer = max(total_timer, machine.get_timer())
@@ -97,6 +111,7 @@ def main():
         print(f"Machine {machine.get_id()}: {machine.get_timer()}")
 
     print(f"total makespan: {total_timer:.5f}")
+
 
 if __name__ == "__main__":
     main()

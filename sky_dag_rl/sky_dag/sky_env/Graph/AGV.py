@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 import math
 
 from sky_dag_rl.sky_dag.sky_env.Graph.Operation import Operation
@@ -18,7 +18,7 @@ class AGV:
         self.timer: float = 0.0
         self.velocity: float = velocity
         self.operation: Optional[Operation] = None
-        # todo 状态转移需要实现
+        self.todo_queue: List[Tuple[str, Machine | Operation]] = []
 
     def __repr__(self):
         # 获取当前操作的名称（如果有）
@@ -55,20 +55,22 @@ class AGV:
 
     def set_operation(self, operation: Optional[Operation]) -> None:
         self.operation = operation
+        if operation is not None:
+            operation.set_status("running")
 
     def dist(self, target_x: float, target_y: float) -> float:
         dx = self.x - target_x
         dy = self.y - target_y
         return math.sqrt(dx * dx + dy * dy)
 
-    def load(self, machine: Machine, final_time: float) -> None:
+    def load(self, machine: Machine, final_time: float) -> bool:
         if self.operation is not None:
             print("AGV is already loading an operation")
-            return
+            return False
         machine_operation: Optional[Operation] = machine.get_operation()
         if machine_operation is None:
             print("Machine is not loaded")
-            return
+            return False
         
         mx, my = machine.get_xy()
         distance = self.dist(mx, my)
@@ -82,7 +84,7 @@ class AGV:
             agv_y = agv_y + dy * (final_time - self.get_timer()) / travel_time
             self.set_xy(agv_x, agv_y)
             self.set_timer(final_time)
-            return
+            return False
 
         self.set_xy(mx, my)
         self.timer += travel_time
@@ -95,10 +97,12 @@ class AGV:
             machine_operation.set_current_machine(None)
             machine.set_operation(None)
 
-    def unload(self, machine: Machine, final_time: float) -> None:
+        return True
+
+    def unload(self, machine: Machine, final_time: float) -> bool:
         if self.operation is None:
             print("AGV is not loaded")
-            return
+            return False
 
         mx, my = machine.get_xy()
         distance = self.dist(mx, my)
@@ -112,7 +116,7 @@ class AGV:
             agv_y = agv_y + dy * (final_time - self.get_timer()) / travel_time
             self.set_xy(agv_x, agv_y)
             self.set_timer(final_time)
-            return
+            return False
 
         self.set_xy(mx, my)
         self.timer += travel_time
@@ -135,13 +139,54 @@ class AGV:
                 self.set_operation(machine_operation)
 
         machine.work(final_time)
+        
+        return True
 
     def is_available(self):
         op = self.get_operation()
         if op is None:
             return True
         else:
-            return op.is_finished()
+            return False
+        
+    def todo_queue_push(self, todo: Tuple[str, Machine | Operation]):
+        self.todo_queue.append(todo)
+
+    def todo_queue_pop(self)-> Optional[Tuple[str, Machine | Operation]]:
+        if len(self.todo_queue) == 0:
+            return None
+        else:
+            return self.todo_queue.pop(0)
+        
+    def todo_queue_is_empty(self):
+            return len(self.todo_queue) == 0
+    
+    def work(self, final_time: float):
+        while not self.todo_queue_is_empty():
+            todo = self.todo_queue[0]
+            print(todo)
+            if todo[0] == "load":
+                if type(todo[1]) != Operation:
+                    raise ValueError(f"Invalid todo type: {todo}")
+                operation = todo[1]
+                last_machine = operation.get_current_machine()
+                if last_machine is None:
+                    self.set_operation(operation)
+                    self.todo_queue_pop()
+                else:
+                    if self.load(last_machine, final_time):
+                        self.todo_queue_pop()
+                    else:
+                        break
+            elif todo[0] == "unload":
+                if type(todo[1]) != Machine:
+                    raise ValueError(f"Invalid todo type: {todo}")
+                if self.unload(todo[1], final_time):
+                    self.todo_queue_pop()
+                else:
+                    break
+            else:
+                raise ValueError(f"Invalid todo type: {todo}")
 
 if __name__ == '__main__':
     k=10

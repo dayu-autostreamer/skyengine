@@ -58,6 +58,7 @@ class Machine:
             self.timer += work_time
             self.operation.set_process_time(duration)
             self.operation.set_finished(True)
+            self.operation.set_status("finished")
             
             self.operation.set_current_machine(None)
             self.operation = self.operation.get_next_operation()

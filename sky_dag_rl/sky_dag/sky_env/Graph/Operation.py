@@ -16,13 +16,12 @@ class Operation:
         self.next_operation: Optional['Operation'] = None
         self.current_machine = None
         self.finished = False
+        self.status = "ready"
 
         self.cpu_req = cpu_req
         self.mem_req = mem_req
 
         # operation本身的状态
-        # todo 状态转移需要实现
-        self.status = "blocked"
         self.progress = 0.0
         self.dependencies = []
         self.successors = []
@@ -88,7 +87,7 @@ class Operation:
         for m_id, duration in self.durations:
             if m_id == machine_id:
                 return duration
-        print(f"Machine {machine_id} not found")
+        print(f"Operation {self.id}: Machine {machine_id} not found")
         return 0.0
     
     def is_finished(self) -> bool:
@@ -116,14 +115,10 @@ class Operation:
         self.current_machine = current_machine
 
     def get_status(self):
-        # todo 修改为状态转移版本
-        if self.current_machine is None and not self.is_finished():
-            self.status = "ready"
-        elif self.current_machine is None:
-            self.status = "finished"
-        else:
-            self.status = "running"
         return self.status
+    
+    def set_status(self, status):
+        self.status = status
 
 
     def add_dependency(self, op):
@@ -155,13 +150,7 @@ class Operation:
             "processed_item_list": self.processed_item_list,
             "assigned_node": self.assigned_node.id if self.assigned_node else None
         }
-
-    def save_status(self):
-        self.status = self.state
-
-    def load_status(self):
-        self.state = self.status
-
+    
     def pause(self):
         """
         暂停operation运行

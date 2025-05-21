@@ -17,7 +17,6 @@ observations = env.reset()
 
 # 运行一个 episode（直到结束）
 while random_Agent.is_alive():
-    print("look here:",random_Agent.alive)
     # 传入agent在内部决策,外部不需要主动传入action了
     observations, rewards, terminations, truncations, infos = env.step()
 

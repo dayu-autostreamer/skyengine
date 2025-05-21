@@ -64,22 +64,19 @@ class SkyDagEnv(ParallelEnv):
         final_time = current_time + step_time
 
         for operation, agv, machine in actions:
-            last_machine = operation.get_current_machine()
-            if last_machine is None:
-                agv.set_operation(operation)
-                agv.unload(machine, final_time)
-            else:
-                agv.load(last_machine, final_time)
-                agv.unload(machine, final_time)
+            agv.todo_queue_push(("load", operation))
+            agv.todo_queue_push(("unload", machine))
 
             print(
                 f"Operation {operation.id}: AGV={agv.get_id()}, Machine={machine.get_id()}, Duration={operation.get_duration(machine.get_id())}")
 
         for machine in self.machines:
-            if machine.operation is not None:
+            if machine.get_operation() is not None:
                 machine.work(final_time)
             machine.set_timer(final_time)
         for agv in self.agvs:
+            if not agv.todo_queue_is_empty():
+                agv.work(final_time)
             agv.set_timer(final_time)
 
     def step(self, actions=None):
@@ -88,6 +85,8 @@ class SkyDagEnv(ParallelEnv):
                                                 self.jobs)  # type: List[Tuple[Operation, AGV,  Machine]], float
         print(step_time)
         print(decision)
+        
+        
         # === 1. 处理 EventQueue 中的事件 ===
         # todo 第一阶段暂时没用到event
         current_event_list = self.event_queue.pop_ready_events(self.env_timeline)

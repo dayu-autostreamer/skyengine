@@ -93,7 +93,7 @@ class SkyDagEnv(ParallelEnv):
         self.deal_event(current_event_list)
 
         # === 2. 提取state,发送给状态转移函数并返回 ===
-        self.env_step(decision, step_time)
+        self.env_step(decisions, step_time)
 
         # === 3. 统计完成状态，计算奖励 ===
         # todo 计算状态/动作完成reward计算

@@ -81,10 +81,10 @@ class SkyDagEnv(ParallelEnv):
 
     def step(self, actions=None):
         # === 0. Agent 决策动作（支持 Job 或 Central）===
-        decision, step_time = self.agent.sample(self.agvs, self.machines,
+        decisions, step_time = self.agent.sample(self.agvs, self.machines,
                                                 self.jobs)  # type: List[Tuple[Operation, AGV,  Machine]], float
-        print(step_time)
-        print(decision)
+        print(f"step_time: {step_time}")
+        print(f"decisions: {decisions}")
         
         
         # === 1. 处理 EventQueue 中的事件 ===

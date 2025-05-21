@@ -25,3 +25,5 @@ while random_Agent.is_alive():
 
     # 更新 done 状态
     done = terminations
+
+print(f"total makespan: {env.env_timeline}s")

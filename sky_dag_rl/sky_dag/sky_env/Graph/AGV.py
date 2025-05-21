@@ -65,11 +65,11 @@ class AGV:
 
     def load(self, machine: Machine, final_time: float) -> bool:
         if self.operation is not None:
-            print("AGV is already loading an operation")
+            print(f"AGV id={self.id} is already loading an operation id={self.operation}")
             return False
         machine_operation: Optional[Operation] = machine.get_operation()
         if machine_operation is None:
-            print("Machine is not loaded")
+            print(f"Machine id={machine.id} is not loaded")
             return False
         
         mx, my = machine.get_xy()
@@ -101,7 +101,7 @@ class AGV:
 
     def unload(self, machine: Machine, final_time: float) -> bool:
         if self.operation is None:
-            print("AGV is not loaded")
+            print(f"AGV id={self.id} is not loaded")
             return False
 
         mx, my = machine.get_xy()
@@ -164,7 +164,7 @@ class AGV:
     def work(self, final_time: float):
         while not self.todo_queue_is_empty():
             todo = self.todo_queue[0]
-            print(todo)
+            print(f"AGV id={self.id} current todo: {todo}")
             if todo[0] == "load":
                 if type(todo[1]) != Operation:
                     raise ValueError(f"Invalid todo type: {todo}")

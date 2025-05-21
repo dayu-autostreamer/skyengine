@@ -47,8 +47,6 @@ class RandomAgent(BaseAgent):
 
             for j in range(job.get_operation_count()):
                 op: Operation = job.get_operation(j)
-                # todo to fix 状态转移需要调整
-                # print(op.get_status())
                 if op.get_status() != "ready":
                     continue
 
@@ -61,7 +59,6 @@ class RandomAgent(BaseAgent):
                 # 随机选择可用AGV（考虑当前是否正在运输）
                 available_agvs = [agv for agv in agvs if agv.is_available()]
                 agv = random.choice(available_agvs) if available_agvs else None
-                # print(machine, agvs, agv)
 
                 # 如果有机器和AGV则分配任务
                 if agv and op and machine:

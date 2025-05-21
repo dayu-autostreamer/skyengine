@@ -44,12 +44,12 @@ class Operation:
                 durations_str += ", ..."
             durations_str = f"[{durations_str}]"
 
-        # 获取已处理物品数量
-        items_count = len(self.processed_item_list)
+        # # 获取已处理物品数量
+        # items_count = len(self.processed_item_list)
 
-        # 格式化状态信息
-        progress_str = f"{self.progress:.1%}"
-        assigned_node = self.assigned_node if self.assigned_node is not None else "None"
+        # # 格式化状态信息
+        # progress_str = f"{self.progress:.1%}"
+        # assigned_node = self.assigned_node if self.assigned_node is not None else "None"
 
         return (
             f"<{self.__class__.__name__} "
@@ -57,9 +57,9 @@ class Operation:
             f"time={self.process_time:.1f} "
             f"durations={durations_str} "
             f"state={self.status} "
-            f"progress={progress_str} "
-            f"items={items_count} "
-            f"node={assigned_node}>"
+            # f"progress={progress_str} "
+            # f"items={items_count} "
+            # f"node={assigned_node}>"
         )
 
 

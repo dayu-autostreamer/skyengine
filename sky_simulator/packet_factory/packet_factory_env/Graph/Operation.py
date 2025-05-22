@@ -45,7 +45,7 @@ class Operation:
             f"id={self.id} "
             f"time={self.process_time:.1f} "
             f"durations={durations_str} "
-            f"state={self.status} "
+            f"status={self.status} "
         )
 
     def get_process_time(self) -> float:

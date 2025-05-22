@@ -11,7 +11,6 @@ class Job:
         """
         self.id = job_id
         self.operations: List[Operation] = operations
-        self.operations[0].set_status(OperationStatus.READY)
         for i in range(len(self.operations)):
             if i + 1 < len(self.operations):
                 self.operations[i].set_next_operation(self.operations[i + 1])
@@ -44,6 +43,8 @@ class Job:
             f"first={first_op_id} "
             f"last={last_op_id} "
             f"time={total_time:.1f}{target_str}>"
+            f"status={self.status}>"
+
         )
 
     def get_operation_count(self) -> int:
@@ -71,5 +72,5 @@ class Job:
         """
         计算当前Job是否已经完成
         """
-        return self.status == JobStatus.FINISHED
-        # return self.operations[self.get_operation_count()-1].is_finished()
+        # return self.status == JobStatus.FINISHED
+        return self.operations[self.get_operation_count()-1].get_status()==OperationStatus.FINISHED

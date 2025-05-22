@@ -13,12 +13,12 @@ class Logger:
         )
 
         # 控制台输出
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(self.format)
-        self.logger.addHandler(console_handler)
+        # console_handler = logging.StreamHandler()
+        # console_handler.setFormatter(self.format)
+        # self.logger.addHandler(console_handler)
         # 文件输出
         os.makedirs(os.path.dirname(log_file), exist_ok=True)  # 自动创建目录
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        file_handler = logging.FileHandler(log_file, mode='w', encoding='utf-8')
         file_handler.setFormatter(self.format)
         self.logger.addHandler(file_handler)
 
@@ -32,4 +32,3 @@ LOGGER = Logger().logger
 if __name__ == '__main__':
     LOGGER.info("233")
     LOGGER.warning("233")
-

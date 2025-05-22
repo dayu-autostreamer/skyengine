@@ -12,7 +12,7 @@ from sky_simulator.packet_factory.packet_factory_env.Graph.util import Operation
 import dataset
 
 
-def read_agv_instance_data(relative_file_path="/brandimarte/mk01_agv.txt"):
+def read_agv_instance_data(relative_file_path):
     prefix = dataset.AGV_DATA_DIR
     file_path = prefix + relative_file_path
     file_content = open(file_path, 'r').read()

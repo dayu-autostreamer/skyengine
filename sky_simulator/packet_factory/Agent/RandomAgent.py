@@ -49,25 +49,24 @@ class RandomAgent(BaseAgent):
 
             for j in range(job.get_operation_count()):
                 op: Operation = job.get_operation(j)
-                if op.get_status() != OperationStatus.READY:
-                    continue
-                LOGGER.info(f"Operation id={op.id} status={op.get_status()} is_finished={op.is_finished()}")
+                if op.get_status() == OperationStatus.READY:
+                    LOGGER.info(f"Operation id={op.id} status={op.get_status()}")
 
-                # 随机选择可处理当前操作的机器
-                # todo to fix 均为ready状态没有决策
-                valid_machines = [m for m in machines if op.is_machine_capable(m.id) and m.is_available()]
-                machine = random.choice(valid_machines) if valid_machines else None
+                    # 随机选择可处理当前操作的机器
+                    # todo to fix 均为ready状态没有决策
+                    valid_machines = [m for m in machines if op.is_machine_capable(m.id) and m.is_available()]
+                    machine = random.choice(valid_machines) if valid_machines else None
 
-                # 随机选择可用AGV（考虑当前是否正在运输）
-                available_agvs = [agv for agv in agvs if agv.is_available()]
-                agv = random.choice(available_agvs) if available_agvs else None
+                    # 随机选择可用AGV（考虑当前是否正在运输）
+                    available_agvs = [agv for agv in agvs if agv.is_available()]
+                    agv = random.choice(available_agvs) if available_agvs else None
 
-                # 如果有机器和AGV则分配任务
-                if agv and op and machine:
-                    # 都存在 添加该op的调度
-                    current_sample.append((op, agv, machine))
-                else:
-                    continue
+                    # 如果有机器和AGV则分配任务
+                    if agv and op and machine:
+                        # 都存在 添加该op的调度
+                        current_sample.append((op, agv, machine))
+                    else:
+                        continue
 
         time_end = time.time()
         LOGGER.info(f"Finished jobs: {cnt}")

@@ -1,0 +1,250 @@
+<mxfile host="www.iodraw.com" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0" version="24.7.17">
+  <diagram name="第 1 页" id="8G8pwh-r1SZjBbQUlxf6">
+    <mxGraphModel dx="1290" dy="683" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="GPTGCSketb1Ri7tJifBI-1" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="40" width="930" height="590" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-2" value="Operation" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="40" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-3" value="WAITING" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="190" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-5" value="READY" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="190" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-6" value="MOVING" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="747" y="190" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-7" value="WORKING" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="747" y="450" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-8" value="FINISHED" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="450" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-9" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-10" target="GPTGCSketb1Ri7tJifBI-3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="230" y="230" as="sourcePoint" />
+            <mxPoint x="590" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-10" value="初始化" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="200" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-12" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-13" target="GPTGCSketb1Ri7tJifBI-5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="570" y="400" as="sourcePoint" />
+            <mxPoint x="620" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-14" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-3" target="GPTGCSketb1Ri7tJifBI-13">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="230" as="sourcePoint" />
+            <mxPoint x="545" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-13" value="Deps Done" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="450" y="215" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-15" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-16" target="GPTGCSketb1Ri7tJifBI-6">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="710" y="390" as="sourcePoint" />
+            <mxPoint x="760" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-18" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-5" target="GPTGCSketb1Ri7tJifBI-16">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="625" y="230" as="sourcePoint" />
+            <mxPoint x="747" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-16" value="Load" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="660" y="215" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-19" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-20" target="GPTGCSketb1Ri7tJifBI-7">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="390" as="sourcePoint" />
+            <mxPoint x="650" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-22" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-6" target="GPTGCSketb1Ri7tJifBI-20">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="787" y="270" as="sourcePoint" />
+            <mxPoint x="787" y="450" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-20" value="Unload" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="762" y="330" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-23" value="" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-24" target="GPTGCSketb1Ri7tJifBI-8">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="390" as="sourcePoint" />
+            <mxPoint x="650" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-25" value="" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-7" target="GPTGCSketb1Ri7tJifBI-24">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="747" y="490" as="sourcePoint" />
+            <mxPoint x="620" y="490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-24" value="Duration reach" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="660" y="475" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-26" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="760" width="930" height="590" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-27" value="AGV" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="760" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-28" value="READY" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="910" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-29" value="ASSIGNED" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="910" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-30" value="LOADED" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="747" y="910" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-33" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-34" target="GPTGCSketb1Ri7tJifBI-28">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="230" y="950" as="sourcePoint" />
+            <mxPoint x="590" y="1060" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-34" value="初始化" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="920" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-35" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-37" target="GPTGCSketb1Ri7tJifBI-29">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="570" y="1120" as="sourcePoint" />
+            <mxPoint x="620" y="1070" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-36" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-28" target="GPTGCSketb1Ri7tJifBI-37">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="950" as="sourcePoint" />
+            <mxPoint x="545" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-37" value="有指令" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="450" y="935" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-38" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-40" target="GPTGCSketb1Ri7tJifBI-30">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="710" y="1110" as="sourcePoint" />
+            <mxPoint x="760" y="1060" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-39" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-29" target="GPTGCSketb1Ri7tJifBI-40">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="625" y="950" as="sourcePoint" />
+            <mxPoint x="747" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-40" value="Load" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="660" y="935" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-41" value="" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-43" target="GPTGCSketb1Ri7tJifBI-28">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="1110" as="sourcePoint" />
+            <mxPoint x="787" y="1170.0000000000002" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="360" y="1070" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-42" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-30" target="GPTGCSketb1Ri7tJifBI-43">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="787" y="990" as="sourcePoint" />
+            <mxPoint x="787" y="1170" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="787" y="1070" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-43" value="Unload" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="555" y="1050" width="50" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-47" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1520" width="930" height="590" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-48" value="Machine" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1520" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-49" value="READY" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="1670" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-50" value="WORKING" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="1670" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-51" value="FINISHED" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="747" y="1670" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-52" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-53" target="GPTGCSketb1Ri7tJifBI-49">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="230" y="1710" as="sourcePoint" />
+            <mxPoint x="590" y="1820" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-53" value="初始化" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="1680" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-54" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-56" target="GPTGCSketb1Ri7tJifBI-50">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="570" y="1880" as="sourcePoint" />
+            <mxPoint x="620" y="1830" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-55" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-49" target="GPTGCSketb1Ri7tJifBI-56">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="1710" as="sourcePoint" />
+            <mxPoint x="545" y="1710" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-56" value="有指令" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="450" y="1695" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-57" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-59" target="GPTGCSketb1Ri7tJifBI-51">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="710" y="1870" as="sourcePoint" />
+            <mxPoint x="760" y="1820" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-58" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-50" target="GPTGCSketb1Ri7tJifBI-59">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="625" y="1710" as="sourcePoint" />
+            <mxPoint x="747" y="1710" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-59" value="Load" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="660" y="1695" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-60" value="" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-62" target="GPTGCSketb1Ri7tJifBI-49">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="1870" as="sourcePoint" />
+            <mxPoint x="787" y="1930.0000000000002" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="360" y="1830" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-61" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GPTGCSketb1Ri7tJifBI-51" target="GPTGCSketb1Ri7tJifBI-62">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="787" y="1750" as="sourcePoint" />
+            <mxPoint x="787" y="1930" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="787" y="1830" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GPTGCSketb1Ri7tJifBI-62" value="等待被AGV访问" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="547.5" y="1810" width="65" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

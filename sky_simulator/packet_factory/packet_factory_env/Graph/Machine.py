@@ -26,7 +26,10 @@ class Machine:
         self.output_queue: List[Operation] = []
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} id={self.id}>"
+        return (f"<{self.__class__.__name__} "
+                f"id={self.id}>"
+                f"status={self.status}>"
+                )
 
     # ---------- 模拟Machine运行 ----------
     def is_available(self):
@@ -34,7 +37,7 @@ class Machine:
         if op is None:
             return True
         else:
-            return op.is_finished()
+            return op.get_status() == OperationStatus.FINISHED
 
     def get_id(self) -> int:
         return self.id
@@ -60,37 +63,39 @@ class Machine:
     def set_status(self, status: MachineStatus):
         self.status = status
 
-    def work(self, final_time: float) -> bool:
-        # if self.operation is not None:
-        if self.get_status() == MachineStatus.READY:
-            if self.operation.get_status() != OperationStatus.WORKING:
-                return False
-
-            duration = self.operation.get_duration(self.id)
-            work_time: float = duration - self.operation.process_time
-            if self.timer + work_time > final_time:
-                self.operation.process_time += final_time - self.timer
-                self.set_timer(final_time)
-                return False
-            self.timer += work_time
-
-            self.operation.set_process_time(duration)
-            self.operation.set_status(OperationStatus.FINISHED)
-            self.operation.set_finished(True)
-            self.operation.set_status(OperationStatus.FINISHED)
-
-            self.operation.set_current_machine(None)
-            self.operation.get_next_operation().set_status(OperationStatus.READY)
-
-            self.operation = self.operation.get_next_operation()
-            if self.operation is not None:
-                self.operation.set_status(OperationStatus.READY)
-                self.operation.set_current_machine(self)
-            return True
-        else:
-            LOGGER.info(f"Machine {self.id} is idle")
+    def push_process(self,final_time):
+        duration = self.operation.get_duration(self.id)
+        work_time: float = duration - self.operation.process_time
+        if self.timer + work_time > final_time:
+            self.operation.process_time += final_time - self.timer
+            self.set_timer(final_time)
             return False
+        self.timer += work_time
+        # 设置完成
+        self.operation.set_process_time(duration)
+        self.operation.set_status(OperationStatus.FINISHED)
+
+        self.operation.set_current_machine(None)
+
+        self.operation = self.operation.get_next_operation()
+        if self.operation is not None:
+            self.operation.set_status(OperationStatus.READY)
+            self.operation.set_current_machine(self)
+
+        return True
+
+    def work(self, final_time: float):
+        if self.get_status() == MachineStatus.READY:
+            self.set_status(MachineStatus.WORKING)
+            if self.push_process(final_time):
+                self.set_status(MachineStatus.READY)
+        elif self.get_status() == MachineStatus.WORKING:
+            if self.push_process(final_time):
+                self.set_status(MachineStatus.READY)
+            LOGGER.info(f"Machine {self.id} is working")
+        elif self.get_status() == MachineStatus.FINISHED:
+            LOGGER.info(f"Machine {self.id} is finished")
 
     # ---------- 模拟异常事件 ----------
     def machine_fail(self):
-        self.status=MachineStatus.FAILED
+        self.status = MachineStatus.FAILED

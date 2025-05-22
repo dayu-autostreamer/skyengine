@@ -36,6 +36,7 @@ class AGV:
             f"v={self.velocity:.2f} "
             f"timer={self.timer:.2f} "
             f"operation={operation_name}>"
+            f"status={self.status}>"
         )
 
     def get_id(self) -> int:
@@ -100,11 +101,14 @@ class AGV:
 
         if machine.get_status() == MachineStatus.FINISHED:
             # 上个阶段结束顺利获得物料
-            self.set_status(AGVStatus.MOVING)
+            self.set_status(AGVStatus.ASSIGNED)
             self.set_operation(machine_operation)
             machine_operation.set_status(OperationStatus.MOVING)
             machine_operation.set_current_machine(None)
             machine.set_operation(None)
+        else:
+            LOGGER.info(f"Machine id={machine.id} is not finished.")
+            return False
 
         return True
 
@@ -149,8 +153,9 @@ class AGV:
             machine.set_operation(self.operation)
             self.operation.set_current_machine(machine)
             self.operation.set_status(OperationStatus.WORKING)
-            self.set_operation(None)
+
             self.set_status(AGVStatus.READY)
+            self.set_operation(None)
         else:
             if machine.get_status()==MachineStatus.FINISHED:
                 machine_operation.set_current_machine(None)
@@ -160,6 +165,7 @@ class AGV:
                 self.set_operation(machine_operation)
                 # todo 修改为machine缓存版本
 
+        self.set_status(AGVStatus.READY)
         machine.set_timer(max(machine.get_timer(), self.timer))
         machine.work(final_time)
 

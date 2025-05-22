@@ -53,7 +53,7 @@ class PacketFactoryEnv(ParallelEnv):
         刷新当前环境的graph和agv
         :return:
         """
-        self.jobs, self.machines, self.agvs = util.read_agv_instance_data()
+        self.jobs, self.machines, self.agvs = util.read_agv_instance_data("/brandimarte/simple_agv.txt")
         LOGGER.info("Environment Initialized Successfully.")
 
     def deal_event(self, event_list):
@@ -66,8 +66,11 @@ class PacketFactoryEnv(ParallelEnv):
                 pass
 
     def env_step(self, actions: List[Tuple[Operation, AGV, Machine]], step_time: float) -> None:
+        # ---------- 当前轮次时间 ----------
         current_time = self.env_timeline
         final_time = current_time + step_time
+
+        # ---------- 输入动作进行模拟 ----------
         for machine in self.machines:
             if machine.get_operation() is not None:
                 machine.work(final_time)
@@ -87,7 +90,11 @@ class PacketFactoryEnv(ParallelEnv):
         for machine in self.machines:
             machine.set_timer(final_time)
 
+        # ---------- 查看状态 ----------
+        self.render_observation()
+
     def step(self, actions=None):
+        LOGGER.info(f"--------- 当前循环步为{self.env_timeline} ---------")
         # === 0. Agent 决策动作（支持 Job 或 Central）===
         decisions, step_time = self.agent.sample(self.agvs, self.machines,
                                                 self.jobs)  # type: List[Tuple[Operation, AGV,  Machine]], float
@@ -112,6 +119,7 @@ class PacketFactoryEnv(ParallelEnv):
         self.env_timeline += step_time
 
         obs = self._get_obs()
+        LOGGER.info(f"--------- 结束当前循环步为 ---------")
 
         return obs, rewards, terminations, truncations, {}
 
@@ -145,10 +153,10 @@ class PacketFactoryEnv(ParallelEnv):
 
     def render_observation(self):
         # 展示作业、机器和AGV数量
-        LOGGER.info(f"\n📊 系统资源状态:")
-        LOGGER.info(f"  - 作业数量: {len(self.jobs)}")
-        LOGGER.info(f"  - 机器数量: {len(self.machines)}")
-        LOGGER.info(f"  - AGV数量: {len(self.agvs)}")
+        # LOGGER.info(f"\n📊 系统资源状态:")
+        LOGGER.info(f"  - 作业: {self.jobs}")
+        LOGGER.info(f"  - 机器: {self.machines}")
+        LOGGER.info(f"  - AGV: {self.agvs}")
 
     def render_event(self):
         # 展示事件队列

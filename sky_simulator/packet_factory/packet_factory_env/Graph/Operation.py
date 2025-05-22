@@ -1,5 +1,4 @@
 from typing import List, Optional, Tuple
-from .util import OperationStatus
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.packet_factory.packet_factory_env.Graph.util import OperationStatus
 
@@ -93,60 +92,3 @@ class Operation:
     def set_status(self, status: OperationStatus):
         self.status = status
 
-    def is_ready(self):
-        return all(dep.state == "finished" for dep in self.dependencies)
-
-    # ----------正常运行阶段----------
-    def step(self, node_speed, env_time, packet=None, error_chance=0.0):
-        """
-        Operation 的执行周期逻辑。
-        每次 step 表示推进一个时间片。
-
-        :param node_speed: 当前节点加工速度 (单位进度/时间)
-        :param env_time: 当前环境时间
-        :param packet: 传入的工件（可为空）
-        :param error_chance: 故障概率（用于模拟）
-        :return: 是否完成一个工件（True/False/None）
-        """
-
-        # 故障状态不执行任何操作
-        if self.state == "failed":
-            return None
-
-        # 暂停状态等待外部 resume
-        if self.state == "paused":
-            return None
-
-        # 尚未满足依赖条件
-        if self.state == "blocked":
-            if self.is_ready():
-                self.state = "ready"
-            else:
-                return None
-
-        # 准备状态，等待输入工件
-        if self.state == "ready":
-            if packet:
-                self.current_progress = 0.0
-                self.current_start_time = env_time
-                self.state = "active"
-            else:
-                return None  # 无输入继续等待
-
-        # 主加工阶段
-        if self.state == "active":
-            self.current_progress += node_speed
-
-            # 加工完成
-            if self.current_progress >= self.duration:
-                self.processed_item_list.append({
-                    "start_time": self.current_start_time,
-                    "end_time": env_time,
-                })
-                self.current_progress = 0.0
-                self.state = "ready"
-                return True
-
-        # 空闲状态，等待下一轮调度
-        if self.state == "ready":
-            return False

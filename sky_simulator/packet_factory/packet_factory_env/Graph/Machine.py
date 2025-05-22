@@ -64,6 +64,7 @@ class Machine:
         self.status = status
 
     def push_process(self,final_time):
+        LOGGER.info(f"Machine {self.id} is working")
         duration = self.operation.get_duration(self.id)
         work_time: float = duration - self.operation.process_time
         if self.timer + work_time > final_time:
@@ -89,10 +90,13 @@ class Machine:
             self.set_status(MachineStatus.WORKING)
             if self.push_process(final_time):
                 self.set_status(MachineStatus.READY)
+                LOGGER.info(f"Machine {self.id} work done,now ready")
+
         elif self.get_status() == MachineStatus.WORKING:
             if self.push_process(final_time):
                 self.set_status(MachineStatus.READY)
-            LOGGER.info(f"Machine {self.id} is working")
+                LOGGER.info(f"Machine {self.id} work done,now ready")
+
         elif self.get_status() == MachineStatus.FINISHED:
             LOGGER.info(f"Machine {self.id} is finished")
 

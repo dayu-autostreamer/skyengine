@@ -70,25 +70,21 @@ class PacketFactoryEnv(ParallelEnv):
         current_time = self.env_timeline
         final_time = current_time + step_time
 
-        # ---------- 输入动作进行模拟 ----------
+        # ---------- machine执行已分配的工作 ----------
         for machine in self.machines:
             if machine.get_operation() is not None:
                 machine.work(final_time)
             machine.set_timer(final_time)
 
+        # ---------- 分配调度策略 ----------
         for operation, agv, machine in actions:
-            agv.todo_queue_push(("load", operation))
-            agv.todo_queue_push(("unload", machine))
+            agv.work(action=(operation,machine))
 
-            LOGGER.info(
-                f"Operation {operation.id}: AGV={agv.get_id()}, Machine={machine.get_id()}")
-
+        # ---------- 执行调度策略 ----------
         for agv in self.agvs:
-            if not agv.todo_queue_is_empty():
-                agv.work(final_time)
+            # if not agv.todo_queue_is_empty():
+            agv.work(final_time)
             agv.set_timer(final_time)
-        for machine in self.machines:
-            machine.set_timer(final_time)
 
         # ---------- 查看状态 ----------
         self.render_observation()

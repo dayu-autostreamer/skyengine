@@ -6,6 +6,7 @@ from sky_simulator.packet_factory.packet_factory_env.Graph.Operation import Oper
 from sky_simulator.packet_factory.packet_factory_env.Graph.Machine import Machine
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 
+
 class AGV:
     def __init__(self, id_: int, x: float, y: float, velocity: float):
         """
@@ -73,12 +74,10 @@ class AGV:
         dx = self.x - target_x
         dy = self.y - target_y
         return math.sqrt(dx * dx + dy * dy)
-    
+
     def load_from_warehouse(self, operation: Operation):
         self.set_operation(operation)
         self.status = AGVStatus.LOADED
-
-
 
     # ---------- ready态使用 ----------
     def load(self, machine: Machine, final_time: float) -> bool:
@@ -144,7 +143,7 @@ class AGV:
             LOGGER.info(f"AGV id={self.id} is not loaded")
             return False
 
-        if not self.heading(machine,final_time):
+        if not self.heading(machine, final_time):
             return False
 
         machine_operation: Optional[Operation] = machine.get_operation()
@@ -157,7 +156,7 @@ class AGV:
             self.set_status(AGVStatus.READY)
             self.set_operation(None)
         else:
-            if machine.get_status()==MachineStatus.FINISHED:
+            if machine.get_status() == MachineStatus.FINISHED:
                 machine_operation.set_current_machine(None)
                 machine.set_operation(self.operation)
                 self.operation.set_current_machine(machine)
@@ -186,20 +185,22 @@ class AGV:
     def todo_queue_is_empty(self):
         return len(self.todo_queue) == 0
 
-    def work(self, final_time: float):
+    def push_process(self,final_time: float):
+
         while not self.todo_queue_is_empty():
             todo = self.todo_queue[0]
             LOGGER.info(f"AGV id={self.id} current todo: {todo}")
             if todo[0] == "load":
                 if type(todo[1]) != Operation:
                     raise ValueError(f"Invalid todo type: {todo}")
-                operation = todo[1]
-                last_machine = operation.get_current_machine()
+                last_machine = todo[1].get_current_machine()
                 if last_machine is None:
-                    self.load_from_warehouse(operation)
+                    # 从头开始
+                    self.load_from_warehouse(todo[1])
                     self.todo_queue_pop()
                 else:
                     if self.load(last_machine, final_time):
+                        # 如果可以就从上一个机器load,并且做完了
                         self.todo_queue_pop()
                     else:
                         break
@@ -210,8 +211,21 @@ class AGV:
                     self.todo_queue_pop()
                 else:
                     break
-            else:
-                raise ValueError(f"Invalid todo type: {todo}")
+        if self.todo_queue_is_empty():
+            self.set_status(AGVStatus.READY)
+
+    def work(self, final_time: float = None, action: Tuple[Operation, Machine] = None):
+        if self.status == AGVStatus.READY:
+            self.set_status(AGVStatus.ASSIGNED)
+            if action is not None:
+                self.todo_queue_push(("load", action[0]))
+                self.todo_queue_push(("unload", action[1]))
+                LOGGER.info(f"AGV id={self.id} assigned todo: {action}")
+        elif self.status == AGVStatus.ASSIGNED:
+            self.push_process(final_time)
+
+
+
 
 if __name__ == '__main__':
     k = 10

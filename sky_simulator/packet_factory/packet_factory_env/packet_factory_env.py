@@ -57,6 +57,14 @@ class PacketFactoryEnv(ParallelEnv):
         self.jobs, self.machines, self.agvs = util.read_agv_instance_data("/brandimarte/simple_agv.txt")
         LOGGER.info("Environment Initialized Successfully.")
 
+    def action_space(self, agent):
+        decisions, step_time = agent.sample(self.agvs, self.machines,
+                                            self.jobs)  # type: List[Tuple[Operation, AGV,  Machine]], float
+        return {
+            "decisions": decisions,
+            "step_time": step_time
+        }
+
     def deal_event(self, event_list):
         for event in event_list:
             if event.event_type == "just_test":
@@ -100,9 +108,10 @@ class PacketFactoryEnv(ParallelEnv):
 
     def step(self, actions=None):
         LOGGER.info(f"--------- 当前循环步为{self.env_timeline} ---------")
-        # === 0. Agent 决策动作（支持 Job 或 Central）=== todo Agent + action 放到外面
-        decisions, step_time = self.agent.sample(self.agvs, self.machines,
-                                                 self.jobs)  # type: List[Tuple[Operation, AGV,  Machine]], float
+        # === 0. Agent 决策动作（支持 Job 或 Central）===
+        decisions = actions['decisions']
+        step_time = actions['step_time']
+
         LOGGER.info(f"step_time: {step_time}")
         LOGGER.info(f"decisions: {decisions}")
 

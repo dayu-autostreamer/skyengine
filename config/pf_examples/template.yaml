@@ -1,0 +1,7 @@
+
+
+components:
+  agent: my_agents.rule_based_agent.RuleBasedAgent
+
+
+

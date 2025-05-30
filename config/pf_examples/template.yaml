@@ -1,7 +1,34 @@
+sky:
+  env_type: simulation  # simulation 或 real
 
+  common: # 仿真和实机共享的配置
+    log_level: INFO
+    timezone: Asia/Shanghai
+    data_path: /var/sky_simulator/data
+    resource_check: true
 
-components:
-  agent: my_agents.rule_based_agent.RuleBasedAgent
+  simulation: # 仿真配置
+    env_name: packet_factory
+    agent_name: RandomAgent
 
+    datasource: agv-instances/brandimarte/simple_agv.txt # 如果有datasource则尝试用数据补全
+    map:
+    agv:
+    machine:
+    job:
 
+  real: # 实机配置
+    env_name: packet_factory
+    agent_name: RandomAgent
 
+    agv_controller:
+      type: mqtt
+      broker: 192.168.1.10
+      port: 1883
+      topic_prefix: "/sky/agv"
+    machine_controller:
+      api_endpoint: http://192.168.1.100/api
+      auth_token: your-token-here
+    safety_checks:
+      enabled: true
+      emergency_stop_pin: 17

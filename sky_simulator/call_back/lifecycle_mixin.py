@@ -6,7 +6,7 @@
 @Date    ：2025/5/30 0:18 
 '''
 from typing import List
-from lifecycle_hooks import EnvInitializer, EnvPostProcessor, EnvLifecycleListener
+from .lifecycle_hooks import EnvInitializer, EnvPostProcessor, EnvLifecycleListener
 
 
 class LifecycleHookMixin:

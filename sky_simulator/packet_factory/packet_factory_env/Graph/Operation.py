@@ -1,7 +1,9 @@
 from typing import List, Optional, Tuple
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.packet_factory.packet_factory_env.Graph.util import OperationStatus
+from sky_simulator.registry import register_component
 
+@register_component("packet_factory.Operation")
 class Operation:
 
     def __init__(self, op_id: int, status: OperationStatus, durations: List[Tuple[int, float]], cpu_req=0, mem_req=0):

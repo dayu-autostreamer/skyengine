@@ -10,8 +10,9 @@ from sky_simulator.packet_factory.packet_factory_env.Graph.AGV import AGV
 from sky_simulator.packet_factory.packet_factory_env.Utils import util
 from sky_simulator.packet_factory.packet_factory_env.Event.Event import Event, EventQueue
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
+from sky_simulator.registry import register_component
 
-
+@register_component("packet_factory_env")
 class PacketFactoryEnv(ParallelEnv):
     metadata = {"render_modes": ["human"], "name": "packet_factory_env"}
 

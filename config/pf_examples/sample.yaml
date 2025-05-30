@@ -1,0 +1,52 @@
+sky:
+  env_type: simulation  # simulation 或 real
+
+  common:  # 仿真与实机共享配置
+    log_level: INFO
+    timezone: Asia/Shanghai
+    data_path: /var/sky_simulator/data
+    resource_check: true
+
+  simulation:
+    env_name: packet_factory
+    agent_name: RandomAgent
+
+    datasource: agv-instances/brandimarte/simple_agv.txt
+
+    map:
+      file: maps/factory_layout.json
+      scale: 1.0
+
+    agv:
+      count: 5
+      default_velocity: 1.2
+      model: SimAGV
+
+    machine:
+      types:
+        - id: M1
+          type: welding
+        - id: M2
+          type: painting
+
+    job:
+      file: jobs/default_jobs.json
+      shuffle: true
+
+  real:
+    env_name: packet_factory
+    agent_name: RealAgent
+
+    agv_controller:
+      type: mqtt
+      broker: 192.168.1.10
+      port: 1883
+      topic_prefix: /sky/agv
+
+    machine_controller:
+      api_endpoint: http://192.168.1.100/api
+      auth_token: your-token-here
+
+    safety_checks:
+      enabled: true
+      emergency_stop_pin: 17

@@ -7,7 +7,7 @@ from sky_simulator.packet_factory.packet_factory_env.Graph.Machine import Machin
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.registry import register_component
 
-@register_component("sim_agv")
+@register_component("packet_factory.Agv")
 class AGV:
     def __init__(self, id_: int, x: float, y: float, velocity: float):
         """

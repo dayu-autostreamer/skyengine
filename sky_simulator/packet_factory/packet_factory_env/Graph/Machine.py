@@ -4,7 +4,9 @@ from .Operation import Operation
 from .util import OperationStatus, MachineStatus
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 
+from sky_simulator.registry import register_component
 
+@register_component("packet_factory.Machine")
 class Machine:
     def __init__(self, machine_id: int, x: float, y: float, operation: Optional[Operation]):
         """

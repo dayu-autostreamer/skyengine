@@ -5,6 +5,9 @@ from abc import ABC, abstractmethod
 # output: [(Operation, AGV, Machine), ...] （job可以混合）
 
 
+from sky_simulator.registry import register_component
+
+@register_component("packet_factory.BaseAgent")
 class BaseAgent(ABC):
     def __init__(self, name=None, agent_id=None, context=None):
         """

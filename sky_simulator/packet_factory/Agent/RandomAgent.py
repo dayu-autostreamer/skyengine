@@ -15,7 +15,9 @@ import random
 # input: 状态
 # output: [(Operation, AGV, Machine), ...] （job可以混合）
 
+from sky_simulator.registry import register_component
 
+@register_component("packet_factory.RandomAgent")
 class RandomAgent(BaseAgent):
     def __init__(self, name=None, agent_id=None, context=None):
         """

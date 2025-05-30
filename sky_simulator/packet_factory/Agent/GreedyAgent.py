@@ -5,7 +5,9 @@ from sky_simulator.packet_factory.packet_factory_env.Graph.Operation import Oper
 from sky_simulator.packet_factory.packet_factory_env.Graph.AGV import AGV
 import time
 
+from sky_simulator.registry import register_component
 
+@register_component("packet_factory.GreedyAgent")
 class GreedyAgent(BaseAgent):
     def __init__(self, name=None, agent_id=None, context=None):
         """

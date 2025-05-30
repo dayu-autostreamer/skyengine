@@ -2,8 +2,9 @@ from typing import List
 
 from .Operation import Operation
 from .util import JobStatus, OperationStatus
+from sky_simulator.registry import register_component
 
-
+@register_component("packet_factory.Job")
 class Job:
     def __init__(self, job_id: int, operations: List[Operation], target_count=None):
         """

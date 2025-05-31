@@ -55,7 +55,7 @@ class PacketFactoryEnv(ParallelEnv):
         :return:
         """
         # todo 修改为yaml数据读取
-        self.jobs, self.machines, self.agvs = util.read_agv_instance_data("/brandimarte/simple_agv.txt")
+        self.jobs, self.machines, self.agvs = util.read_agv_instance_data("/brandimarte/mk01_agv.txt")
         LOGGER.info("Environment Initialized Successfully.")
 
     def action_space(self, agent):

@@ -17,7 +17,7 @@ class Job:
                 self.operations[i].set_next_operation(self.operations[i + 1])
             else:
                 self.operations[i].set_next_operation(None)
-        if len(self.operations)>=1:
+        if len(self.operations) >= 1:
             self.operations[0].set_status(OperationStatus.READY)
 
         self.status=JobStatus.B4START

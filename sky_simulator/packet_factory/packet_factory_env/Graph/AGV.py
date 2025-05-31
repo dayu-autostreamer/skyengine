@@ -93,10 +93,10 @@ class AGV:
             LOGGER.info(f"AGV id={self.id} is already loading an operation id={self.operation}")
             return False
 
-        machine: Optional[Machine] = operation.get_current_machine()
-        if machine is None:
+        if operation.current_machine is None:
             LOGGER.warning(f"Operation id={operation.id} is not assigned to any machine")
             return False
+        machine: Machine = operation.current_machine
 
         if not self.heading(machine, final_time):
             return False

@@ -56,6 +56,7 @@ class Machine:
 
     def input_pop_operation(self) -> Optional[Operation]:
         if len(self.input_queue) == 0:
+            LOGGER.warning(f"Machine id={self.id} input queue is empty")
             return None
         else:
             return self.input_queue.pop(0)
@@ -66,6 +67,7 @@ class Machine:
 
     def output_pop_operation(self, operation: Optional[Operation] = None) -> Optional[Operation]:
         if len(self.output_queue) == 0:
+            LOGGER.warning(f"Machine id={self.id} output queue is empty")
             return None
         elif operation is None:
             return self.output_queue.pop(0)

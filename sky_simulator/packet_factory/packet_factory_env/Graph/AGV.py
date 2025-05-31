@@ -103,11 +103,11 @@ class AGV:
 
         self.timer = max(self.timer, machine.get_timer())
 
-        if operation.get_status() == OperationStatus.READY:
+        if operation.get_status() == OperationStatus.MOVING:
             # 上个阶段结束顺利获得物料
             self.set_status(AGVStatus.LOADED)
             self.set_operation(operation)
-            operation.set_status(OperationStatus.MOVING)
+            # operation.set_status(OperationStatus.MOVING)
             operation.set_current_machine(None)
             machine.output_pop_operation(operation)
         else:
@@ -212,6 +212,7 @@ class AGV:
 
     def work(self, final_time: float, action: Optional[Tuple[Operation, Machine]] = None):
         if action is not None:
+            action[0].set_status(OperationStatus.MOVING)
             self.todo_queue_push(("load", action[0]))
             self.todo_queue_push(("unload", action[1]))
             LOGGER.info(f"AGV id={self.id} assigned todo: {action}")

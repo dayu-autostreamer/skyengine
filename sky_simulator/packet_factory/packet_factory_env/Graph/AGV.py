@@ -80,18 +80,22 @@ class AGV:
         self.set_operation(operation)
         self.status = AGVStatus.LOADED
 
-    # ---------- ready态使用 ----------
-    def load(self, machine: Machine, final_time: float) -> bool:
+    # ---------- ready和assigned态使用 ----------
+    def load(self, operation: Operation, final_time: float) -> bool:
         """
         从machine上获得对应的operation
         """
-        if self.status != AGVStatus.READY:
+        
+        if self.status == AGVStatus.READY:
+            self.set_status(AGVStatus.ASSIGNED)
+
+        if self.status != AGVStatus.ASSIGNED:
             LOGGER.info(f"AGV id={self.id} is already loading an operation id={self.operation}")
             return False
 
-        machine_operation: Optional[Operation] = machine.get_operation()
-        if machine_operation is None:
-            LOGGER.info(f"Machine id={machine.id} is not loaded")
+        machine: Optional[Machine] = operation.get_current_machine()
+        if machine is None:
+            LOGGER.warning(f"Operation id={operation.id} is not assigned to any machine")
             return False
 
         if not self.heading(machine, final_time):
@@ -99,24 +103,25 @@ class AGV:
 
         self.timer = max(self.timer, machine.get_timer())
 
-        if machine.get_status() == MachineStatus.FINISHED:
+        if operation.get_status() == OperationStatus.READY:
             # 上个阶段结束顺利获得物料
-            self.set_status(AGVStatus.ASSIGNED)
-            self.set_operation(machine_operation)
-            machine_operation.set_status(OperationStatus.MOVING)
-            machine_operation.set_current_machine(None)
-            machine.set_operation(None)
+            self.set_status(AGVStatus.LOADED)
+            self.set_operation(operation)
+            operation.set_status(OperationStatus.MOVING)
+            operation.set_current_machine(None)
+            machine.output_pop_operation(operation)
         else:
             LOGGER.info(f"Machine id={machine.id} is not finished.")
             return False
 
         return True
 
-    # ---------- moving和loaded态使用 ----------
+    # ---------- assigned和loaded态使用 ----------
     def heading(self, machine: Machine, final_time: float) -> bool:
-        # if self.status != AGVStatus.READY or self.status != AGVStatus.MOVING:
-        #     LOGGER.info(f"AGV id={self.id} can't go to machine={machine.id}")
-        #     return False
+        if self.status != AGVStatus.ASSIGNED and self.status != AGVStatus.LOADED:
+            LOGGER.info(f"AGV id={self.id} can't go to machine={machine.id}")
+            return False
+        
         mx, my = machine.get_xy()
         distance = self.dist(mx, my)
         travel_time = distance / self.velocity
@@ -135,7 +140,7 @@ class AGV:
         self.timer += travel_time
         return True
 
-    # ---------- moving态使用 ----------
+    # ---------- loaded态使用 ----------
     def unload(self, machine: Machine, final_time: float) -> bool:
         """
         将AGV上的operation卸载到对应machine上
@@ -147,25 +152,18 @@ class AGV:
         if not self.heading(machine, final_time):
             return False
 
-        machine_operation: Optional[Operation] = machine.get_operation()
-
-        if machine_operation is None:
-            machine.set_operation(self.operation)
-            self.operation.set_current_machine(machine)
-            self.operation.set_status(OperationStatus.WORKING)
-
-            self.set_status(AGVStatus.READY)
-            self.set_operation(None)
-        else:
-            if machine.get_status() == MachineStatus.FINISHED:
-                machine_operation.set_current_machine(None)
-                machine.set_operation(self.operation)
-                self.operation.set_current_machine(machine)
-                self.operation.set_status(OperationStatus.WORKING)
-                self.set_operation(machine_operation)
-                # todo 修改为machine缓存版本
+        if self.operation is None:
+            LOGGER.warning(f"AGV id={self.id} has no operation")
+            return False
+        
+        agv_operation: Operation = self.operation
+        machine.input_push_operation(agv_operation)
+        agv_operation.set_current_machine(machine)
+        agv_operation.set_status(OperationStatus.WORKING)
 
         self.set_status(AGVStatus.READY)
+        self.set_operation(None)
+
         machine.set_timer(max(machine.get_timer(), self.timer))
         machine.work(final_time)
 
@@ -187,7 +185,6 @@ class AGV:
         return len(self.todo_queue) == 0
 
     def push_process(self,final_time: float):
-
         while not self.todo_queue_is_empty():
             todo = self.todo_queue[0]
             LOGGER.info(f"AGV id={self.id} current todo: {todo}")
@@ -200,7 +197,7 @@ class AGV:
                     self.load_from_warehouse(todo[1])
                     self.todo_queue_pop()
                 else:
-                    if self.load(last_machine, final_time):
+                    if self.load(todo[1], final_time):
                         # 如果可以就从上一个机器load,并且做完了
                         self.todo_queue_pop()
                     else:
@@ -212,18 +209,13 @@ class AGV:
                     self.todo_queue_pop()
                 else:
                     break
-        if self.todo_queue_is_empty():
-            self.set_status(AGVStatus.READY)
 
-    def work(self, final_time: float = None, action: Tuple[Operation, Machine] = None):
-        if self.status == AGVStatus.READY:
-            self.set_status(AGVStatus.ASSIGNED)
-            if action is not None:
-                self.todo_queue_push(("load", action[0]))
-                self.todo_queue_push(("unload", action[1]))
-                LOGGER.info(f"AGV id={self.id} assigned todo: {action}")
-        elif self.status == AGVStatus.ASSIGNED:
-            self.push_process(final_time)
+    def work(self, final_time: float, action: Optional[Tuple[Operation, Machine]] = None):
+        if action is not None:
+            self.todo_queue_push(("load", action[0]))
+            self.todo_queue_push(("unload", action[1]))
+            LOGGER.info(f"AGV id={self.id} assigned todo: {action}")
+        self.push_process(final_time)
 
 
 

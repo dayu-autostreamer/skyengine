@@ -40,12 +40,12 @@ class Job:
         return (
             f"<{self.__class__.__name__} "
             f"id={self.id} "
-            f"ops={op_count} "
+            f"operation_count={op_count} "
             f"first={first_op_id} "
             f"last={last_op_id} "
-            f"time={total_time:.1f}{target_str}>"
-            f"status={self.status}>"
-
+            f"time={total_time:.1f}{target_str}> "
+            f"status={self.status}> "
+            f"operations={self.operations} "
         )
 
     def get_operation_count(self) -> int:

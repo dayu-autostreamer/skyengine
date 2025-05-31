@@ -82,17 +82,16 @@ class PacketFactoryEnv(ParallelEnv):
 
         # ---------- machine执行已分配的工作 ----------
         for machine in self.machines:
-            if machine.get_operation() is not None:
+            if len(machine.input_queue) > 0:
                 machine.work(final_time)
             machine.set_timer(final_time)
 
         # ---------- 分配调度策略 ----------
         for operation, agv, machine in actions:
-            agv.work(action=(operation, machine))
+            agv.work(final_time, action=(operation, machine))
 
         # ---------- 执行调度策略 ----------
         for agv in self.agvs:
-            # if not agv.todo_queue_is_empty():
             agv.work(final_time)
             agv.set_timer(final_time)
 

@@ -68,7 +68,7 @@ def main():
         idx += 1
         y = float(data[idx])
         idx += 1
-        machines.append(Machine(i, x, y, None))
+        machines.append(Machine(i, x, y))
 
     agvs: List[AGV] = []
     for i in range(k):

@@ -51,7 +51,7 @@ class EnvVisualizer:
 
     def draw_agv(self, screen, agv: AGV):
         color = self.AGV_STATE_COLOR.get(agv.status, self.BLACK)
-        pos = scale(agv.get_xy())
+        pos = scale(agv.get_xy(), shift=(100, 90))
         pygame.draw.circle(screen, color, pos, 15)
         font = pygame.font.SysFont(None, 24)
         label = font.render(str(agv.id), True, self.WHITE)
@@ -80,15 +80,16 @@ class EnvVisualizer:
 
         for machine in self.env.machines:
             self.draw_machine(self.screen, machine)
-            machine_operation = machine.get_operation()
-            if machine_operation is not None:
-                self.draw_operation(self.screen, machine_operation, scale(machine.get_xy()))
+            for operation in machine.input_queue:
+                self.draw_operation(self.screen, operation, scale(machine.get_xy(), shift=(80, 100)))
+            for operation in machine.output_queue:
+                self.draw_operation(self.screen, operation, scale(machine.get_xy(), shift=(120, 100)))
 
         for agv in self.env.agvs:
             self.draw_agv(self.screen, agv)
             agv_operation = agv.get_operation()
             if agv_operation is not None:
-                self.draw_operation(self.screen, agv_operation, scale(agv.get_xy()))
+                self.draw_operation(self.screen, agv_operation, scale(agv.get_xy(), shift=(100, 80)))
 
         pygame.display.flip()
         self.clock.tick(fps)

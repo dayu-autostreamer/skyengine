@@ -52,7 +52,7 @@ def read_agv_instance_data(relative_file_path):
         idx += 1
         y = float(data[idx])
         idx += 1
-        machines.append(Machine(i, x, y, None))
+        machines.append(Machine(i, x, y))
 
     agvs: List[AGV] = []
     for i in range(k):

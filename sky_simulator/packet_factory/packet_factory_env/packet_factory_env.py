@@ -86,6 +86,10 @@ class PacketFactoryEnv(ParallelEnv):
                 machine.work(final_time)
             machine.set_timer(final_time)
 
+        # ---------- 清空已调度但未执行的策略 ----------
+        for agv in self.agvs:
+            agv.todo_queue_clear()
+
         # ---------- 分配调度策略 ----------
         for operation, agv, machine in actions:
             agv.work(final_time, action=(operation, machine))

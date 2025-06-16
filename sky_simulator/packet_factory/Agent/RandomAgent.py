@@ -51,11 +51,11 @@ class RandomAgent(BaseAgent):
 
             for j in range(job.get_operation_count()):
                 op: Operation = job.get_operation(j)
-                if op.get_status() == OperationStatus.READY:
-                    LOGGER.info(f"Operation id={op.id} status={op.get_status()}")
+
+                # 分配所有尚未开始执行的operation, 其状态为ready或者waiting
+                if op.get_status() == OperationStatus.READY or op.get_status() == OperationStatus.WAITING: 
 
                     # 随机选择可处理当前操作的机器
-                    # todo to fix 均为ready状态没有决策
                     valid_machines = [m for m in machines if op.is_machine_capable(m.id) and m.is_available()]
                     machine = random.choice(valid_machines) if valid_machines else None
 
@@ -64,7 +64,7 @@ class RandomAgent(BaseAgent):
 
                     # 如果有机器和AGV则分配任务
                     if agv and op and machine:
-                        # 都存在 添加该op的调度
+                        # 都存在, 添加该op的调度
                         current_sample.append((op, agv, machine))
                     else:
                         continue

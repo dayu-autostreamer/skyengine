@@ -61,6 +61,8 @@ class Job:
         return self.operations[index]
 
     def add_operation(self, op):
+        if self.get_operation_count() > 0:
+            self.operations[-1].set_next_operation(op)
         self.operations.append(op)
 
     def set_status(self, status: JobStatus):
@@ -73,5 +75,6 @@ class Job:
         """
         计算当前Job是否已经完成
         """
+        # todo: 待完善job状态转移
         # return self.status == JobStatus.FINISHED
-        return self.operations[self.get_operation_count()-1].get_status()==OperationStatus.FINISHED
+        return self.operations[self.get_operation_count()-1].get_status() == OperationStatus.FINISHED

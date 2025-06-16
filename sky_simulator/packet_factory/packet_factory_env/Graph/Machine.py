@@ -80,7 +80,11 @@ class Machine:
     def set_status(self, status: MachineStatus):
         self.status = status
 
-    def push_process(self,final_time):
+    def push_process(self, final_time):
+        """ 
+        模拟机器工作
+        :param final_time: 模拟的截止时间
+        """
         LOGGER.info(f"Machine {self.id} is working")
         while len(self.input_queue) > 0:
             self.set_status(MachineStatus.WORKING)
@@ -110,6 +114,10 @@ class Machine:
         return True
 
     def work(self, final_time: float):
+        """
+        判断机器是否处于正常状态，若正常则开始工作
+        :param final_time: 模拟的截止时间
+        """
         if self.get_status() == MachineStatus.READY or self.get_status() == MachineStatus.WORKING:
             self.push_process(final_time)
         else:

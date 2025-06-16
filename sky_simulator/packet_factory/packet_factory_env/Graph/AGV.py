@@ -194,6 +194,9 @@ class AGV:
     def todo_queue_is_empty(self):
         return len(self.todo_queue) == 0
     
+    def todo_queue_clear(self):
+        self.todo_queue.clear()
+    
     def running_queue_push(self, todo: Tuple[str, Machine | Operation]):
         self.running_queue.append(todo)
 
@@ -210,7 +213,45 @@ class AGV:
         """
         执行队列中的任务, running队列代表执行了一半不能被中断的任务, todo队列代表还没被分配可以重新分配的任务
         """
-        while not self.running_queue_is_empty():
+        while True:
+            if self.running_queue_is_empty():
+                if self.todo_queue_is_empty():
+                    return
+                else:
+                    todo_load = self.todo_queue[0]
+                    todo_unload = self.todo_queue[1]
+
+                    if todo_load[0] == "load":
+                        if type(todo_load[1]) != Operation:
+                            raise ValueError(f"Invalid todo type: {todo_load}")
+                        
+                        # 如果operation是等待状态, 前序operation的机器没有处理完成, 则直接返回, 等待下次调用再处理
+                        if todo_load[1].get_status() == OperationStatus.WAITING:
+                            return
+                        
+                        assert todo_load[1].get_status() == OperationStatus.READY, f"{todo_load[1]} is not ready"
+                        
+                        todo_load[1].set_status(OperationStatus.MOVING) # 修改Operation的状态, 代表已经开始执行了, 不能被中断
+                        last_machine = todo_load[1].get_current_machine()
+                        if last_machine is None:
+                            # 从头开始
+                            self.load_from_warehouse(todo_load[1])
+                            self.todo_queue_pop()
+                        else:
+                            self.todo_queue_pop()
+                            self.running_queue_push(("load", todo_load[1]))
+                    else:
+                        raise ValueError(f"Invalid todo type: {todo_load}")
+                            
+                    if todo_unload[0] == "unload":
+                        if type(todo_unload[1]) != Machine:
+                            raise ValueError(f"Invalid todo type: {todo_unload}")
+                        self.todo_queue_pop()
+                        self.running_queue_push(("unload", todo_unload[1]))
+                    else:
+                        raise ValueError(f"Invalid todo type: {todo_unload}")
+
+
             todo = self.running_queue[0]
             LOGGER.info(f"AGV id={self.id} current todo: {todo}")
             if todo[0] == "load":
@@ -229,34 +270,6 @@ class AGV:
                     return
 
 
-        while not self.todo_queue_is_empty():
-            todo = self.todo_queue[0]
-            self.todo_queue_pop()
-            LOGGER.info(f"AGV id={self.id} current todo: {todo}")
-            if todo[0] == "load":
-                if type(todo[1]) != Operation:
-                    raise ValueError(f"Invalid todo type: {todo}")
-                
-                todo[1].set_status(OperationStatus.MOVING) # 修改Operation的状态, 代表已经开始执行了, 不能被中断
-                last_machine = todo[1].get_current_machine()
-                if last_machine is None:
-                    # 从头开始
-                    self.load_from_warehouse(todo[1])
-                else:
-                    if self.load(todo[1], final_time):
-                        continue
-                    else:
-                        self.running_queue_push(("load", todo[1]))
-                        return
-            elif todo[0] == "unload":
-                if type(todo[1]) != Machine:
-                    raise ValueError(f"Invalid todo type: {todo}")
-                if self.unload(todo[1], final_time):
-                    continue
-                else:
-                    self.running_queue_push(("unload", todo[1]))
-                    return
-
     def work(self, final_time: float, action: Optional[Tuple[Operation, Machine]] = None):
         """
         向todo队列中加入任务, 执行队列中的任务
@@ -264,7 +277,6 @@ class AGV:
         :param action: 最新待执行的任务
         """
         if action is not None:
-            action[0].set_status(OperationStatus.MOVING)
             self.todo_queue_push(("load", action[0]))
             self.todo_queue_push(("unload", action[1]))
             LOGGER.info(f"AGV id={self.id} assigned todo: {action}")

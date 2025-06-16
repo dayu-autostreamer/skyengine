@@ -23,6 +23,7 @@ class AGV:
         self.velocity: float = velocity
         self.operation: Optional[Operation] = None
         self.todo_queue: List[Tuple[str, Machine | Operation]] = []
+        self.running_queue: List[Tuple[str, Machine | Operation]] = []
 
         self.status = AGVStatus.READY
 
@@ -63,7 +64,7 @@ class AGV:
     def set_operation(self, operation: Optional[Operation]) -> None:
         self.operation = operation
         if operation is None:
-            LOGGER.info(f"Operation clear.")
+            LOGGER.info(f"AGV id={self.id} Operation clear.")
 
     def get_status(self) -> AGVStatus:
         return self.status
@@ -72,11 +73,17 @@ class AGV:
         self.status = status
 
     def dist(self, target_x: float, target_y: float) -> float:
+        """
+        计算与给定坐标之间的距离
+        """
         dx = self.x - target_x
         dy = self.y - target_y
         return math.sqrt(dx * dx + dy * dy)
 
     def load_from_warehouse(self, operation: Operation):
+        """
+        将AGV从仓库中获取operation, 目前没有仓库, 直接赋值
+        """
         self.set_operation(operation)
         self.status = AGVStatus.LOADED
 
@@ -84,6 +91,7 @@ class AGV:
     def load(self, operation: Operation, final_time: float) -> bool:
         """
         从machine上获得对应的operation
+        :return: 是否成功, 若失败需要在下一轮step重新调用该函数
         """
         
         if self.status == AGVStatus.READY:
@@ -118,6 +126,10 @@ class AGV:
 
     # ---------- assigned和loaded态使用 ----------
     def heading(self, machine: Machine, final_time: float) -> bool:
+        """
+        将AGV前往machine
+        :return: 是否成功, 若失败则调用该函数的上一级步骤也失败
+        """
         if self.status != AGVStatus.ASSIGNED and self.status != AGVStatus.LOADED:
             LOGGER.info(f"AGV id={self.id} can't go to machine={machine.id}")
             return False
@@ -144,6 +156,7 @@ class AGV:
     def unload(self, machine: Machine, final_time: float) -> bool:
         """
         将AGV上的operation卸载到对应machine上
+        :return: 是否成功, 若失败需要在下一轮step重新调用该函数
         """
         if self.status is not AGVStatus.LOADED:
             LOGGER.info(f"AGV id={self.id} is not loaded")
@@ -169,9 +182,6 @@ class AGV:
 
         return True
 
-    def is_available(self):
-        return self.status == AGVStatus.READY
-
     def todo_queue_push(self, todo: Tuple[str, Machine | Operation]):
         self.todo_queue.append(todo)
 
@@ -183,34 +193,76 @@ class AGV:
 
     def todo_queue_is_empty(self):
         return len(self.todo_queue) == 0
+    
+    def running_queue_push(self, todo: Tuple[str, Machine | Operation]):
+        self.running_queue.append(todo)
+
+    def running_queue_pop(self) -> Optional[Tuple[str, Machine | Operation]]:
+        if len(self.running_queue) == 0:
+            return None
+        else:
+            return self.running_queue.pop(0)
+        
+    def running_queue_is_empty(self):
+        return len(self.running_queue) == 0
 
     def push_process(self,final_time: float):
-        while not self.todo_queue_is_empty():
-            todo = self.todo_queue[0]
+        """
+        执行队列中的任务, running队列代表执行了一半不能被中断的任务, todo队列代表还没被分配可以重新分配的任务
+        """
+        while not self.running_queue_is_empty():
+            todo = self.running_queue[0]
             LOGGER.info(f"AGV id={self.id} current todo: {todo}")
             if todo[0] == "load":
                 if type(todo[1]) != Operation:
                     raise ValueError(f"Invalid todo type: {todo}")
-                last_machine = todo[1].get_current_machine()
-                if last_machine is None:
-                    # 从头开始
-                    self.load_from_warehouse(todo[1])
-                    self.todo_queue_pop()
+                if self.load(todo[1], final_time):
+                    self.running_queue_pop()
                 else:
-                    if self.load(todo[1], final_time):
-                        # 如果可以就从上一个机器load,并且做完了
-                        self.todo_queue_pop()
-                    else:
-                        break
+                    return
             elif todo[0] == "unload":
                 if type(todo[1]) != Machine:
                     raise ValueError(f"Invalid todo type: {todo}")
                 if self.unload(todo[1], final_time):
-                    self.todo_queue_pop()
+                    self.running_queue_pop()
                 else:
-                    break
+                    return
+
+
+        while not self.todo_queue_is_empty():
+            todo = self.todo_queue[0]
+            self.todo_queue_pop()
+            LOGGER.info(f"AGV id={self.id} current todo: {todo}")
+            if todo[0] == "load":
+                if type(todo[1]) != Operation:
+                    raise ValueError(f"Invalid todo type: {todo}")
+                
+                todo[1].set_status(OperationStatus.MOVING) # 修改Operation的状态, 代表已经开始执行了, 不能被中断
+                last_machine = todo[1].get_current_machine()
+                if last_machine is None:
+                    # 从头开始
+                    self.load_from_warehouse(todo[1])
+                else:
+                    if self.load(todo[1], final_time):
+                        continue
+                    else:
+                        self.running_queue_push(("load", todo[1]))
+                        return
+            elif todo[0] == "unload":
+                if type(todo[1]) != Machine:
+                    raise ValueError(f"Invalid todo type: {todo}")
+                if self.unload(todo[1], final_time):
+                    continue
+                else:
+                    self.running_queue_push(("unload", todo[1]))
+                    return
 
     def work(self, final_time: float, action: Optional[Tuple[Operation, Machine]] = None):
+        """
+        向todo队列中加入任务, 执行队列中的任务
+        :param final_time: 模拟的截止时间
+        :param action: 最新待执行的任务
+        """
         if action is not None:
             action[0].set_status(OperationStatus.MOVING)
             self.todo_queue_push(("load", action[0]))

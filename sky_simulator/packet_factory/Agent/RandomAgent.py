@@ -59,9 +59,8 @@ class RandomAgent(BaseAgent):
                     valid_machines = [m for m in machines if op.is_machine_capable(m.id) and m.is_available()]
                     machine = random.choice(valid_machines) if valid_machines else None
 
-                    # 随机选择可用AGV（考虑当前是否正在运输）
-                    available_agvs = [agv for agv in agvs if agv.is_available()]
-                    agv = random.choice(available_agvs) if available_agvs else None
+                    # 随机选择可用AGV, 由于是对AGV的未来分配指令, 无需考虑当前是否正在运输
+                    agv = random.choice(agvs) if agvs else None
 
                     # 如果有机器和AGV则分配任务
                     if agv and op and machine:

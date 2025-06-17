@@ -6,7 +6,7 @@
 🌱 1. 启动引导阶段（Initialize Bootstrap）
 
 引用对应的 environment_env.py后,
- - 读取全局的配置文件（即 application.yml） 
+ - 读取全局的配置文件（即 application.yml）,检查配置文件中指定的其他文件是否存在. 
  - 扫描环境中的类组件 标注唯一的ID与其对应, 后续通过ID索引+反射创建对象.
 
 ---

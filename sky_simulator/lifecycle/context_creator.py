@@ -6,11 +6,13 @@
 @Date    ：2025/5/31 1:28 
 '''
 from sky_simulator.registry.factory import create_component_by_id
-
-def create_context(config: dict):
+from sky_simulator.registry.registry import component_registry
+def create_context():
     '''
     创建环境并整合组件
     '''
+    config= component_registry.get_component('config')
+
     assert isinstance(config,dict) and config is not None
     env_type = config.get("env_type")
     if not env_type:

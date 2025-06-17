@@ -18,4 +18,3 @@ def get_component_class_by_id(component_id: str):
     if cls is None:
         raise ValueError(f"Unknown component ID: {component_id}")
     return cls
-

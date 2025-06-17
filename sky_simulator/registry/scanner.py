@@ -7,7 +7,25 @@
 '''
 import importlib
 import pkgutil
-import sky_simulator  # 你定义的组件模块包
+import sky_simulator
+
+import yaml
+import os
+from sky_simulator.registry.registry import component_registry
+
+def load_config(config_path: str):
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        raw_config = yaml.safe_load(f)
+
+    if "config" not in raw_config:
+        raise ValueError("Missing 'config' section in configuration.")
+
+    sky_config = raw_config["config"]
+
+    component_registry['config'] = sky_config
 
 def scan_and_register_components():
     """

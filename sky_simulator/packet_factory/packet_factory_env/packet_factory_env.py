@@ -2,16 +2,15 @@ from typing import Union, List, Tuple
 
 from pettingzoo import ParallelEnv
 import numpy as np
-from sky_simulator.packet_factory.packet_factory_env.Graph import graph_loader
 
 from sky_simulator.packet_factory.Agent import BaseAgent
 from sky_simulator.packet_factory.packet_factory_env.Graph.Machine import Machine
 from sky_simulator.packet_factory.packet_factory_env.Graph.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Graph.AGV import AGV
-from sky_simulator.packet_factory.packet_factory_env.Utils import util
 from sky_simulator.packet_factory.packet_factory_env.Event.Event import Event, EventQueue
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.registry import register_component
+from sky_simulator.call_back.base_callback.EnvMapLoader import EnvMapLoader
 
 from sky_simulator.call_back.EnvCallback import EnvCallback
 
@@ -44,7 +43,7 @@ class PacketFactoryEnv(ParallelEnv):
 
         # env的回调函数组
         self.callback = {
-            "load_graph": graph_loader.read_agv_instance_data("/brandimarte/simple_agv.txt")
+            "load_graph": EnvMapLoader("/brandimarte/simple_agv.txt")
         }
 
     # ---------- 自定义状态更新函数 ----------

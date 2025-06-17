@@ -1,5 +1,5 @@
 from sky_simulator.packet_factory import packet_factory_v0 
-from sky_simulator.packet_factory.packet_factory_env.Utils.env_visualizer import EnvVisualizer
+from sky_simulator.call_back.base_callback.EnvVisualizer import EnvVisualizer
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 
 # 创建环境与智能体

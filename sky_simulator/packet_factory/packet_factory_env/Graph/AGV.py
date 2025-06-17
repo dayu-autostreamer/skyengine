@@ -20,6 +20,8 @@ class AGVUncertaintySimulator:
         # 创建一个独立的随机数生成器
         self.seed_seq = np.random.SeedSequence(base_seed)
         self.rng = np.random.Generator(np.random.PCG64(self.seed_seq))
+        # 从上次调用uncertain_event_occurred函数开始，是否发生过不确定事件
+        self.is_occurred = False
 
     def uncertain_event_ratio(self, agv_id, machine_id, operation_id):
         """
@@ -38,6 +40,7 @@ class AGVUncertaintySimulator:
 
         if result:
             LOGGER.info(f"AGV {agv_id} Machine {machine_id} operation {operation_id} has uncertain event")
+            self.is_occurred = True
             # todo: 通过yaml配置随机事件后的具体影响
             random_ratio = np.random.uniform(1, 1.5)
         else:
@@ -45,6 +48,15 @@ class AGVUncertaintySimulator:
 
         self.cache[key] = random_ratio
         return random_ratio
+    
+    def uncertain_event_occurred(self):
+        """
+        :return: 若发生随机事件, 返回True, 否则返回False
+        :rtype: bool
+        """
+        result = self.is_occurred
+        self.is_occurred = False
+        return result
 
 @register_component("packet_factory.Agv")
 class AGV:
@@ -179,7 +191,7 @@ class AGV:
         distance = self.dist(mx, my)
         travel_time = distance / self.velocity
         agv_operation_id = None if self.operation is None else self.operation.id
-        travel_time *= self.uncertainty_simulator.uncertain_event_ratio(self.id, agv_operation_id, machine.id)
+        travel_time *= self.uncertainty_simulator.uncertain_event_ratio(self.id, machine.id, agv_operation_id)
 
         if self.get_timer() + travel_time > final_time:
             agv_x, agv_y = self.get_xy()

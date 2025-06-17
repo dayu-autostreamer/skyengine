@@ -86,52 +86,69 @@ class PacketFactoryEnv(ParallelEnv):
                 machine.work(final_time)
             machine.set_timer(final_time)
 
-        # ---------- 清空已调度但未执行的策略 ----------
-        for agv in self.agvs:
-            agv.todo_queue_clear()
+        if len(actions) > 0:
+            # ---------- 清空已调度但未执行的策略 ----------
+            for agv in self.agvs:
+                agv.todo_queue_clear()
 
-        # ---------- 分配调度策略 ----------
-        for operation, agv, machine in actions:
-            agv.work(final_time, action=(operation, machine))
+            # ---------- 分配调度策略 ----------
+            for operation, agv, machine in actions:
+                agv.work(final_time, action=(operation, machine))
 
         # ---------- 执行调度策略 ----------
         for agv in self.agvs:
             agv.work(final_time)
             agv.set_timer(final_time)
 
-        # todo 添加不确定事件
-        # === 1. 处理 EventQueue 中的事件 ===
-        # todo 第一阶段暂时没用到event
-        current_event_list = self.event_queue.pop_ready_events(self.env_timeline)
-        self.deal_event(current_event_list)
-
         # ---------- 查看状态 ----------
         self.render_observation()
 
-        return True
+        # === 处理全局时间 ===
+        self.env_timeline += step_time
+
+        # 判断是否有不确定事件发生过，若有则返回True
+        for machine in self.machines:
+            if machine.uncertainty_simulator.uncertain_event_occurred():
+                return True
+        for agv in self.agvs:
+            if agv.uncertainty_simulator.uncertain_event_occurred():
+                return True
+
+        return False
 
     def step(self, actions=None):
         LOGGER.info(f"--------- 当前循环步为{self.env_timeline} ---------")
         # === 0. Agent 决策动作（支持 Job 或 Central）===
         decisions = actions['decisions']
-        step_time = actions['step_time']
+
+        # todo: Agent的执行时间不再决定要step多久，而是不确定性事件发生时才重新决策
+        # step_time = actions['step_time']
+        step_time = 1
 
         LOGGER.info(f"step_time: {step_time}")
         LOGGER.info(f"decisions: {decisions}")
 
         # === 2. 提取state,发送给状态转移函数并返回 ===
         while True:
+            # 轮询，直到不确定性事件发生才重新决策
             if self.env_step(decisions, step_time):
-                # todo 轮询
                 break
+            else:
+                # 分配完任务后，没有不确定性发生，那么仍执行原决策，不传入新决策
+                decisions = []
+                # 当全部任务执行完成时，也应该退出循环
+                cnt = 0
+                for job in self.jobs:
+                    if job.is_finished():
+                        cnt += 1
+                if cnt == len(self.jobs):
+                    self.agent.alive = False
+                    break
 
         # === 3. 统计完成状态，计算奖励 ===
         # todo 计算状态/动作完成reward计算
         rewards = {self.agent.agent_id: self.agent.reward(self.critic_vector)}
         terminations = {self.agent}
-
-        # === 4. 处理全局时间 === todo 累加时间
-        self.env_timeline += step_time
 
         obs = self._get_obs()
         LOGGER.info(f"--------- 结束当前循环步 ---------")

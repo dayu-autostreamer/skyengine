@@ -30,6 +30,8 @@ class PacketFactoryEnv(ParallelEnv):
         self.jobs = []
         self.machines = []
         self.agvs = []
+        self.points = []
+        self.links = []
 
         # 环境本身的状态,向量指标,事件队列等
         self.env_timeline: float = 0
@@ -43,7 +45,6 @@ class PacketFactoryEnv(ParallelEnv):
         self.agent = agent
 
         # env的回调函数组 
-        # todo: 现在还是写死的，不能传参！！！
         self.callback = {
             "load_graph": EnvMapLoader("/brandimarte/simple_agv.txt"),
             "initialize_visualizer": EnvVisualizer(self)
@@ -65,7 +66,7 @@ class PacketFactoryEnv(ParallelEnv):
         刷新当前环境的graph和agv
         :return:
         """
-        self.jobs, self.machines, self.agvs = self.callback['load_graph']()
+        self.jobs, self.machines, self.agvs, self.points, self.links = self.callback['load_graph']()
         # 可视化
         self.env_visualizer = self.callback['initialize_visualizer']
         self.env_visualizer.visualize_env()

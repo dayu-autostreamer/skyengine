@@ -61,7 +61,7 @@ class MachineUncertaintySimulator:
 class Machine:
     def __init__(self, machine_id: int, x: float, y: float):
         """
-        :param id_: 机器 ID
+        :param id: 机器 ID
         :param x: 坐标 X
         :param y: 坐标 Y
         """

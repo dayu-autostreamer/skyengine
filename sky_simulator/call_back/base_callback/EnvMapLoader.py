@@ -59,11 +59,13 @@ class EnvMapLoader(EnvCallback):
             jobs.append(Job(job_id, operations))
 
         machines: List[Machine] = []
+        points: List[Tuple[float, float]] = []
         for i in range(m):
             x = float(data[idx])
             idx += 1
             y = float(data[idx])
             idx += 1
+            points.append((x, y))
             machines.append(Machine(i, x, y))
 
         agvs: List[AGV] = []
@@ -75,8 +77,13 @@ class EnvMapLoader(EnvCallback):
             velocity = float(data[idx])
             idx += 1
             agvs.append(AGV(i, x, y, velocity))
+        
+        links: List[Tuple[int, int]] = []
+        for i in range(len(points)):
+            for j in range(i + 1, len(points)):
+                links.append((i, j))
 
-        return jobs, machines, agvs
+        return jobs, machines, agvs, points, links
 
 
 if __name__ == '__main__':

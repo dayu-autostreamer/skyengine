@@ -79,7 +79,7 @@ class FactoryMapLoader(EnvCallback):
             if point is None:
                 LOGGER.error(f"Point ID {m['point_id']} not found in the graph")
                 continue
-            machines.append(Machine(m['id'], point.x, point.y))
+            machines.append(Machine(m['id'], point.x, point.y, m['point_id']))
 
         agvs = []
         for agv in map_config.get('agvs', []):
@@ -88,7 +88,7 @@ class FactoryMapLoader(EnvCallback):
             if point is None:
                 LOGGER.error(f"Point ID {a['point_id']} not found in the graph")
                 continue
-            agvs.append(AGV(a['id'], point.x, point.y, a['velocity']))
+            agvs.append(AGV(a['id'], point.x, point.y, a['point_id'], a['velocity'], graph))
         
         return jobs, machines, agvs, graph
        

@@ -5,6 +5,7 @@ import numpy as np
 from .util import AGVStatus, OperationStatus, MachineStatus
 from sky_simulator.packet_factory.packet_factory_env.Graph.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Graph.Machine import Machine
+from sky_simulator.packet_factory.packet_factory_env.Graph.Graph import Graph
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.registry import register_component
 
@@ -60,16 +61,19 @@ class AGVUncertaintySimulator:
 
 @register_component("packet_factory.Agv")
 class AGV:
-    def __init__(self, id_: int, x: float, y: float, velocity: float):
+    def __init__(self, id: int, x: float, y: float, point_id: int, velocity: float, graph: Graph):
         """
-        :param id_: AGV ID
+        :param id: AGV ID
         :param x: 坐标 X
         :param y: 坐标 Y
         :param velocity: 移动速度
         """
-        self.id: int = id_
+        self.id: int = id
         self.x: float = x
         self.y: float = y
+        self.point_id = point_id
+        self.path_stage = 1
+        self.graph: Graph = graph
         self.timer: float = 0.0
         self.velocity: float = velocity
         self.operation: Optional[Operation] = None
@@ -159,7 +163,8 @@ class AGV:
             return False
         machine: Machine = operation.current_machine
 
-        if not self.heading(machine, final_time):
+        path = self.graph.get_path(self.point_id, machine.point_id)
+        if not self.heading(machine, path, final_time):
             return False
 
         self.timer = max(self.timer, machine.get_timer())
@@ -175,36 +180,46 @@ class AGV:
             LOGGER.info(f"Machine id={machine.id} is not finished.")
             return False
 
+        self.point_id = machine.point_id
+        self.path_stage = 1
         return True
 
     # ---------- assigned和loaded态使用 ----------
-    def heading(self, machine: Machine, final_time: float) -> bool:
+    def heading(self, machine: Machine, path: List[int], final_time: float) -> bool:
         """
         将AGV前往machine
         :return: 是否成功, 若失败则调用该函数的上一级步骤也失败
         """
         if self.status != AGVStatus.ASSIGNED and self.status != AGVStatus.LOADED:
-            LOGGER.info(f"AGV id={self.id} can't go to machine={machine.id}")
+            LOGGER.info(f"AGV id={self.id} can't go to point {path[-1]}")
             return False
         
-        mx, my = machine.get_xy()
-        distance = self.dist(mx, my)
-        travel_time = distance / self.velocity
-        agv_operation_id = None if self.operation is None else self.operation.id
-        travel_time *= self.uncertainty_simulator.uncertain_event_ratio(self.id, machine.id, agv_operation_id)
+        while self.path_stage < len(path):
+            point = self.graph.get_point_by_id(path[self.path_stage])
+            if point is None:
+                LOGGER.info(f"AGV id={self.id} can't go to point {path[self.path_stage]}")
+                return False
+            nx, ny = point.get_xy()
+            distance = self.dist(nx, ny)
+            travel_time = distance / self.velocity
+            agv_operation_id = None if self.operation is None else self.operation.id
+            travel_time *= self.uncertainty_simulator.uncertain_event_ratio(self.id, machine.id, agv_operation_id)
 
-        if self.get_timer() + travel_time > final_time:
-            agv_x, agv_y = self.get_xy()
-            dx: float = mx - agv_x
-            dy: float = my - agv_y
-            agv_x = agv_x + dx * (final_time - self.get_timer()) / travel_time
-            agv_y = agv_y + dy * (final_time - self.get_timer()) / travel_time
-            self.set_xy(agv_x, agv_y)
-            self.set_timer(final_time)
-            return False
+            if self.get_timer() + travel_time > final_time:
+                agv_x, agv_y = self.get_xy()
+                dx: float = nx - agv_x
+                dy: float = ny - agv_y
+                agv_x = agv_x + dx * (final_time - self.get_timer()) / travel_time
+                agv_y = agv_y + dy * (final_time - self.get_timer()) / travel_time
+                self.set_xy(agv_x, agv_y)
+                self.set_timer(final_time)
+                return False
 
-        self.set_xy(mx, my)
-        self.timer += travel_time
+            self.set_xy(nx, ny)
+            self.timer += travel_time
+
+            self.path_stage += 1
+
         return True
 
     # ---------- loaded态使用 ----------
@@ -216,12 +231,13 @@ class AGV:
         if self.status is not AGVStatus.LOADED:
             LOGGER.info(f"AGV id={self.id} is not loaded")
             return False
-
-        if not self.heading(machine, final_time):
-            return False
-
+        
         if self.operation is None:
             LOGGER.warning(f"AGV id={self.id} has no operation")
+            return False
+
+        path = self.graph.get_path(self.point_id, machine.point_id)
+        if not self.heading(machine, path, final_time):
             return False
         
         agv_operation: Operation = self.operation
@@ -235,6 +251,8 @@ class AGV:
         machine.set_timer(max(machine.get_timer(), self.timer))
         machine.work(final_time)
 
+        self.point_id = machine.point_id
+        self.path_stage = 1
         return True
 
     def todo_queue_push(self, todo: Tuple[str, Machine | Operation]):

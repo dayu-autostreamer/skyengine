@@ -59,7 +59,7 @@ class MachineUncertaintySimulator:
 
 @register_component("packet_factory.Machine")
 class Machine:
-    def __init__(self, machine_id: int, x: float, y: float):
+    def __init__(self, machine_id: int, x: float, y: float, point_id: int):
         """
         :param id: 机器 ID
         :param x: 坐标 X
@@ -69,6 +69,7 @@ class Machine:
         self.id: int = machine_id
         self.x: float = x
         self.y: float = y
+        self.point_id: int = point_id
         self.timer: float = 0.0
 
         self.status: MachineStatus = MachineStatus.READY

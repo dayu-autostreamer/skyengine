@@ -61,7 +61,15 @@ class EnvMapLoader(EnvCallback):
             y = float(data[idx])
             idx += 1
             points.append(Point(i, x, y))
-            machines.append(Machine(i, x, y))
+            machines.append(Machine(i, x, y, i))
+        
+        links: List[Link] = []
+        link_count = 0
+        for i in range(len(points)):
+            for j in range(i + 1, len(points)):
+                links.append(Link(link_count, i, j))
+        
+        graph = Graph(points, links)
 
         agvs: List[AGV] = []
         for i in range(k):
@@ -71,15 +79,7 @@ class EnvMapLoader(EnvCallback):
             idx += 1
             velocity = float(data[idx])
             idx += 1
-            agvs.append(AGV(i, x, y, velocity))
-        
-        links: List[Link] = []
-        link_count = 0
-        for i in range(len(points)):
-            for j in range(i + 1, len(points)):
-                links.append(Link(link_count, i, j))
-        
-        graph = Graph(points, links)
+            agvs.append(AGV(i, x, y, i, velocity, graph))
 
         return jobs, machines, agvs, graph
 

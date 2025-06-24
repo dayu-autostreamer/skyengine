@@ -54,7 +54,7 @@ class EnvVisualizer(EnvCallback):
 
     def __call__(self):
         """使类的实例可以像函数一样被调用"""
-        self.visualize_env(self.fps)
+        self.visualize_env()
 
     def draw_agv(self, screen, agv: AGV):
         color = self.AGV_STATE_COLOR.get(agv.status, self.BLACK)
@@ -81,7 +81,7 @@ class EnvVisualizer(EnvCallback):
         label = font.render(str(operation.id), True, self.WHITE)
         screen.blit(label, (position[0] + 10, position[1] + 10))
 
-    def visualize_env(self, fps):
+    def visualize_env(self):
         # 渲染
         self.screen.fill(self.WHITE)
 
@@ -99,4 +99,4 @@ class EnvVisualizer(EnvCallback):
                 self.draw_operation(self.screen, agv_operation, scale(agv.get_xy(), shift=(100, 80)))
 
         pygame.display.flip()
-        self.clock.tick(fps)
+        self.clock.tick(self.fps)

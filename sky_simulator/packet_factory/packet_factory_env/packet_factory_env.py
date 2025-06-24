@@ -68,7 +68,7 @@ class PacketFactoryEnv(ParallelEnv):
         self.jobs, self.machines, self.agvs = self.callback['load_graph']()
         # 可视化
         self.env_visualizer = self.callback['initialize_visualizer']
-        self.env_visualizer.visualize_env(fps=3)
+        self.env_visualizer.visualize_env()
         LOGGER.info("Environment Initialized Successfully.")
 
     def action_space(self, agent):
@@ -117,7 +117,7 @@ class PacketFactoryEnv(ParallelEnv):
         self.render_observation()
 
         # 更新可视化（每env_step更新一次）
-        self.env_visualizer.visualize_env(fps=3)
+        self.env_visualizer.visualize_env()
 
         # === 处理全局时间 ===
         self.env_timeline += step_time

@@ -7,9 +7,10 @@ from sky_simulator.packet_factory.Agent import BaseAgent
 from sky_simulator.packet_factory.packet_factory_env.Graph.Machine import Machine
 from sky_simulator.packet_factory.packet_factory_env.Graph.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Graph.AGV import AGV
-from sky_simulator.packet_factory.packet_factory_env.Event.Event import Event, EventQueue
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.registry import register_component
+from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
+
 from sky_simulator.call_back.base_callback.EnvVisualizer import EnvVisualizer
 from sky_simulator.call_back.base_callback.EnvMapLoader import EnvMapLoader
 from sky_simulator.call_back.EnvCallback import EnvCallback
@@ -42,12 +43,8 @@ class PacketFactoryEnv(ParallelEnv):
         # 智能体相关的状态
         self.agent = agent
 
-        # env的回调函数组 
-        # todo: 现在还是写死的，不能传参！！！
-        self.callback = {
-            "load_graph": EnvMapLoader("/brandimarte/simple_agv.txt"),
-            "initialize_visualizer": EnvVisualizer(self)
-        }
+        # 回调管理
+        self.callback_manager: CallbackManager = CallbackManager()
 
     # ---------- 自定义状态更新函数 ----------
     def set_env_timeline(self, env_timeline: float):
@@ -56,19 +53,20 @@ class PacketFactoryEnv(ParallelEnv):
     def get_env_timeline(self) -> float:
         return self.env_timeline
 
-    def add_callback(self, callback_name: str, callback_function: EnvCallback):
-        assert callback_name in self.callback.keys()
-        self.callback[callback_name] = callback_function
+    def set_callback_manager(self, callback_manager: CallbackManager):
+        self.callback_manager = callback_manager
+        LOGGER.info("CallbackManager Created Successfully.")
 
     def refresh_status(self):
         """
         刷新当前环境的graph和agv
         :return:
         """
-        self.jobs, self.machines, self.agvs = self.callback['load_graph']()
+        # 环境创建
+        self.jobs, self.machines, self.agvs = self.callback_manager.get('load_graph')()
         # 可视化
-        self.env_visualizer = self.callback['initialize_visualizer']
-        self.env_visualizer.visualize_env(fps=3)
+        self.env_visualizer = self.callback_manager.get('initialize_visualizer')
+        self.env_visualizer.visualize_env(fps=3, env=self)
         LOGGER.info("Environment Initialized Successfully.")
 
     def action_space(self, agent):
@@ -190,10 +188,8 @@ class PacketFactoryEnv(ParallelEnv):
         # ---------- 清理重建阶段 ----------
         self.set_env_timeline(0)
         self.refresh_status()
-        # ---------- 获取Agent的观察 ----------
-        obs = self._get_obs()  # 本系统agent从外界定义因此不需要从内部获得agent信息
-        return obs
 
+    # ---------- 渲染函数 ----------
     def render_env(self):
         # 展示环境状态
         LOGGER.info(f"\n🌍 环境状态:")

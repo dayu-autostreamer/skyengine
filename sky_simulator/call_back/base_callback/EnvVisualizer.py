@@ -43,11 +43,10 @@ class EnvVisualizer(EnvCallback):
         MachineStatus.EXCEPTION: (100, 0, 100)  # 深紫 - 异常
     }
 
-    def __init__(self, env, _fps=3) -> None:
+    def __init__(self, _fps=3) -> None:
         super().__init__()
-        self.env = env
         self.fps = _fps
-
+        self.env = None
         pygame.init()
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         self.clock = pygame.time.Clock()
@@ -81,8 +80,11 @@ class EnvVisualizer(EnvCallback):
         label = font.render(str(operation.id), True, self.WHITE)
         screen.blit(label, (position[0] + 10, position[1] + 10))
 
-    def visualize_env(self, fps):
+    def visualize_env(self, fps,env=None):
         # 渲染
+        if self.env is None and env is not None:
+            self.env = env
+
         self.screen.fill(self.WHITE)
 
         for machine in self.env.machines:

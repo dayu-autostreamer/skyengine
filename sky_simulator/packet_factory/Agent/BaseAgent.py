@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
 
+from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
 # Agent:
 # input: 状态
 # output: [(Operation, AGV, Machine), ...] （job可以混合）
 
 
 from sky_simulator.registry import register_component
+
 
 @register_component("packet_factory.BaseAgent")
 class BaseAgent(ABC):
@@ -21,6 +23,7 @@ class BaseAgent(ABC):
         self.context = context
         self.alive = True  # 是否在线
         self.turns = 0  # 存活轮次
+        self.callback_manager = CallbackManager()
 
     def is_alive(self):
         return self.alive
@@ -34,6 +37,21 @@ class BaseAgent(ABC):
     def sample(self, *args, **kwargs):
         """Agent 推理采样"""
         pass
+
+    @abstractmethod
+    def before_sample(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def after_sample(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def decision(self, *args, **kwargs):
+        """Agent 推理采样"""
+        self.before_sample(*args, **kwargs)
+        self.sample(*args, **kwargs)
+        self.after_sample(*args, **kwargs)
 
     @abstractmethod
     def train(self, *args, **kwargs):

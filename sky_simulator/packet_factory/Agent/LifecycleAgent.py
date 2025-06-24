@@ -13,7 +13,7 @@ import random
 from sky_simulator.registry import register_component
 
 @register_component("packet_factory.RandomAgent")
-class RandomAgent(BaseAgent):
+class LifecycleAgent(BaseAgent):
     def __init__(self, name=None, agent_id=None, context=None):
         """
         通用智能体基类
@@ -48,7 +48,7 @@ class RandomAgent(BaseAgent):
                 op: Operation = job.get_operation(j)
 
                 # 分配所有尚未开始执行的operation, 其状态为ready或者waiting
-                if op.get_status() == OperationStatus.READY or op.get_status() == OperationStatus.WAITING: 
+                if op.get_status() == OperationStatus.READY or op.get_status() == OperationStatus.WAITING:
 
                     # 随机选择可处理当前操作的机器
                     valid_machines = [m for m in machines if op.is_machine_capable(m.id) and m.is_available()]

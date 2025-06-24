@@ -4,6 +4,12 @@ config:
   simulation:
     env_name: packet_factory
 
+    factory_config:
+      file: .config_set/map_config.yaml
+
+    task_config:
+      file: .config_set/job_config.yaml
+
     agent:
       agent_name: packet_factory.RandomAgent
       name: 1
@@ -13,17 +19,19 @@ config:
       visualizer_name: packet_factory.Visualizer
       fps: 3
 
-    factory_config:
-      file: .config_set/map_config.yaml
-
-    task_config:
-      file: .config_set/job_config.yaml
-
     callback:
-      # todo 后续区分为map callback和agent callback
-      graph_loader:
-        name: base_callback.MapLoader
-        args: /brandimarte/mk01_agv.txt
-      visualizer:
-        name: packet_factory.Visualizer
-        args: 3     #  fps
+      map_callback:
+        graph_loader:
+          name: base_callback.MapLoader
+          args: /brandimarte/mk01_agv.txt
+        visualizer:
+          name: packet_factory.Visualizer
+          args: 3     #  fps
+
+      agent_callback:
+        before_decision:
+          name: base_callback.BeforeDecision
+          args: None
+        after_decision:
+          name: base_callback.AfterDecision
+          args: None

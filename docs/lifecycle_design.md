@@ -17,9 +17,6 @@
  - 创建指定策略的Agent, 并将其与环境进行组装.
 对于组件, 以agent为例, 其寻址方式为env_name.agent_name.
 
-3. 创建组件
-加载并调用 PostProcessor, 在该回调中进行后处理.
-
 ---
 🏗 3. 上下文创建阶段（Context Creation）
 

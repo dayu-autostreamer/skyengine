@@ -4,12 +4,6 @@ config:
   width: 20
   height: 30
 
-  block_count: 1
-  point_count: 2
-  machine_count: 2
-  path_count: 2
-  agv_count: 2
-
   blocks:
     - zone:
         id: 1
@@ -22,37 +16,39 @@ config:
     - point:
         id: 2
         coordinate: [12, 23]
-
+    - point:
+        id: 3
+        coordinate: [ 22, 10 ]
   machines:
     - machine:
         id: 1
         type: packet_factory.Machine
-        coordinate: [1, 2]
+        location: point@1
     - machine:
         id: 2
         type: packet_factory.Machine
-        coordinate: [2, 3]
+        location: point@2
 
   paths:
     - path:
         id: 1
         type: bi
-        begin: machine@1
-        end: point@1
+        begin: 1
+        end: 2
     - path:
         id: 2
         type: uni
-        begin: machine@2
-        end: point@2
+        begin: 2
+        end: 3
 
   agvs:
     - agv:
         type: packet_factory.Agv
-        coordinate: [1, 2]
+        location: point@1
         velocity: 10
         capacity: 12
     - agv:
         type: packet_factory.Agv
-        coordinate: [2, 3]
+        location: point@2
         velocity: 1
         capacity: 12

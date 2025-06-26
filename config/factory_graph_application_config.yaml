@@ -20,10 +20,19 @@ config:
       file: .config_set/job_config.yaml
 
     callback:
-      # todo 后续区分为map callback和agent callback
-      graph_loader:
-        name: packet_factory_callback.MapLoader
-        args: [/brandimarte/mk01.txt, /map_config.yaml]
-      visualizer:
-        name: packet_factory.Visualizer
-        args: [3]     #  fps
+      # todo: args用字典形式传入
+      map_callback:
+        graph_loader:
+          name: packet_factory_callback.MapLoader
+          args: [/brandimarte/mk01.txt, /map_config.yaml]
+        visualizer:
+          name: packet_factory.Visualizer
+          args: [3]    #  fps
+
+      agent_callback:
+        before_decision:
+          name: base_callback.BeforeDecision
+          args: []
+        after_decision:
+          name: base_callback.AfterDecision
+          args: []

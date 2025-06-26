@@ -31,6 +31,14 @@ class RandomAgent(BaseAgent):
         """GreedyAgent 不需训练"""
         pass
 
+    def before_sample(self, *args, **kwargs):
+        return 0
+
+    def after_sample(self, *args, **kwargs):
+        return 0
+
+    def decision(self, *args, **kwargs):
+        return 0
     def sample(self, agvs, machines, jobs):
         """
         返回本次采样结果

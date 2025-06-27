@@ -115,11 +115,20 @@ class PacketFactoryEnv(ParallelEnv):
         # ---------- 查看状态 ----------
         self.render_observation()
 
+        # todo: 模块化，不要这样写
+        # 启动：bool变量变成True，暂停：bool变量变成False，
+        # 重启：从这里break出去，一路break到最外面，重置agent和env（可以设计状态，每个step的地方都检测状态，一路break出去）
+
+        #  while (bool变量) sleep
+
+
         # 更新可视化（每env_step更新一次）
         self.env_visualizer.visualize_env()
 
         # === 处理全局时间 ===
         self.env_timeline += step_time
+
+        # todo：event有个函数判断是否有不确定事件发生过（包括三类：agv停止/释放，机器停止/释放，额外增加订单）
 
         # 判断是否有不确定事件发生过，若有则返回True
         for machine in self.machines:
@@ -149,6 +158,8 @@ class PacketFactoryEnv(ParallelEnv):
             if self.env_step(decisions, step_time):
                 break
             else:
+                # todo：改成一个函数调用
+
                 # 分配完任务后，没有不确定性发生，那么仍执行原决策，不传入新决策
                 decisions = []
                 # 当全部任务执行完成时，也应该退出循环

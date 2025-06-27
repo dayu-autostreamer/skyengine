@@ -1,0 +1,27 @@
+# 当前声明的额外不确定性事件以及对应的处理回调函数。
+#    TASK_FINISH = 100
+#
+#    MACHINE_FAIL = 200
+#
+#    AGV_REFRESH = 300
+#    AGV_FAIL = 301
+#    AGV_BLOCK = 302
+#
+#    OPERATION_DELAY = 400
+
+
+config:
+  events:
+    - event:
+        id: 0
+        type: normal
+        dealer: pass
+    - event:
+        id: 1
+        type: agv
+        dealer: pass
+    - event:
+        id: 2
+        type: machine
+        dealer: pass
+

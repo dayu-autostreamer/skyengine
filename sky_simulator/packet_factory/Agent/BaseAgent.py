@@ -25,12 +25,19 @@ class BaseAgent(ABC):
         self.turns = 0  # 存活轮次
         self.callback_manager = CallbackManager()
 
+
+
     def is_alive(self):
         return self.alive
 
     @abstractmethod
     def reward(self, *args, **kwargs):
         """Agent 计算自身的reward"""
+        pass
+
+    @abstractmethod
+    def is_finish(self):
+        """判断任务是否完成"""
         pass
 
     @abstractmethod

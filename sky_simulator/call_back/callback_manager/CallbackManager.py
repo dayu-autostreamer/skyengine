@@ -2,13 +2,15 @@ from typing import Dict, Any
 from sky_simulator.call_back.EnvCallback import EnvCallback
 from sky_simulator.call_back.base_callback.EnvMapLoader import EnvMapLoader
 from sky_simulator.call_back.base_callback.EnvVisualizer import EnvVisualizer
+from sky_simulator.call_back.base_callback.EventDealer import EventDealer
 
 
 class CallbackManager:
     def __init__(self):
         self._callbacks: Dict[str, EnvCallback] = {
             'load_graph': EnvMapLoader("/brandimarte/simple_agv.txt"),
-            'initialize_visualizer': EnvVisualizer()
+            'initialize_visualizer': EnvVisualizer(),
+            'event_dealer':EventDealer()
         }
 
     def register(self, name: str, callback: EnvCallback):

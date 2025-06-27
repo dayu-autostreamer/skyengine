@@ -9,10 +9,6 @@ config:
       name: 1
       id: 1
 
-    visualizer:
-      visualizer_name: packet_factory.Visualizer
-      fps: 3
-
     factory_config:
       file: .config_set/map_config.yaml
 

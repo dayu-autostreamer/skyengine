@@ -3,6 +3,7 @@ from typing import Union, List, Tuple
 from pettingzoo import ParallelEnv
 import numpy as np
 
+from sky_simulator.call_back.base_callback import EventDealer
 from sky_simulator.packet_factory.Agent import BaseAgent
 from sky_simulator.packet_factory.packet_factory_env.Graph.Machine import Machine
 from sky_simulator.packet_factory.packet_factory_env.Graph.Operation import Operation
@@ -10,10 +11,7 @@ from sky_simulator.packet_factory.packet_factory_env.Graph.AGV import AGV
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.registry import register_component
 from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
-
-from sky_simulator.call_back.base_callback.EnvVisualizer import EnvVisualizer
-from sky_simulator.call_back.base_callback.EnvMapLoader import EnvMapLoader
-from sky_simulator.call_back.EnvCallback import EnvCallback
+from sky_simulator.event.Event import Event, EventQueue
 
 
 @register_component("packet_factory")
@@ -33,13 +31,11 @@ class PacketFactoryEnv(ParallelEnv):
         self.agvs = []
         self.graph = None
 
-        # 环境本身的状态,向量指标,事件队列等
+        # 环境本身的状态,事件队列等
         self.env_timeline: float = 0
-
         self.env_visualizer = None
-
-        self.limit = 200
-        self.critic_vector = {}  # 评价指标
+        self.event_queue = EventQueue()
+        self.event_dealer = None
 
         # 智能体相关的状态
         self.agent = agent
@@ -68,6 +64,8 @@ class PacketFactoryEnv(ParallelEnv):
         # 可视化
         self.env_visualizer = self.callback_manager.get('initialize_visualizer')
         self.env_visualizer.visualize_env(env=self)
+        # 事件处理器
+        self.event_dealer = self.callback_manager.get('event_dealer')
         LOGGER.info("Environment Initialized Successfully.")
 
     def action_space(self, agent):
@@ -78,14 +76,8 @@ class PacketFactoryEnv(ParallelEnv):
             "step_time": step_time
         }
 
-    def deal_event(self, event_list):
-        for event in event_list:
-            if event.event_type == "just_test":
-                LOGGER.info(event.payload)
-            elif event.event_type == "task_finish":
-                op = event.payload
-            elif event.event_type == "machine_fail":
-                pass
+    def deal_event(self, event):
+        self.event_dealer(event)
 
     def env_step(self, actions: List[Tuple[Operation, AGV, Machine]], step_time: float) -> bool:
         # ---------- 当前轮次时间 ----------
@@ -115,12 +107,13 @@ class PacketFactoryEnv(ParallelEnv):
         # ---------- 查看状态 ----------
         self.render_observation()
 
-        # todo: 模块化，不要这样写
+        # todo: 添加事件处理
+        # todo：event有个函数判断是否有不确定事件发生过（包括三类：agv停止/释放，机器停止/释放，额外增加订单）
         # 启动：bool变量变成True，暂停：bool变量变成False，
         # 重启：从这里break出去，一路break到最外面，重置agent和env（可以设计状态，每个step的地方都检测状态，一路break出去）
-
         #  while (bool变量) sleep
-
+        event=self.event_queue.pop_ready_events()
+        self.deal_event(event)
 
         # 更新可视化（每env_step更新一次）
         self.env_visualizer.visualize_env()
@@ -128,15 +121,15 @@ class PacketFactoryEnv(ParallelEnv):
         # === 处理全局时间 ===
         self.env_timeline += step_time
 
-        # todo：event有个函数判断是否有不确定事件发生过（包括三类：agv停止/释放，机器停止/释放，额外增加订单）
-
         # 判断是否有不确定事件发生过，若有则返回True
-        for machine in self.machines:
-            if machine.uncertainty_simulator.uncertain_event_occurred():
-                return True
-        for agv in self.agvs:
-            if agv.uncertainty_simulator.uncertain_event_occurred():
-                return True
+        if event is not None:
+            return True
+        # for machine in self.machines:
+        #     if machine.uncertainty_simulator.uncertain_event_occurred():
+        #         return True
+        # for agv in self.agvs:
+        #     if agv.uncertainty_simulator.uncertain_event_occurred():
+        #         return True
 
         return False
 

@@ -1,5 +1,6 @@
 from sky_simulator.call_back.EnvCallback import EnvCallback
 from sky_simulator.registry import register_component
+from sky_simulator.packet_factory.packet_factory_env.Graph.Job import Job
 from sky_simulator.packet_factory.packet_factory_env.Graph.Machine import Machine
 from sky_simulator.packet_factory.packet_factory_env.Graph.AGV import AGV
 from sky_simulator.packet_factory.packet_factory_env.Graph.Operation import Operation
@@ -97,23 +98,23 @@ class EnvVisualizer(EnvCallback):
             LOGGER.error("请先初始化环境")
 
         self.screen.fill(self.WHITE)
-        
-        for point in self.env.graph.points:
+
+        graph = self.env.getGraph()
+        for point in graph.points:
             self.draw_point(self.screen, (point.x, point.y))
-        
-        for link in self.env.graph.links:
-            point1 = self.env.graph.get_point_by_id(link.point1)
-            point2 = self.env.graph.get_point_by_id(link.point2)
+        for link in graph.links:
+            point1 = graph.get_point_by_id(link.point1)
+            point2 = graph.get_point_by_id(link.point2)
             self.draw_link(self.screen, (point1.x, point1.y), (point2.x, point2.y))
 
-        for machine in self.env.machines:
+        for machine in self.env.getMachines():
             self.draw_machine(self.screen, machine)
             for operation in machine.input_queue:
                 self.draw_operation(self.screen, operation, scale(machine.get_xy(), shift=(90, 110)))
             for operation in machine.output_queue:
                 self.draw_operation(self.screen, operation, scale(machine.get_xy(), shift=(130, 110)))
 
-        for agv in self.env.agvs:
+        for agv in self.env.getAGVs():
             self.draw_agv(self.screen, agv)
             agv_operation = agv.get_operation()
             if agv_operation is not None:
@@ -122,3 +123,41 @@ class EnvVisualizer(EnvCallback):
 
         pygame.display.flip()
         self.clock.tick(self.fps)
+
+
+    def shouldRestart(self) -> bool:
+        """
+        :return: True if env should restart
+        """
+        pass
+
+    def isRunning() -> bool:
+        """
+        :return: True if env should running
+        """
+        pass
+
+    def getPausedAGVs(self) -> dict[AGV]:
+        """
+        :return: 距离上次调用, 哪些AGV被暂停了
+        """
+
+    def getResumedAGVs(self) -> dict[AGV]:
+        """
+        :return: 距离上次调用, 哪些AGV被恢复运行了
+        """
+
+    def getPausedMachines(self) -> dict[Machine]:
+        """
+        :return: 距离上次调用, 哪些Machine被暂停了
+        """
+    
+    def getResumedMachines(self) -> dict[Machine]:
+        """
+        :return: 距离上次调用, 哪些Machine被恢复运行了
+        """
+    
+    def getAddedJobs(self) -> dict[Job]:
+        """
+        :return: 距离上次调用, 哪些Job被添加了
+        """

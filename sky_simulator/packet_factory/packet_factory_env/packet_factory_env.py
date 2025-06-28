@@ -4,9 +4,11 @@ from pettingzoo import ParallelEnv
 import numpy as np
 
 from sky_simulator.packet_factory.Agent import BaseAgent
+from sky_simulator.packet_factory.packet_factory_env.Graph.Job import Job
 from sky_simulator.packet_factory.packet_factory_env.Graph.Machine import Machine
 from sky_simulator.packet_factory.packet_factory_env.Graph.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Graph.AGV import AGV
+from sky_simulator.packet_factory.packet_factory_env.Graph.Graph import Graph
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.registry import register_component
 from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
@@ -243,6 +245,23 @@ class PacketFactoryEnv(ParallelEnv):
     def render(self):
         """可视化系统当前状态 功能拆分到不同函数中"""
         pass
+
+    def getNewUncertaintyEvents(self) -> List[str]:
+        """
+        :return: 距离上次调用, 哪些新的不确定性事件发生了, 以字符串形式format后传递, 最后将由visualizer直接显示
+        """
+
+    def getJobs(self) -> List[Job]:
+        return self.jobs
+    
+    def getMachines(self) -> List[Machine]:
+        return self.machines
+    
+    def getAGVs(self) -> List[AGV]:
+        return self.agvs
+    
+    def getGraph(self) -> Graph:
+        return self.graph
 
 
 if __name__ == '__main__':

@@ -1,3 +1,6 @@
+from typing import List
+import pygame
+
 from sky_simulator.call_back.EnvCallback import EnvCallback
 from sky_simulator.registry import register_component
 from sky_simulator.packet_factory.packet_factory_env.Graph.Job import Job
@@ -5,7 +8,6 @@ from sky_simulator.packet_factory.packet_factory_env.Graph.Machine import Machin
 from sky_simulator.packet_factory.packet_factory_env.Graph.AGV import AGV
 from sky_simulator.packet_factory.packet_factory_env.Graph.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Graph.util import OperationStatus, MachineStatus, AGVStatus
-import pygame
 
 
 def scale(pos, scale=(100, 100), shift=(100, 100)):
@@ -137,27 +139,32 @@ class EnvVisualizer(EnvCallback):
         """
         pass
 
-    def getPausedAGVs(self) -> dict[AGV]:
+    def getPausedAGVs(self) -> List[AGV]:
         """
         :return: 距离上次调用, 哪些AGV被暂停了
         """
+        pass
 
-    def getResumedAGVs(self) -> dict[AGV]:
+    def getResumedAGVs(self) -> List[AGV]:
         """
         :return: 距离上次调用, 哪些AGV被恢复运行了
         """
+        pass
 
-    def getPausedMachines(self) -> dict[Machine]:
+    def getPausedMachines(self) -> List[Machine]:
         """
         :return: 距离上次调用, 哪些Machine被暂停了
         """
+        pass
     
-    def getResumedMachines(self) -> dict[Machine]:
+    def getResumedMachines(self) -> List[Machine]:
         """
         :return: 距离上次调用, 哪些Machine被恢复运行了
         """
+        pass
     
-    def getAddedJobs(self) -> dict[Job]:
+    def getAddedJobs(self) -> List[Job]:
         """
         :return: 距离上次调用, 哪些Job被添加了
         """
+        pass

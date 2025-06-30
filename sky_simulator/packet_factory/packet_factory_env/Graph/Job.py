@@ -47,6 +47,9 @@ class Job:
             f"status={self.status}> "
             f"operations={self.operations} "
         )
+    
+    def get_id(self) -> int:
+        return self.id
 
     def get_operation_count(self) -> int:
         return len(self.operations)
@@ -70,6 +73,16 @@ class Job:
 
     def get_status(self):
         return self.status
+    
+    def get_progress(self):
+        """
+        计算当前Job的进度
+        """
+        count = 0
+        for operation in self.operations:
+            if operation.get_status() != OperationStatus.FINISHED:
+                count += 1
+        return count / len(self.operations)
 
     def is_finished(self):
         """

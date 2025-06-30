@@ -27,7 +27,7 @@ config:
           args: [/brandimarte/mk01.txt, /map_config.yaml]
         visualizer:
           name: packet_factory.Visualizer
-          args: [3]    #  fps
+          args: [24]    #  fps
 
       agent_callback:
         before_decision:

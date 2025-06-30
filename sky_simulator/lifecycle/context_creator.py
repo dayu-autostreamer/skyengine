@@ -15,7 +15,7 @@ def create_context():
     '''
     创建环境并整合组件
     '''
-    print(f"[Context] 创建'环境,智能体,可视化器'等上下文...")
+    print(f"[Context] Creating 'Env,Agent'...")
 
     config = component_registry.get('config')
 
@@ -29,5 +29,5 @@ def create_context():
     # 初始化环境本身的文件（例如地图、数据源等）
     env = initialize_env(config, agent)
 
-    print(f"[Context] 环境上下文创建完成! ")
+    print(f"[Context] Created.")
     return env, agent

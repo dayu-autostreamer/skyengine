@@ -13,7 +13,6 @@ config:
     event_config:
       file: ./config_set/event_config.yaml
 
-
     agent:
       agent_name: packet_factory.RandomAgent
       name: 1

@@ -1,6 +1,7 @@
 from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
-from sky_simulator.lifecycle.initializer.event_initializer import initialize_event
+from sky_simulator.lifecycle.initializer.event_initializer import initialize_event_manager
 from sky_simulator.registry.factory import create_component_by_id
+
 
 def initialize_env(config, agent):
     """
@@ -23,19 +24,19 @@ def initialize_env(config, agent):
     callback_config = config.get(env_type).get('callback').get('map_callback')
 
     # ---------- 创建回调管理器 ----------
-    callback_manager = CallbackManager()
+    callback_manager = CallbackManager()  # 调用对应的构造函数,使用时直接加括号就能使用
     callback_manager.register("load_graph", create_component_by_id(callback_config.get('graph_loader').get('name'),
                                                                    *callback_config.get('graph_loader').get('args')))
     callback_manager.register("initialize_visualizer",
                               create_component_by_id(callback_config.get('visualizer').get('name'),
                                                      *callback_config.get('visualizer').get('args')))
 
-    env.set_callback_manager(callback_manager)
-    print(f"[Callback] 添加至环境上下文...")
+    event_manager = initialize_event_manager(config)
+    callback_manager.register("event_queue",
+                              create_component_by_id(callback_config.get('event_queue').get('name'),
+                                                     event_manager))
 
-    # ---------- 添加事件队列 ----------
-    event_queue=initialize_event(config)
-    env.set_event_queue(event_queue)
-    print(f"[Event] 添加至环境上下文...")
+    env.set_callback_manager(callback_manager)
+    print(f"[Callback] Added to Context...")
 
     return env

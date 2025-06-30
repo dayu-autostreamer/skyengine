@@ -2,6 +2,7 @@ from typing import Dict
 from sky_simulator.call_back.EnvCallback import EnvCallback
 from sky_simulator.call_back.base_callback.EnvMapLoader import EnvMapLoader
 from sky_simulator.call_back.base_callback.EnvVisualizer import EnvVisualizer
+from sky_simulator.call_back.base_callback.EventQueue import EventQueue
 
 
 class CallbackManager:
@@ -9,6 +10,7 @@ class CallbackManager:
         self._callbacks: Dict[str, EnvCallback] = {
             'load_graph': EnvMapLoader("/brandimarte/simple_agv.txt"),
             'initialize_visualizer': EnvVisualizer(),
+            'event_queue': EventQueue()
         }
 
     def register(self, name: str, callback: EnvCallback):
@@ -27,8 +29,6 @@ class CallbackManager:
         return self._callbacks[name]
 
     def has(self, name: str) -> bool:
-        print(name)
-        print(name in self._callbacks.keys())
         return name in self._callbacks.keys()
 
     def list_all(self) -> Dict[str, EnvCallback]:

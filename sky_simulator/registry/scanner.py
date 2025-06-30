@@ -12,6 +12,8 @@ import sky_simulator
 import yaml
 import os
 from sky_simulator.registry.registry import component_registry
+from pathlib import Path
+
 
 def load_config(config_path: str):
     if not os.path.exists(config_path):
@@ -24,8 +26,10 @@ def load_config(config_path: str):
         raise ValueError("Missing 'config' section in configuration.")
 
     sky_config = raw_config["config"]
+    sky_config['config_path'] = Path(config_path)
 
     component_registry['config'] = sky_config
+
 
 def scan_and_register_components():
     """

@@ -12,7 +12,6 @@ from sky_simulator.packet_factory.packet_factory_env.Graph.Graph import Graph
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.registry import register_component
 from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
-from sky_simulator.event.event_queue.EventQueue import EventQueue
 
 @register_component("packet_factory")
 class PacketFactoryEnv(ParallelEnv):
@@ -34,7 +33,7 @@ class PacketFactoryEnv(ParallelEnv):
         # 环境本身的状态,事件队列,智能体相关的状态等
         self.env_timeline: float = 0
         self.env_visualizer = None
-        self.event_queue = EventQueue()
+        self.event_queue = None
         self.agent = agent
 
         # 回调管理
@@ -51,10 +50,6 @@ class PacketFactoryEnv(ParallelEnv):
         self.callback_manager = callback_manager
         LOGGER.info("CallbackManager Created Successfully.")
 
-    def set_event_queue(self, event_queue: EventQueue):
-        self.event_queue = event_queue
-        LOGGER.info("EventQueue Created Successfully.")
-
     def refresh_status(self):
         """
         刷新当前环境的graph和agv
@@ -65,6 +60,9 @@ class PacketFactoryEnv(ParallelEnv):
         # 可视化
         self.env_visualizer = self.callback_manager.get('initialize_visualizer')
         self.env_visualizer.visualize_env(env=self)
+        # 事件队列
+        self.event_queue = self.callback_manager.get('event_queue')
+
         LOGGER.info("Environment Initialized Successfully.")
 
     def action_space(self, agent):
@@ -79,7 +77,7 @@ class PacketFactoryEnv(ParallelEnv):
         """
         调用event_queue取出队列中current_time之前的事件并调用.
         """
-
+        self.event_queue.put()
 
     def env_step(self, actions: List[Tuple[Operation, AGV, Machine]], step_time: float) -> bool:
         # ---------- 当前轮次时间 ----------

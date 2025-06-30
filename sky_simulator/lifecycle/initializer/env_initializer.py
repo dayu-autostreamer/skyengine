@@ -31,10 +31,11 @@ def initialize_env(config, agent):
                                                      *callback_config.get('visualizer').get('args')))
 
     env.set_callback_manager(callback_manager)
-    print(f"[Callback] 添加至 load_graph 环境上下文...")
+    print(f"[Callback] 添加至环境上下文...")
 
     # ---------- 添加事件队列 ----------
     event_queue=initialize_event(config)
     env.set_event_queue(event_queue)
+    print(f"[Event] 添加至环境上下文...")
 
     return env

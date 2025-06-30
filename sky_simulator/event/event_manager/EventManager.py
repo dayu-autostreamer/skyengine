@@ -13,7 +13,7 @@ import yaml
 
 from sky_simulator.event.event.BaseEvent import BaseEvent
 from sky_simulator.event.EventType import EventType
-from sky_simulator.registry.factory import create_component_by_id,get_component_class_by_id
+from sky_simulator.registry.factory import get_event_class_by_id
 
 class EventManager:
     def __init__(self):
@@ -22,13 +22,14 @@ class EventManager:
 
     def add_event(self, event_name):
         # 确保当前事件还没被记录
-        assert event_name not in self.events
-        self.events[event_name] = get_component_class_by_id(event_name)
+        if event_name in self.events.keys():
+            raise ValueError(f"[EventManager] 重复声明 '{event_name}' 事件")
+        self.events[event_name] = get_event_class_by_id(event_name)
 
 
-    def create_event(self,event_name,payload):
+    def create_event(self,event_name,status='trigger',payload=None):
         """输入事件类型和参数,返回对应的事件实例"""
-        return self.events[event_name](payload)
+        return self.events[event_name](status,payload)
 
 
     def load_event(self,config_path):
@@ -43,4 +44,7 @@ class EventManager:
 
         event_config = raw_config["config"]
 
-        print(event_config)
+        event_type_list=event_config["event_type"]
+
+        for event_name in event_type_list:
+            self.add_event(event_name)

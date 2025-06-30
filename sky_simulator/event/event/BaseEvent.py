@@ -18,6 +18,9 @@ class BaseEvent:
             self.trigger()
         elif self.status=="recover":
             self.recover()
+        else:
+            raise ValueError(f"[Event] {self.event_type} Event {self.status} Wrong!")
+
         print(f"[Event] {self.event_type} Event {self.status} | Payload: {self.payload}")
 
     def trigger(self):

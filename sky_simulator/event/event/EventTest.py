@@ -13,11 +13,13 @@ class EventTest(BaseEvent):
         """
         触发该事件
         """
+        print('EventTest.trigger()')
         return self.event_type
 
     def recover(self):
         """
         恢复该事件的现场
         """
+        print('EventTest.recover()')
         return self.event_type
 

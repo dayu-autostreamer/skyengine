@@ -55,12 +55,12 @@ class PacketFactoryEnv(ParallelEnv):
         刷新当前环境的graph和agv
         :return:
         """
-        # 环境创建
+        # 环境创建 当场调用即可
         self.jobs, self.machines, self.agvs, self.graph = self.callback_manager.get('load_graph')()
-        # 可视化
+        # 可视化组件赋值 不需要当场调用
         self.env_visualizer = self.callback_manager.get('initialize_visualizer')
         self.env_visualizer.visualize_env(env=self)
-        # 事件队列
+        # 事件队列 不需要当场调用
         self.event_queue = self.callback_manager.get('event_queue')
 
         LOGGER.info("Environment Initialized Successfully.")
@@ -211,18 +211,6 @@ class PacketFactoryEnv(ParallelEnv):
         # 展示事件队列
         LOGGER.info(f"\n📋 事件队列 ({len(self.event_queue)} 个待处理事件):")
 
-    def render_critic(self):
-        # 展示critic向量
-        LOGGER.info(f"\n📈 Critic向量 ({len(self.critic_vector)} 维):")
-        if len(self.critic_vector) > 0:
-            # 缩短长向量显示
-            vec_display = np.array(self.critic_vector)
-            if len(self.critic_vector) > 10:
-                vec_display = np.concatenate([vec_display[:5], [np.nan], vec_display[-5:]])
-            LOGGER.info(f"  {np.array2string(vec_display, precision=2, max_line_width=100)}")
-        else:
-            LOGGER.info("  Critic向量为空")
-
     def render_agent(self):
         # 展示智能体状态
         LOGGER.info(f"\n🤖 智能体状态:")
@@ -241,6 +229,8 @@ class PacketFactoryEnv(ParallelEnv):
         """
         :return: 距离上次调用, 哪些新的不确定性事件发生了, 以字符串形式format后传递, 最后将由visualizer直接显示
         """
+        pass
+
 
     def getJobs(self) -> List[Job]:
         return self.jobs

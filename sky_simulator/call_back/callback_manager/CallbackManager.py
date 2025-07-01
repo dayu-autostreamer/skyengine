@@ -23,7 +23,7 @@ class CallbackManager:
         self._callbacks[name] = callback
 
     def get(self, name: str) -> EnvCallback:
-        """获取回调对象"""
+        """获取回调对象 有时候需要当场调用 有的时候不需要"""
         if name not in self._callbacks:
             raise KeyError(f"[CallbackManager] 未找到名为 '{name}' 的回调")
         return self._callbacks[name]

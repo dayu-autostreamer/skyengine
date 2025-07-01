@@ -1,11 +1,7 @@
-# 测试事件动态启动 管理等功能
-from sky_simulator.event import EventTest
-from sky_simulator.lifecycle import context_creator
+from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
 from sky_simulator.registry import component_registry, scan_and_register_components, create_component_by_id
 from sky_simulator.registry.scanner import load_config
 from sky_simulator.event.event_manager.EventManager import EventManager
-from pathlib import Path
-import os
 
 config_path = '../../config/application_config.yaml'
 
@@ -20,6 +16,16 @@ if __name__ == '__main__':
 
     event_manager=EventManager()
     event_manager.load_event(target_path)
-    event=event_manager.create_event('packet_factory.MACHINE_FAIL','trigger',payload={})
-    print(event_manager.init_event)
-    event()
+    env_type = config.get("env_type")
+    callback_config = config.get(env_type).get('callback').get('map_callback')
+
+    callback_manager = CallbackManager()  # 调用对应的构造函数,使用时直接加括号就能使用
+    callback_manager.register("event_queue",
+                              create_component_by_id(callback_config.get('event_queue').get('name'),
+                                                     event_manager))
+
+    # 事件队列 不需要当场调用
+    event_queue = callback_manager.get('event_queue')
+    print(event_queue.queue)
+    print(event_queue.queue[0][2])
+

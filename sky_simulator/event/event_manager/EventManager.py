@@ -20,6 +20,8 @@ class EventManager:
         self.events = {
         }
 
+        self.init_event=[] # 记录数据集初始化时的Event
+
     def add_event(self, event_name):
         # 确保当前事件还没被记录
         if event_name in self.events.keys():
@@ -27,8 +29,13 @@ class EventManager:
         self.events[event_name] = get_event_class_by_id(event_name)
 
 
-    def create_event(self,event_name,status='trigger',payload=None):
+    def create_event(self,event_name,*args):
         """输入事件类型和参数,返回对应的事件实例"""
+        print(args)
+        status=args[0]
+        assert status in ["trigger","recover"]
+        payload=args[1]
+        assert isinstance(payload, dict)
         return self.events[event_name](status,payload)
 
 
@@ -48,3 +55,9 @@ class EventManager:
 
         for event_name in event_type_list:
             self.add_event(event_name)
+
+        event_timeline=event_config["event_timeline"]
+
+        for event in event_timeline:
+            self.init_event.append(event['event'])
+

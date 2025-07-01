@@ -20,10 +20,7 @@ class EventQueue(EnvCallback):
 
         # 初始化后 获得管理器中的init_event集合
         for event in self.event_manager.init_event:
-            print(*event['args'])
-            heapq.heappush(self.queue, (
-            event['timestamp'], self.counter, self.event_manager.create_event(event['type'], *event['args'])))
-            self.counter += 1
+            self.add_event(event['timestamp'],self.event_manager.create_event(event['type'], *event['args']))
 
     def __call__(self):
         """使类的实例可以像函数一样被调用"""

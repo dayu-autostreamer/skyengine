@@ -1,3 +1,6 @@
+from threading import Event
+
+from sky_simulator.call_back.base_callback.EventQueue import EventQueue
 from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
 from sky_simulator.registry import component_registry, scan_and_register_components, create_component_by_id
 from sky_simulator.registry.scanner import load_config
@@ -25,7 +28,23 @@ if __name__ == '__main__':
                                                      event_manager))
 
     # 事件队列 不需要当场调用
-    event_queue = callback_manager.get('event_queue')
+    event_queue:EventQueue = callback_manager.get('event_queue')
     print(event_queue.queue)
     print(event_queue.queue[0][2])
+
+    event_queue()
+
+    len(event_queue)
+
+    event_queue.peek_next_event_time()
+
+    event_queue.list_all_events()
+
+    time_line=0
+    while True:
+        res=event_queue.pop_ready_events(time_line)
+        print(res)
+        time_line+=1
+        if time_line>=5:
+            break
 

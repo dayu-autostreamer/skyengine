@@ -13,6 +13,7 @@ from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.registry import register_component
 from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
 
+
 @register_component("packet_factory")
 class PacketFactoryEnv(ParallelEnv):
     metadata = {"render_modes": ["human"], "name": "packet_factory_env"}
@@ -73,11 +74,18 @@ class PacketFactoryEnv(ParallelEnv):
             "step_time": step_time
         }
 
-    def deal_event(self,current_time):
+    def deal_event(self):
         """
         调用event_queue取出队列中current_time之前的事件并调用.
         """
-        self.event_queue.put()
+        ready_event = self.event_queue.pop_ready_events(self.env_timeline)
+        for event in ready_event:
+            print(event)
+            event()
+        if len(ready_event) == 0:
+            return False
+        else:
+            return True
 
     def env_step(self, actions: List[Tuple[Operation, AGV, Machine]], step_time: float) -> bool:
         # ---------- 当前轮次时间 ----------
@@ -112,8 +120,7 @@ class PacketFactoryEnv(ParallelEnv):
         # 启动：bool变量变成True，暂停：bool变量变成False，
         # 重启：从这里break出去，一路break到最外面，重置agent和env（可以设计状态，每个step的地方都检测状态，一路break出去）
         #  while (bool变量) sleep
-        event=self.event_queue.pop_ready_events()
-        self.deal_event(event)
+        event_happen = self.deal_event()
 
         # 更新可视化（每env_step更新一次）
         self.env_visualizer.visualize_env()
@@ -122,8 +129,7 @@ class PacketFactoryEnv(ParallelEnv):
         self.env_timeline += step_time
 
         # 判断是否有不确定事件发生过，若有则返回True
-        if event is not None:
-            return True
+        return event_happen
         # for machine in self.machines:
         #     if machine.uncertainty_simulator.uncertain_event_occurred():
         #         return True
@@ -131,7 +137,7 @@ class PacketFactoryEnv(ParallelEnv):
         #     if agv.uncertainty_simulator.uncertain_event_occurred():
         #         return True
 
-        return False
+        # return False
 
     def step(self, actions=None):
         LOGGER.info(f"--------- 当前循环步为{self.env_timeline} ---------")
@@ -166,7 +172,8 @@ class PacketFactoryEnv(ParallelEnv):
 
         # === 3. 统计完成状态，计算奖励 ===
         # todo 计算状态/动作完成reward计算
-        rewards = {self.agent.agent_id: self.agent.reward(self.critic_vector)}
+        # rewards = {self.agent.agent_id: self.agent.reward(self.critic_vector)}
+        rewards = {self.agent.agent_id: self.agent.reward({})}
         terminations = {self.agent}
 
         obs = self._get_obs()
@@ -231,16 +238,15 @@ class PacketFactoryEnv(ParallelEnv):
         """
         pass
 
-
     def getJobs(self) -> List[Job]:
         return self.jobs
-    
+
     def getMachines(self) -> List[Machine]:
         return self.machines
-    
+
     def getAGVs(self) -> List[AGV]:
         return self.agvs
-    
+
     def getGraph(self) -> Graph:
         return self.graph
 

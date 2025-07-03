@@ -44,9 +44,6 @@ class PacketFactoryEnv(ParallelEnv):
         # 回调管理
         self.callback_manager: CallbackManager = CallbackManager()
 
-        
-        self.rubbish_counter = 0
-
     # ---------- 自定义状态更新函数 ----------
     def set_env_timeline(self, env_timeline: float):
         self.env_timeline = env_timeline
@@ -233,15 +230,6 @@ class PacketFactoryEnv(ParallelEnv):
     def render(self):
         """可视化系统当前状态 功能拆分到不同函数中"""
         pass
-
-    def getNewUncertaintyEvents(self) -> List[str]:
-        """
-        :return: 距离上次调用, 哪些新的不确定性事件发生了, 以字符串形式format后传递, 最后将由visualizer直接显示
-        """
-        self.rubbish_counter += 1
-        if self.rubbish_counter > 20 and self.rubbish_counter < 50:
-            return []
-        return [f"{self.rubbish_counter} uncertainty events occurred"]
 
     def createHashIndex(self):
         """

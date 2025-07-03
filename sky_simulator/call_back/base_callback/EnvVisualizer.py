@@ -71,6 +71,8 @@ class EnvVisualizer(EnvCallback):
         self.machine_pause_queue = []
         self.machine_resume_queue = []
         self.job_add_queue = []
+
+        self.uncertainty_event_queue = []
     
     def _init_env(self, env):
         self.env = env
@@ -309,13 +311,13 @@ class EnvVisualizer(EnvCallback):
                 if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element == self.start_button:
                         self.running = True
-                        print("Start Button Pressed")
+                        self.insertNewUncertaintyEvent("Start!")
                     elif event.ui_element == self.pause_button:
                         self.running = False
-                        print("Pause Button Pressed")
+                        self.insertNewUncertaintyEvent("Pause!")
                     elif event.ui_element == self.restart_button:
                         self.restart = True
-                        print("Restart Button Pressed")
+                        self.insertNewUncertaintyEvent("Restart!")
                     elif event.ui_element == self.agv_pause_button:
                         self.pause_agv(self.selected_agv_id)
                     elif event.ui_element == self.agv_resume_button:
@@ -343,7 +345,7 @@ class EnvVisualizer(EnvCallback):
 
         self.update_job_progress(self.env.getJobs())
 
-        uncertainty_events = self.env.getNewUncertaintyEvents()
+        uncertainty_events = self.getNewUncertaintyEvents()
         if uncertainty_events:
             for event in uncertainty_events:
                 self.add_uncertainty_event_log(f"{event}")
@@ -399,7 +401,7 @@ class EnvVisualizer(EnvCallback):
         for agv in self.env.getAGVs():
             if agv.get_id() == agv_id:
                 self.agv_pause_queue.append(agv)
-                print(f"AGV {agv_id} paused")
+                self.insertNewUncertaintyEvent(f"AGV {agv_id} paused!")
                 break
 
     def getPausedAGVs(self) -> List[AGV]:
@@ -415,7 +417,7 @@ class EnvVisualizer(EnvCallback):
         for agv in self.env.getAGVs():
             if agv.get_id() == agv_id:
                 self.agv_resume_queue.append(agv)
-                print(f"AGV {agv_id} resumed")
+                self.insertNewUncertaintyEvent(f"AGV {agv_id} resumed!")
                 break
 
     def getResumedAGVs(self) -> List[AGV]:
@@ -431,7 +433,7 @@ class EnvVisualizer(EnvCallback):
         for machine in self.env.getMachines():
             if machine.get_id() == machine_id:
                 self.machine_pause_queue.append(machine)
-                print(f"Machine {machine_id} paused")
+                self.insertNewUncertaintyEvent(f"Machine {machine_id} paused!")
                 break
 
     def getPausedMachines(self) -> List[Machine]:
@@ -447,7 +449,7 @@ class EnvVisualizer(EnvCallback):
         for machine in self.env.getMachines():
             if machine.get_id() == machine_id:
                 self.machine_resume_queue.append(machine)
-                print(f"Machine {machine_id} resumed")
+                self.insertNewUncertaintyEvent(f"Machine {machine_id} resumed!")
                 break
     
     def getResumedMachines(self) -> List[Machine]:
@@ -463,7 +465,7 @@ class EnvVisualizer(EnvCallback):
         for job in self.env.getJobs():
             if job.get_id() == job_id:
                 self.job_add_queue.append(job)
-                print(f"Job {job_id} added")
+                self.insertNewUncertaintyEvent(f"Job {job_id} added!")
                 break
     
     def getAddedJobs(self) -> List[Job]:
@@ -473,3 +475,92 @@ class EnvVisualizer(EnvCallback):
         job_add_queue = self.job_add_queue
         self.job_add_queue = []
         return job_add_queue
+
+    def insertNewUncertaintyEvent(self, event: str):
+        self.uncertainty_event_queue.append(event)
+
+    def getNewUncertaintyEvents(self) -> List[str]:
+        """
+        :return: 距离上次调用, 哪些新的不确定性事件发生了, 以字符串形式format后传递, 最后将由visualizer直接显示
+        """
+        result = self.uncertainty_event_queue
+        self.uncertainty_event_queue = []
+        return result
+
+    def getBuffered(self):
+        """
+        :return: [
+                {
+                    event_type: "packet_factory.ENV_FAIL" / "packet_factory.AGV_FAIL" / ...
+                    event_method: "trigger" / "recover"
+                    type: "" / "AGV" / "Machine" / "Job" 
+                    data: None / AGV / Machine / Job 实例
+                }
+                ]
+        """
+        result = []
+
+        if self.shouldRestart():
+            result.append({
+                "event_type": "packet_factory.ENV_RESTART",
+                "event_method": "trigger",
+                "type": "",
+                "data": None
+            })
+
+        if self.isRunning():
+            result.append({
+                "event_type": "packet_factory.ENV_FAIL",
+                "event_method": "recover",
+                "type": "",
+                "data": None
+            })
+        else:
+            result.append({
+                "event_type": "packet_factory.ENV_FAIL",
+                "event_method": "trigger",
+                "type": "",
+                "data": None
+            })
+
+        for paused_agv in self.getPausedAGVs():
+            result.append({
+                "event_type": "packet_factory.AGV_FAIL",
+                "event_method": "trigger",
+                "type": "AGV",
+                "data": paused_agv,
+            })
+        
+        for resumed_agv in self.getResumedAGVs():
+            result.append({
+                "event_type": "packet_factory.AGV_FAIL",
+                "event_method": "recover",
+                "type": "AGV",
+                "data": resumed_agv,
+            })
+
+        for paused_machine in self.getPausedMachines():
+            result.append({
+                "event_type": "packet_factory.MACHINE_FAIL",
+                "event_method": "trigger",
+                "type": "MACHINE",
+                "data": paused_machine,
+            })
+        
+        for resumed_machine in self.getResumedMachines():
+            result.append({
+                "event_type": "packet_factory.MACHINE_FAIL",
+                "event_method": "recover",
+                "type": "MACHINE",
+                "data": resumed_machine,
+            })
+        
+        for added_job in self.getAddedJobs():
+            result.append({
+                "event_type": "packet_factory.JOB_ADD",
+                "event_method": "trigger",
+                "type": "JOB",
+                "data": added_job,
+            })
+        
+        return result

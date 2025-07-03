@@ -5,6 +5,7 @@ config:
     - packet_factory.JUST_TEST
 
     - packet_factory.ENV_FAIL
+    # - packet_factory.ENV_RESTART
     - packet_factory.AGV_FAIL
     - packet_factory.MACHINE_FAIL
     - packet_factory.JOB_ADD

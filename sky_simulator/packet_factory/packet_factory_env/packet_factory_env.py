@@ -35,7 +35,11 @@ class PacketFactoryEnv(ParallelEnv):
         self.env_visualizer = None
         self.event_queue = None
         self.agent = agent
-        self.hash_index={}
+        self.hash_index={
+            'agvs':{},
+            'machines':{},
+            'jobs':{},
+        }
 
         # 回调管理
         self.callback_manager: CallbackManager = CallbackManager()
@@ -63,8 +67,10 @@ class PacketFactoryEnv(ParallelEnv):
         # 可视化组件赋值 不需要当场调用
         self.env_visualizer = self.callback_manager.get('initialize_visualizer')
         self.env_visualizer.visualize_env(env=self)
+
         # 事件队列 不需要当场调用
         self.event_queue = self.callback_manager.get('event_queue')
+        self.event_queue.set_env(env=self)
 
         LOGGER.info("Environment Initialized Successfully.")
 
@@ -135,15 +141,6 @@ class PacketFactoryEnv(ParallelEnv):
         return event_happen
 
         # 判断是否有不确定事件发生过，若有则返回True
-
-        # for machine in self.machines:
-        #     if machine.uncertainty_simulator.uncertain_event_occurred():
-        #         return True
-        # for agv in self.agvs:
-        #     if agv.uncertainty_simulator.uncertain_event_occurred():
-        #         return True
-
-        # return False
 
     def step(self, actions=None):
         LOGGER.info(f"--------- 当前循环步为{self.env_timeline} ---------")

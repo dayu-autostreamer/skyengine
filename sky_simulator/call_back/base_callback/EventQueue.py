@@ -1,3 +1,5 @@
+from pettingzoo import ParallelEnv
+
 from sky_simulator.event.event import BaseEvent
 import heapq
 from sky_simulator.registry import register_component
@@ -17,10 +19,11 @@ class EventQueue(EnvCallback):
 
         self.queue = []  # 最小堆，按时间排序
         self.counter = 0  # 保持插入顺序，解决时间相同时的排序问题
+        self.env = None
 
         # 初始化后 获得管理器中的init_event集合
         for event in self.event_manager.init_event:
-            self.add_event(event['timestamp'],self.event_manager.create_event(event['type'], *event['args']))
+            self.add_event(event['timestamp'], self.event_manager.create_event(event['type'], *event['args']))
 
     def __call__(self):
         """使类的实例可以像函数一样被调用"""
@@ -28,6 +31,9 @@ class EventQueue(EnvCallback):
 
     def __len__(self):
         return len(self.queue)
+
+    def set_env(self, env: ParallelEnv):
+        self.env = env
 
     def add_event(self, timestamp, event: BaseEvent):
         heapq.heappush(self.queue, (timestamp, self.counter, event))
@@ -38,6 +44,10 @@ class EventQueue(EnvCallback):
         ready = []
         while self.queue and self.queue[0][0] <= current_time:
             _, _, event = heapq.heappop(self.queue)
+
+            event:BaseEvent
+            event.set_env(self.env)
+
             ready.append(event)
         return ready
 

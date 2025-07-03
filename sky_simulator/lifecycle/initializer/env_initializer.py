@@ -1,6 +1,6 @@
 from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
 from sky_simulator.lifecycle.initializer.event_initializer import initialize_event_manager
-from sky_simulator.registry.factory import create_component_by_id
+from sky_simulator.registry.factory import create_component_by_id,get_component_class_by_id
 
 
 def initialize_env(config, agent):
@@ -12,14 +12,10 @@ def initialize_env(config, agent):
     if not env_type:
         raise ValueError("[Context] 配置中未指定 'env_type'，请检查配置文件")
 
-    if env_type == "simulation":
-        env_name = config.get(env_type).get("env_name")
-        env = create_component_by_id(env_name, agent, )
-    elif env_type == "real":
-        env_name = config.get(env_type).get("env_name")
-        env = create_component_by_id(env_name, agent)
-    else:
-        raise ValueError(f"[Context] 未知环境类型: {env_type}")
+    # todo 后续根据real还是sim更换创建流程
+    env_name = config.get(env_type).get("env_name")
+    env = create_component_by_id(env_name, agent)
+    env: get_component_class_by_id(env_name)
 
     callback_config = config.get(env_type).get('callback').get('map_callback')
 
@@ -31,11 +27,12 @@ def initialize_env(config, agent):
                               create_component_by_id(callback_config.get('visualizer').get('name'),
                                                      *callback_config.get('visualizer').get('args')))
 
+    # ---------- 创建事件管理器 ----------
     event_manager = initialize_event_manager(config)
+
     callback_manager.register("event_queue",
                               create_component_by_id(callback_config.get('event_queue').get('name'),
                                                      event_manager))
-
     env.set_callback_manager(callback_manager)
     print(f"[Callback] Added to Context...")
 

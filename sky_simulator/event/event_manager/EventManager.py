@@ -15,12 +15,14 @@ from pettingzoo import ParallelEnv
 from sky_simulator.event.event.BaseEvent import BaseEvent
 from sky_simulator.registry.factory import get_event_class_by_id
 
+
 class EventManager:
     def __init__(self):
         self.events = {
         }
-        self.init_event=[] # 记录数据集初始化时的Event
-        self.history = [] # 已执行事件的历史记录
+        self.init_event = []  # 记录数据集初始化时的Event
+        self.history = []  # 已执行事件的历史记录
+        self.env = None
 
     def add_event(self, event_name):
         # 确保当前事件还没被记录
@@ -28,17 +30,19 @@ class EventManager:
             raise ValueError(f"[EventManager] 重复声明 '{event_name}' 事件")
         self.events[event_name] = get_event_class_by_id(event_name)
 
-
-    def create_event(self,event_name,*args):
+    def create_event(self, event_name, *args):
         """输入事件类型和参数,返回对应的事件实例"""
-        status=args[0]
-        assert status in ["trigger","recover"]
-        payload=args[1]
+
+        status = args[0]
+        assert status in ["trigger", "recover"]
+        payload = args[1]
         assert isinstance(payload, dict)
-        return self.events[event_name](status,payload)
 
+        event: BaseEvent = self.events[event_name](status, payload)
 
-    def load_event(self,config_path):
+        return event
+
+    def load_event(self, config_path):
         if not os.path.exists(config_path):
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
@@ -50,22 +54,23 @@ class EventManager:
 
         event_config = raw_config["config"]
 
-        event_type_list=event_config["event_type"]
+        event_type_list = event_config["event_type"]
 
         for event_name in event_type_list:
             self.add_event(event_name)
 
-        event_timeline=event_config["event_timeline"]
+        event_timeline = event_config["event_timeline"]
 
         for event in event_timeline:
             self.init_event.append(event['event'])
 
-
-    def deal_event(self,event: BaseEvent,env:ParallelEnv):
+    def deal_event(self, event: BaseEvent, env: ParallelEnv):
         """
         记录执行过的事件，同时说明该事件是否顺利执行
         """
-        self.history.append((event,event(env)))
+        self.history.append((event, event(env)))
+
+
 
     def list_all_history(self):
         return self.history

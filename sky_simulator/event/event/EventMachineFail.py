@@ -20,12 +20,18 @@ class EventMachineFail(BaseEvent):
 
     def trigger(self):
         """
-        触发该事件
+        触发该事件 触发时调用machine的record。
         """
         from sky_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
         self.judge_env(PacketFactoryEnv)
         self.env: PacketFactoryEnv
-        self.env.hash_index['machines'][self.machine_id]: Machine.set_status()
+
+        target_machine: Machine=self.env.hash_index['machines'][self.machine_id]
+
+        # 记录本次事件
+        target_machine.record(self)
+        # 实际执行事件
+        target_machine.event_set_fail()
 
     def recover(self):
         """
@@ -36,4 +42,8 @@ class EventMachineFail(BaseEvent):
         self.judge_env(PacketFactoryEnv)
         self.env: PacketFactoryEnv
 
-        self.env.hash_index['machines'][self.machine_id]: Machine.machine_recover()
+        target_machine: Machine=self.env.hash_index['machines'][self.machine_id]
+        # 回复事件
+        target_machine.recover()
+
+

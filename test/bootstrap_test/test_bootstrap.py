@@ -14,8 +14,6 @@ if __name__ == '__main__':
     # 创建环境与智能体
     env, agent = bootstrap(config_path)
 
-    print(env)
-    print(agent)
     # 重置环境
     observations = env.reset()
 

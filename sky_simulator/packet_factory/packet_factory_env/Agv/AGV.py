@@ -161,8 +161,8 @@ class AGV:
             nx, ny = point.get_xy()
             distance = self.dist(nx, ny)
             travel_time = distance / self.velocity
-            agv_operation_id = None if self.operation is None else self.operation.id
-            travel_time *= self.uncertainty_simulator.uncertain_event_ratio(self.id, machine.id, agv_operation_id)
+            # agv_operation_id = None if self.operation is None else self.operation.id
+            # travel_time *= self.uncertainty_simulator.uncertain_event_ratio(self.id, machine.id, agv_operation_id)
 
             if self.get_timer() + travel_time > final_time:
                 agv_x, agv_y = self.get_xy()
@@ -307,7 +307,6 @@ class AGV:
         :param final_time: 模拟的截止时间
         :param action: 最新待执行的任务
         """
-        self.check_event()
         if action is not None:
             self.todo_queue_push(("load", action[0]))
             self.todo_queue_push(("unload", action[1]))

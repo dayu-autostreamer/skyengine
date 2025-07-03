@@ -4,6 +4,7 @@ config:
   event_type: # 交给manager管理
     - packet_factory.JUST_TEST
 
+    - packet_factory.ENV_FAIL
     - packet_factory.AGV_FAIL
     - packet_factory.MACHINE_FAIL
     - packet_factory.JOB_ADD
@@ -14,14 +15,14 @@ config:
         args: ['trigger',{'data':233}]
     - event:
         timestamp: 2
-        type: packet_factory.AGV_FAIL
-        args: ['trigger',{'agv_id': 1}]
+        type: packet_factory.MACHINE_FAIL
+        args: ['trigger',{'fail_time': -1,'machine_id': 1}]
     - event:
         timestamp: 3
         type: packet_factory.JUST_TEST
         args: ['recover',{'data':'agv failed.'}]
     - event:
         timestamp: 4
-        type: packet_factory.AGV_FAIL
-        args: [ 'recover',{'agv_id': 1} ]
+        type: packet_factory.MACHINE_FAIL
+        args: [ 'recover',{'fail_time': -1,'machine_id': 1} ]
 

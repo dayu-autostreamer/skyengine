@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Optional, Tuple, List
 
+from sky_simulator.event import BaseEvent
 from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Utils.util import OperationStatus, MachineStatus
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
@@ -28,7 +29,7 @@ class Machine:
         self.input_queue: List[Operation] = []
         self.output_queue: List[Operation] = []
 
-        # 事件相关
+        # 事件相关 记录某个状态在修改前的取值
         self.history_stack: List = []
 
     def __repr__(self):
@@ -125,7 +126,6 @@ class Machine:
         :param final_time: 模拟的截止时间
         """
         # todo: 维护一个machine的状态（event队列去修改的），如果当前machine状态=宕机，把self.timer变成final_time，但是不移动坐标
-        self.check_event()
 
         if self.get_status() == MachineStatus.READY or self.get_status() == MachineStatus.WORKING:
             self.push_process(final_time)
@@ -133,17 +133,61 @@ class Machine:
             LOGGER.info(f"Machine {self.id} is failed")
 
     # ---------- 修改状态的函数,便于事件使用 ----------
-    def record(self, ):
+    def status_pack(self):
         """
-        记录历史事件
+        将可能会改变的状态全部打包记录
         """
-        pass
+        return {
+            "status": self.status.name,  # 存储枚举的字符串
+        }
 
-    def recover(self):
+    def status_unpack(self, field):
         """
-        从历史事件中回复
+        将状态从记录中恢复
         """
-        pass
+        self.status = MachineStatus[field["status"]]  #从字符串还原枚举
+
+    def record(self, event:BaseEvent):
+        """
+        执行事件并记录
+        """
+        self.history_stack.append(
+            {
+                "field": self.status_pack(),
+                "event_id": event.event_id
+            }
+        )
+
+    def recover(self, event=None):
+        """
+        恢复（撤销）事件。
+        - 如果不传 event，则撤销最近的一个事件。
+        - 如果传入 event_id，则回滚到该事件之前，期间的所有事件都会被撤销。
+        """
+        if not self.history_stack:
+            print("没有可以恢复的事件")
+            return
+
+        if event is None:
+            # 恢复最近的一个事件
+            event_dict = self.history_stack.pop()
+            self.status_unpack(event_dict['field'])
+            print(f"恢复到事件: {event_dict['event_id']}")
+        else:
+            # 查找目标 event_id 是否存在
+            event_ids = [e['event_id'] for e in self.history_stack]
+            if event not in event_ids:
+                print(f"指定事件 {event} 不在历史记录中，无法恢复")
+                return
+
+            # 不断弹出直到 event 之前
+            while self.history_stack:
+                event_dict = self.history_stack.pop()
+                self.status_unpack(event_dict['field'])
+                print(f"恢复到事件: {event_dict['event_id']}")
+
+                if event_dict['event_id'] == event:
+                    break
 
     def event_set_fail(self):
         self.set_status(MachineStatus.FAILED)

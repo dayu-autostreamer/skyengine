@@ -26,31 +26,31 @@ class BaseEvent:
         self.payload = payload or {}  # 事件携带的数据
         self.env = None  # 事件可以手动绑定环境使用 或者每次传入不同的env使用
 
-
     def __repr__(self):
         return f"[Event] {self.event_type.name} - Payload: {self.payload}"
 
-    def __call__(self, env: ParallelEnv)->bool:
+    def __call__(self, env: ParallelEnv) -> bool:
         """
         返回当前事件是否执行成功
         """
         print(f"[Event] {self.event_type} Event {self.status} | Payload: {self.payload}")
 
         if self.status == "trigger":
-            return self.trigger()
+            res = self.trigger()
         elif self.status == "recover":
-            return self.recover()
+            res = self.recover()
         else:
             raise ValueError(f"[Event] {self.event_type} Event {self.status} Wrong!")
 
+        return res
 
-    def trigger(self)->bool:
+    def trigger(self) -> bool:
         """
         触发该事件
         """
         return True
 
-    def recover(self)->bool:
+    def recover(self) -> bool:
         """
         恢复该事件的现场
         """
@@ -58,7 +58,7 @@ class BaseEvent:
 
     def judge_env(self, env_type: type):
         """指定当前环境,确定当前事件和环境是对应的"""
-        assert isinstance(self.env, env_type), f"env必须是{env_type}的实例"
+        assert isinstance(self.env, env_type), f"env必须是{env_type}的实例,当前为{type(self.env)}"
 
     def set_env(self, env):
         self.env = env

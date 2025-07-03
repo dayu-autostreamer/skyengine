@@ -79,5 +79,17 @@ class RandomAgent(BaseAgent):
             return [],0
         return current_sample, (time_end - time_start)*500+1
 
+    def is_finish(self):
+        # 分配完任务后，没有不确定性发生，那么仍执行原决策，不传入新决策
+        decisions = []
+        # 当全部任务执行完成时，也应该退出循环
+        cnt = 0
+        for job in self.jobs:
+            if job.is_finished():
+                cnt += 1
+        if cnt == len(self.jobs):
+            self.alive = False
+            return True
+
     def __repr__(self):
         return f"<{self.__class__.__name__} id={self.agent_id} name={self.name}>"

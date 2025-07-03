@@ -19,7 +19,7 @@ def scale(pos, scale=(80, 100), shift=(100, 100)):
 
 
 # 仿真环境创建前的初始化
-@register_component("packet_factory.Visualizer")
+@register_component("base_callback.Visualizer")
 class EnvVisualizer(EnvCallback):
     WIDTH, HEIGHT = 1024, 768
 

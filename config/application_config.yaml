@@ -10,29 +10,30 @@ config:
     task_config:
       file: .config_set/job_config.yaml
 
+    event_config:
+      file: .config_set/event_config.yaml
+
+
     agent:
       agent_name: packet_factory.RandomAgent
       name: 1
       id: 1
 
-    visualizer:
-      visualizer_name: packet_factory.Visualizer
-      fps: 3
-
     callback:
-      # todo: args用字典形式传入
       map_callback:
         graph_loader:
           name: base_callback.MapLoader
-          args: [/brandimarte/mk01_agv.txt]
+          args: [ /brandimarte/mk01_agv.txt ]
         visualizer:
-          name: packet_factory.Visualizer
-          args: [3]    #  fps
-
+          name: base_callback.Visualizer
+          args: [ 3 ]    #  fps
+        event_dealer:
+          name: base_callback.EventDealer
+          args: [ ]
       agent_callback:
         before_decision:
           name: base_callback.BeforeDecision
-          args: []
+          args: [ ]
         after_decision:
           name: base_callback.AfterDecision
-          args: []
+          args: [ ]

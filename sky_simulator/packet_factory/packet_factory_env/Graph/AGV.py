@@ -190,10 +190,19 @@ class AGV:
         将AGV前往machine
         :return: 是否成功, 若失败则调用该函数的上一级步骤也失败
         """
+        
+        # todo: 维护一个agv的状态（event队列去修改的），如果当前agv状态=宕机，把self.timer变成final_time，但是不移动坐标
+
+        # todo: 现在的改成：随机生成宕机若干秒的事件
+
+        # update event
+        # check state
+
+
         if self.status != AGVStatus.ASSIGNED and self.status != AGVStatus.LOADED:
             LOGGER.info(f"AGV id={self.id} can't go to point {path[-1]}")
             return False
-        
+
         while self.path_stage < len(path):
             point = self.graph.get_point_by_id(path[self.path_stage])
             if point is None:

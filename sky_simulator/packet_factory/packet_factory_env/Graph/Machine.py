@@ -140,6 +140,15 @@ class Machine:
         模拟机器工作
         :param final_time: 模拟的截止时间
         """
+
+        
+        # todo: 维护一个machine的状态（event队列去修改的），如果当前machine状态=宕机，把self.timer变成final_time，但是不移动坐标
+
+        # todo: 现在的改成：随机生成宕机若干秒的事件
+
+        # update event
+        # check state
+
         LOGGER.info(f"Machine {self.id} is working")
         while len(self.input_queue) > 0:
             self.set_status(MachineStatus.WORKING)

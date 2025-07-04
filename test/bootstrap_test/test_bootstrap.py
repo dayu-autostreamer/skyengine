@@ -4,12 +4,12 @@ import argparse
 
 if __name__ == '__main__':
     # 解析命令行参数
-    parser = argparse.ArgumentParser(description="启动环境与智能体")
-    parser.add_argument('--config', type=str, help='YAML 配置文件路径')
-    
-    args = parser.parse_args()
-    config_path = args.config
-    # config_path = '../../config/application_config.yaml'
+    # parser = argparse.ArgumentParser(description="启动环境与智能体")
+    # parser.add_argument('--config', type=str, help='YAML 配置文件路径')
+    #
+    # args = parser.parse_args()
+    # config_path = args.config
+    config_path = '../../config/application_config.yaml'
 
     # 创建环境与智能体
     env, agent = bootstrap(config_path)

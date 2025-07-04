@@ -53,3 +53,34 @@ class JobStatus(Enum):
 
     # 意外状态
     EXCEPTION = 99
+
+
+class EnvStatus(Enum):
+    # 环境暂停
+    PAUSED = 0
+    # 环境在运行
+    RUNNING = 1
+    # 环境需要一次重启
+    RESTART = 2
+
+    # 环境正常结束
+    FINISHED = 3
+    # 意外状态
+    EXCEPTION = 99
+
+
+class AgentStatus(Enum):
+    # 决策暂停
+    INFER_PAUSED = 0
+    # 决策在运行
+    INFER_RUNNING = 1
+    # 决策需要一次重启
+    INFER_RESTART = 2
+
+    # 决策正在训练
+    TRAIN_PAUSED = 3
+    # 训练暂停
+    TRAIN_RUNNING = 4
+
+    # 意外状态
+    EXCEPTION = 99

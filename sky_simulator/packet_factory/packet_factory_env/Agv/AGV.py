@@ -1,6 +1,7 @@
 from typing import Optional, Tuple, List
 import math
 
+from sky_simulator.event.event import BaseEvent
 from sky_simulator.packet_factory.packet_factory_env.Utils.util import AGVStatus, OperationStatus
 from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine
@@ -26,14 +27,38 @@ class AGV:
         self.graph: Graph = graph
         self.timer: float = 0.0
         self.velocity: float = velocity
+        self.status = AGVStatus.READY
+
+
         self.operation: Optional[Operation] = None
         self.todo_queue: List[Tuple[str, Machine | Operation]] = []
         self.running_queue: List[Tuple[str, Machine | Operation]] = []
 
-        self.status = AGVStatus.READY
-
         # 事件相关 字段包括
         self.history_stack: List = []
+
+
+    def pack(self) -> dict:
+        return {
+            "id": self.id,
+            "x": self.x,
+            "y": self.y,
+            "point_id": self.point_id,
+            "path_stage": self.path_stage,
+            "timer": self.timer,
+            "velocity": self.velocity,
+            "status": self.status.name if hasattr(self.status, 'name') else self.status,
+        }
+
+    def unpack(self, data: dict):
+        self.id = data["id"]
+        self.x = data["x"]
+        self.y = data["y"]
+        self.point_id = data["point_id"]
+        self.path_stage = data["path_stage"]
+        self.timer = data["timer"]
+        self.velocity = data["velocity"]
+        self.status = AGVStatus[data["status"]] if isinstance(data["status"], str) else data["status"]
 
     def __repr__(self):
         # 获取当前操作的名称（如果有）
@@ -314,23 +339,36 @@ class AGV:
         self.push_process(final_time)
 
     # ---------- 修改状态的函数,便于事件使用 ----------
-    def record(self, ):
+    def record(self, event:BaseEvent):
         """
-        记录历史事件
+        执行事件并记录
         """
-        pass
+        self.history_stack.append(
+            {
+                "field": self.pack(),
+                "event_id": event.event_id
+            }
+        )
 
-    def recover(self):
+    def recover(self, event=None):
         """
-        从历史事件中回复
+        恢复（撤销）事件。
+        - 如果不传 event，则撤销最近的一个事件。
+        - 如果传入 event_id，则回滚到该事件之前，期间的所有事件都会被撤销。
         """
+        if not self.history_stack:
+            print("没有可以恢复的事件")
+            return
         pass
 
     def event_set_fail(self):
         self.set_status(AGVStatus.EXCEPTION)
 
     def event_set_restart(self):
-        self.set_status(AGVStatus.LOADED)
+        if self.history_stack is None or len(self.history_stack) == 0:
+            self.set_status(AGVStatus.READY)
+        else:
+            self.unpack(self.history_stack[-1]['field'])
 
 if __name__ == '__main__':
     k = 10

@@ -54,23 +54,22 @@ class EventManager:
 
         event_config = raw_config["config"]
 
-        event_type_list = event_config["event_type"]
+        event_type_list =  event_config.get("event_type", None)
 
-        for event_name in event_type_list:
-            self.add_event(event_name)
+        if event_type_list is not None and len(event_type_list) > 0:
+            for event_name in event_type_list:
+                self.add_event(event_name)
 
-        event_timeline = event_config["event_timeline"]
-
-        for event in event_timeline:
-            self.init_event.append(event['event'])
+        event_timeline = event_config.get("event_timeline", None)
+        if event_timeline is not None and len(event_timeline) > 0:
+            for event in event_timeline:
+                self.init_event.append(event['event'])
 
     def deal_event(self, event: BaseEvent, env: ParallelEnv):
         """
         记录执行过的事件，同时说明该事件是否顺利执行
         """
         self.history.append((event, event(env)))
-
-
 
     def list_all_history(self):
         return self.history

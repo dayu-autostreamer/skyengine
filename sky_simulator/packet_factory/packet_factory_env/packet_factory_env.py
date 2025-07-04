@@ -8,6 +8,7 @@ from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Mach
 from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Agv.AGV import AGV
 from sky_simulator.packet_factory.packet_factory_env.Graph.Graph import Graph
+from sky_simulator.packet_factory.packet_factory_env.Utils.util import EnvStatus
 from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
 from sky_simulator.registry import register_component
 from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
@@ -35,12 +36,12 @@ class PacketFactoryEnv(ParallelEnv):
         self.env_visualizer = None
         self.event_queue = None
         self.agent = agent
-        self.hash_index={
-            'agvs':{},
-            'machines':{},
-            'jobs':{},
+        self.hash_index = {
+            'agvs': {},
+            'machines': {},
+            'jobs': {},
         }
-
+        self.status = EnvStatus.PAUSED
         # 回调管理
         self.callback_manager: CallbackManager = CallbackManager()
 
@@ -57,7 +58,7 @@ class PacketFactoryEnv(ParallelEnv):
 
     def refresh_status(self):
         """
-        刷新当前环境的graph和agv
+        刷新当前环境引入的额外组件
         :return:
         """
         # 环境创建 当场调用即可
@@ -82,19 +83,59 @@ class PacketFactoryEnv(ParallelEnv):
             "step_time": step_time
         }
 
+    def check_job_finished(self):
+        # 检测任务是否执行完成
+        if self.status == EnvStatus.FINISHED:
+            return True
+        else:
+            cnt = 0
+            for job in self.jobs:
+                if job.is_finished():
+                    cnt += 1
+            res = False
+            if cnt == len(self.jobs):
+                self.agent.alive = False
+                self.status = EnvStatus.FINISHED
+                res = True
+        return res
+
     def deal_event(self):
         """
         调用event_queue取出队列中current_time之前的事件并调用.
         """
-        # todo：event有个函数判断是否有不确定事件发生过（包括三类：agv停止/释放，机器停止/释放，额外增加订单）
-        # 启动：bool变量变成True，暂停：bool变量变成False，
-        # 重启：从这里break出去，一路break到最外面，重置agent和env（可以设计状态，每个step的地方都检测状态，一路break出去）
-        # while (bool变量) sleep
+        # ---------- 检测事件 ----------
+        try:
+            command_list = self.env_visualizer.getBuffered()
+        except TypeError as e:
+            LOGGER.warning("Current Visualizer Don't support Event.")
+            return
 
+        # ---------- 翻译创建事件 ----------
+        for command in command_list:
+            print(command)
+            payload = {}
+            if command['type'] == 'AGV':
+                current_agv: AGV = command['data']
+                payload = current_agv.pack()
+            elif command['type'] == 'MACHINE':
+                current_machine: Machine = command['data']
+                payload = current_machine.pack()
+            elif command['type'] == 'JOB':
+                current_job: Job = command['data']
+                payload['job'] = current_job
+            else:
+                pass
+
+            print(payload)
+            current_event = self.event_queue.event_manager.create_event(command['event_type'],
+                                                                        *[command['event_method'], payload])
+            self.event_queue.add_event(self.env_timeline, event=current_event)
+
+        # ---------- 执行事件 ----------
+        print(f"当前事件:{self.event_queue.queue}")
         ready_event = self.event_queue.pop_ready_events(self.env_timeline)
         for event in ready_event:
-            print(event)
-            self.event_queue.event_manager.deal_event(event,self)
+            self.event_queue.event_manager.deal_event(event, self)
 
         if len(ready_event) == 0:
             return False
@@ -102,81 +143,85 @@ class PacketFactoryEnv(ParallelEnv):
             return True
 
     def env_step(self, actions: List[Tuple[Operation, AGV, Machine]], step_time: float) -> bool:
-        # ---------- 当前轮次时间 ----------
-        current_time = self.env_timeline
-        final_time = current_time + step_time
+        """
+        环境的单时间片执行,返回当前有无事件发生
+        """
+        event_happen = False
+        print("当前环境执行中...")
+        if self.status == EnvStatus.PAUSED:
+            # ---------- 更新可视化 ----------
+            self.env_visualizer.visualize_env()
+            # ---------- 触发事件队列相关机制 ----------
+            event_happen = self.deal_event()
+        elif self.status == EnvStatus.RUNNING:
+            # ---------- 当前轮次时间 ----------
+            current_time = self.env_timeline
+            final_time = current_time + step_time
 
-        # ---------- machine执行已分配的工作 ----------
-        for machine in self.machines:
-            if len(machine.input_queue) > 0:
-                machine.work(final_time)
-            machine.set_timer(final_time)
+            # ---------- machine执行已分配的工作 ----------
+            for machine in self.machines:
+                if len(machine.input_queue) > 0:
+                    machine.work(final_time)
+                machine.set_timer(final_time)
 
-        if len(actions) > 0:
-            # ---------- 清空已调度但未执行的策略 ----------
+            if len(actions) > 0:
+                # ---------- 清空已调度但未执行的策略 ----------
+                for agv in self.agvs:
+                    agv.todo_queue_clear()
+
+                # ---------- 分配调度策略 ----------
+                for operation, agv, machine in actions:
+                    agv.work(final_time, action=(operation, machine))
+
+            # ---------- 执行调度策略 ----------
             for agv in self.agvs:
-                agv.todo_queue_clear()
+                agv.work(final_time)
+                agv.set_timer(final_time)
 
-            # ---------- 分配调度策略 ----------
-            for operation, agv, machine in actions:
-                agv.work(final_time, action=(operation, machine))
+            # ---------- 查看状态 ----------
+            self.render_observation()
 
-        # ---------- 执行调度策略 ----------
-        for agv in self.agvs:
-            agv.work(final_time)
-            agv.set_timer(final_time)
+            # ---------- 更新可视化 ----------
+            self.env_visualizer.visualize_env()
 
-        # ---------- 查看状态 ----------
-        self.render_observation()
+            # ---------- 触发事件队列相关机制 ----------
+            event_happen = self.deal_event()
 
-        # ---------- 检测事件 ----------
-        event_happen = self.deal_event()
-
-        # 更新可视化（每env_step更新一次）
-        self.env_visualizer.visualize_env()
-
-        # === 处理全局时间 ===
-        self.env_timeline += step_time
+            # ---------- 处理全局时间 ----------
+            self.env_timeline += step_time
 
         return event_happen
 
-        # 判断是否有不确定事件发生过，若有则返回True
-
     def step(self, actions=None):
         LOGGER.info(f"--------- 当前循环步为{self.env_timeline} ---------")
-        # === 0. Agent 决策动作（支持 Job 或 Central）===
+
+        # === 0. Agent 决策动作 ===
         decisions = actions['decisions']
 
         # todo: Agent的执行时间不再决定要step多久，而是不确定性事件发生时才重新决策
-        # step_time = actions['step_time']
         step_time = 1
 
-        LOGGER.info(f"step_time: {step_time}")
-        LOGGER.info(f"decisions: {decisions}")
+        LOGGER.info(f"step_time: {step_time},decisions: {decisions}")
 
-        # === 2. 提取state,发送给状态转移函数并返回 ===
+        # === 1. 提取state,发送给状态转移函数并返回 ===
         while True:
-            # 轮询，直到不确定性事件发生才重新决策
-            if self.env_step(decisions, step_time):
+            # 确定环境是否执行完毕
+            if self.check_job_finished():
                 break
-            else:
-                # 分配完任务后，没有不确定性发生，那么仍执行原决策，不传入新决策
+            # 执行当前决策,返回是否发生不确定性事件
+            res = self.env_step(decisions, step_time)
+            if res:
+                # 未发生不确定性事件,继续执行
                 decisions = []
-                # 当全部任务执行完成时，也应该退出循环
-                cnt = 0
-                for job in self.jobs:
-                    if job.is_finished():
-                        cnt += 1
-                if cnt == len(self.jobs):
-                    self.agent.alive = False
-                    break
+            else:
+                # 发生不确定性事件,弹出再进行决策
+                break
 
-        # === 3. 统计完成状态，计算奖励 ===
-        # rewards = {self.agent.agent_id: self.agent.reward(self.critic_vector)}
+        # === 2. 统计完成状态，计算奖励 ===
         rewards = {self.agent.agent_id: self.agent.reward({})}
         terminations = {self.agent}
-
         obs = self._get_obs()
+
         LOGGER.info(f"--------- 结束当前循环步 ---------")
 
         return obs, rewards, terminations, {}, {}
@@ -190,42 +235,18 @@ class PacketFactoryEnv(ParallelEnv):
         return obs
 
     def reset(self, seed=None, options=None):
-        """
-        返回环境初始状态下智能体的观察值,使环境整体的状态回到开始时的样子。
-        :param seed: 随机种子,复现实验
-        :param options:选项
-        :return:
-        """
         # ---------- 清理重建阶段 ----------
         self.set_env_timeline(0)
+        self.status = EnvStatus.RUNNING
         self.refresh_status()
 
     # ---------- 渲染函数 ----------
-    def render_env(self):
-        # 展示环境状态
-        LOGGER.info(f"\n🌍 环境状态:")
-        LOGGER.info(f"  - 当前时间: {self.env_timeline}")
-
     def render_observation(self):
         # 展示作业、机器和AGV数量
         # LOGGER.info(f"\n📊 系统资源状态:")
         LOGGER.info(f"  - 作业: {self.jobs}")
         LOGGER.info(f"  - 机器: {self.machines}")
         LOGGER.info(f"  - AGV: {self.agvs}")
-
-    def render_event(self):
-        # 展示事件队列
-        LOGGER.info(f"\n📋 事件队列 ({len(self.event_queue)} 个待处理事件):")
-
-    def render_agent(self):
-        # 展示智能体状态
-        LOGGER.info(f"\n🤖 智能体状态:")
-        if hasattr(self.agent, 'name'):
-            LOGGER.info(f"  - 智能体名称: {self.agent.name}")
-        if hasattr(self.agent, 'step_count'):
-            LOGGER.info(f"  - 执行步数: {self.agent.step_count}")
-        if hasattr(self.agent, 'epsilon'):
-            LOGGER.info(f"  - 探索率 (ε): {self.agent.epsilon:.4f}")
 
     def render(self):
         """可视化系统当前状态 功能拆分到不同函数中"""
@@ -236,11 +257,11 @@ class PacketFactoryEnv(ParallelEnv):
         创建高效获取组件的结构
         """
         for agv in self.agvs:
-            self.hash_index['agvs'][agv.id]=agv
+            self.hash_index['agvs'][agv.id] = agv
         for job in self.jobs:
-            self.hash_index['jobs'][job.id]=job
+            self.hash_index['jobs'][job.id] = job
         for machine in self.machines:
-            self.hash_index['machines'][machine.id]=machine
+            self.hash_index['machines'][machine.id] = machine
 
     def getJobs(self) -> List[Job]:
         return self.jobs
@@ -254,6 +275,14 @@ class PacketFactoryEnv(ParallelEnv):
     def getGraph(self) -> Graph:
         return self.graph
 
+    def event_set_paused(self):
+        self.status = EnvStatus.PAUSED
+
+    def event_set_running(self):
+        self.status = EnvStatus.RUNNING
+
+    def event_set_restart(self):
+        self.status = EnvStatus.EXCEPTION
 
 
 if __name__ == '__main__':

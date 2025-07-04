@@ -12,11 +12,9 @@ class EventMachineFail(BaseEvent):
         super().__init__(status, payload)
 
         assert payload is not None, "payload不能为None"
-        assert 'machine_id' in payload, "payload必须包含machine_id字段"
-        assert 'fail_time' in payload, "payload必须包含fail_time字段"
+        assert 'id' in payload, "payload必须包含id字段"
 
-        self.machine_id = payload['machine_id']
-        self.fail_time = payload['fail_time']
+        self.machine_id = payload['id']
 
     def trigger(self):
         """
@@ -44,6 +42,6 @@ class EventMachineFail(BaseEvent):
 
         target_machine: Machine=self.env.hash_index['machines'][self.machine_id]
         # 回复事件
-        target_machine.recover()
+        target_machine.event_set_restart()
 
 

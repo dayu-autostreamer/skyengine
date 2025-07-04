@@ -29,26 +29,26 @@ class EnvVisualizer(EnvCallback):
     BLACK = (0, 0, 0)
 
     OPERATION_STATE_COLOR = {
-        OperationStatus.WAITING: (240, 240, 240),     # 浅灰 - 等待（更接近白，柔和）
-        OperationStatus.READY: (255, 200, 0),         # 浅黄橙 - 就绪
-        OperationStatus.MOVING: (255, 150, 0),        # 中橙 - 移动中
-        OperationStatus.WORKING: (255, 90, 0),        # 橙红 - 执行中
-        OperationStatus.FINISHED: (200, 50, 0),       # 暗红橙 - 完成
-        OperationStatus.EXCEPTION: (255, 0, 0)        # 鲜红 - 异常（醒目突出）
+        OperationStatus.WAITING: (240, 240, 240),  # 浅灰 - 等待（更接近白，柔和）
+        OperationStatus.READY: (255, 200, 0),  # 浅黄橙 - 就绪
+        OperationStatus.MOVING: (255, 150, 0),  # 中橙 - 移动中
+        OperationStatus.WORKING: (255, 90, 0),  # 橙红 - 执行中
+        OperationStatus.FINISHED: (200, 50, 0),  # 暗红橙 - 完成
+        OperationStatus.EXCEPTION: (255, 0, 0)  # 鲜红 - 异常（醒目突出）
     }
 
     AGV_STATE_COLOR = {
-        AGVStatus.READY: (0, 200, 0),         # 鲜绿 - 可用
-        AGVStatus.ASSIGNED: (0, 160, 0),      # 中绿 - 已分配
-        AGVStatus.LOADED: (0, 120, 0),        # 深绿 - 已装载
-        AGVStatus.EXCEPTION: (255, 0, 0)      # 鲜红 - 异常（与正常绿色系强烈对比）
+        AGVStatus.READY: (0, 200, 0),  # 鲜绿 - 可用
+        AGVStatus.ASSIGNED: (0, 160, 0),  # 中绿 - 已分配
+        AGVStatus.LOADED: (0, 120, 0),  # 深绿 - 已装载
+        AGVStatus.EXCEPTION: (255, 0, 0)  # 鲜红 - 异常（与正常绿色系强烈对比）
     }
 
     MACHINE_STATE_COLOR = {
-        MachineStatus.READY: (130, 180, 255),     # 浅蓝 - 就绪
-        MachineStatus.WORKING: (80, 130, 200),    # 中蓝 - 执行中
-        MachineStatus.FAILED: (170, 0, 170),      # 紫红 - 故障
-        MachineStatus.EXCEPTION: (255, 0, 0)      # 鲜红 - 异常（与蓝色/紫色形成强对比）
+        MachineStatus.READY: (130, 180, 255),  # 浅蓝 - 就绪
+        MachineStatus.WORKING: (80, 130, 200),  # 中蓝 - 执行中
+        MachineStatus.FAILED: (170, 0, 170),  # 紫红 - 故障
+        MachineStatus.EXCEPTION: (255, 0, 0)  # 鲜红 - 异常（与蓝色/紫色形成强对比）
     }
 
     def __init__(self, _fps=3) -> None:
@@ -62,9 +62,11 @@ class EnvVisualizer(EnvCallback):
         self.ui_manager = UIManager((self.WIDTH, self.HEIGHT))
 
         self.clock = pygame.time.Clock()
-        
+
         self.running = False
         self.restart = False
+        self.should_pause = False
+        self.should_run =False
 
         self.agv_pause_queue = []
         self.agv_resume_queue = []
@@ -73,7 +75,7 @@ class EnvVisualizer(EnvCallback):
         self.job_add_queue = []
 
         self.uncertainty_event_queue = []
-    
+
     def _init_env(self, env):
         self.env = env
         # 创建按钮和下拉菜单
@@ -158,7 +160,7 @@ class EnvVisualizer(EnvCallback):
             text='Resume',
             manager=self.ui_manager
         )
-    
+
     def draw_job_ui(self, right_panel_x, dropdown_pos_y, jobs: List[Job]):
         # Job 新增
         job_list = [f"Job{job.get_id()}" for job in jobs]
@@ -243,10 +245,10 @@ class EnvVisualizer(EnvCallback):
 
     def add_uncertainty_event_log(self, message):
         new_log = f"{message}<br>"
-        
+
         # 更新日志文本
         self.uncertainty_event_log_textbox.html_text += new_log
-        
+
         # 重新构建 UI 元素以应用更改
         self.uncertainty_event_log_textbox.rebuild()
 
@@ -280,17 +282,17 @@ class EnvVisualizer(EnvCallback):
         # Machine 暂停/恢复
         dropdown_pos_y += 50
         self.draw_machine_ui(right_panel_x, dropdown_pos_y, machines)
-        
+
         # Job 新增
         dropdown_pos_y += 50
         self.draw_job_ui(right_panel_x, dropdown_pos_y, jobs)
-        
+
         # 左下 Job 进度显示
         self.draw_job_progress_ui(jobs)
 
         # 右下 不确定性事件日志窗口（可滚动）
         self.draw_uncertainty_event_ui()
-        
+
     def visualize_env(self, env=None):
         # 渲染
         if self.env is None and env is not None:
@@ -310,10 +312,12 @@ class EnvVisualizer(EnvCallback):
             if event.type == pygame.USEREVENT:
                 if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element == self.start_button:
-                        self.running = True
+                        # self.running = True
+                        self.should_run=True
                         self.insertNewUncertaintyEvent("Start!")
                     elif event.ui_element == self.pause_button:
-                        self.running = False
+                        # self.running = False
+                        self.should_pause=True
                         self.insertNewUncertaintyEvent("Pause!")
                     elif event.ui_element == self.restart_button:
                         self.restart = True
@@ -351,7 +355,7 @@ class EnvVisualizer(EnvCallback):
                 self.add_uncertainty_event_log(f"{event}")
 
         # 更新GUI
-        self.ui_manager.update(self.clock.tick(self.fps)/1000.0)
+        self.ui_manager.update(self.clock.tick(self.fps) / 1000.0)
 
         graph = self.env.getGraph()
         for point in graph.points:
@@ -374,13 +378,11 @@ class EnvVisualizer(EnvCallback):
             if agv_operation is not None:
                 self.draw_operation(self.screen, agv_operation, scale(agv.get_xy(), shift=(110, 90)))
 
-
         # 绘制GUI
         self.ui_manager.draw_ui(self.screen)
 
         pygame.display.flip()
         self.clock.tick(self.fps)
-
 
     def shouldRestart(self) -> bool:
         """
@@ -389,6 +391,22 @@ class EnvVisualizer(EnvCallback):
         restart = self.restart
         self.restart = False
         return restart
+
+    def shouldPause(self) -> bool:
+        """
+        :return: True if env should pause
+        """
+        pause = self.should_pause
+        self.should_pause = False
+        return pause
+
+    def shouldRun(self)->bool:
+        """
+        :return: True if env should running
+        """
+        run = self.should_run
+        self.should_run = False
+        return run
 
     def isRunning(self) -> bool:
         """
@@ -451,7 +469,7 @@ class EnvVisualizer(EnvCallback):
                 self.machine_resume_queue.append(machine)
                 self.insertNewUncertaintyEvent(f"Machine {machine_id} resumed!")
                 break
-    
+
     def getResumedMachines(self) -> List[Machine]:
         """
         :return: 距离上次调用, 哪些Machine被恢复运行了
@@ -459,7 +477,7 @@ class EnvVisualizer(EnvCallback):
         machine_resume_queue = self.machine_resume_queue
         self.machine_resume_queue = []
         return machine_resume_queue
-    
+
     def add_job(self, job_id: int):
         """添加指定 Job"""
         for job in self.env.getJobs():
@@ -467,7 +485,7 @@ class EnvVisualizer(EnvCallback):
                 self.job_add_queue.append(job.clone())
                 self.insertNewUncertaintyEvent(f"Job {job_id} added!")
                 break
-    
+
     def getAddedJobs(self) -> List[Job]:
         """
         :return: 距离上次调用, 哪些Job被添加了
@@ -491,7 +509,7 @@ class EnvVisualizer(EnvCallback):
         """
         :return: [
                 {
-                    event_type: "packet_factory.ENV_FAIL" / "packet_factory.AGV_FAIL" / ...
+                    event_type: "packet_factory.ENV_PAUSED" / "packet_factory.AGV_FAIL" / ...
                     event_method: "trigger" / "recover"
                     type: "" / "AGV" / "Machine" / "Job" 
                     data: None / AGV / Machine / Job 实例
@@ -508,20 +526,22 @@ class EnvVisualizer(EnvCallback):
                 "data": None
             })
 
-        if self.isRunning():
+        if self.shouldPause():
             result.append({
-                "event_type": "packet_factory.ENV_FAIL",
-                "event_method": "recover",
-                "type": "",
-                "data": None
-            })
-        else:
-            result.append({
-                "event_type": "packet_factory.ENV_FAIL",
+                "event_type": "packet_factory.ENV_PAUSED",
                 "event_method": "trigger",
                 "type": "",
                 "data": None
             })
+
+        if self.shouldRun():
+            result.append({
+                "event_type": "packet_factory.ENV_RECOVER",
+                "event_method": "trigger",
+                "type": "",
+                "data": None
+            })
+
 
         for paused_agv in self.getPausedAGVs():
             result.append({
@@ -530,7 +550,7 @@ class EnvVisualizer(EnvCallback):
                 "type": "AGV",
                 "data": paused_agv,
             })
-        
+
         for resumed_agv in self.getResumedAGVs():
             result.append({
                 "event_type": "packet_factory.AGV_FAIL",
@@ -546,7 +566,7 @@ class EnvVisualizer(EnvCallback):
                 "type": "MACHINE",
                 "data": paused_machine,
             })
-        
+
         for resumed_machine in self.getResumedMachines():
             result.append({
                 "event_type": "packet_factory.MACHINE_FAIL",
@@ -554,7 +574,7 @@ class EnvVisualizer(EnvCallback):
                 "type": "MACHINE",
                 "data": resumed_machine,
             })
-        
+
         for added_job in self.getAddedJobs():
             result.append({
                 "event_type": "packet_factory.JOB_ADD",
@@ -562,5 +582,5 @@ class EnvVisualizer(EnvCallback):
                 "type": "JOB",
                 "data": added_job,
             })
-        
+
         return result

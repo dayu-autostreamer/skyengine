@@ -2,25 +2,13 @@
   <!-- <SvcInstall/>
   <SvcQuery/>  -->
   <div class="home-container layout-pd">
-
     <el-row :gutter="15" class="home-card-two mb15">
-      <el-col :xs="24" :sm="24" :md="11" :lg="11" :xl="11">
+      <el-col :xs="24">
         <div class="home-card-item">
           <div style="height: 100%">
             <div class="flex-margin flex w100">
               <div class="flex-auto">
-                <SvcInstall/>
-              </div>
-            </div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :xs="24" :sm="24" :md="13" :lg="13" :xl="13">
-        <div class="home-card-item">
-          <div style="height: 100%">
-            <div class="flex-margin flex w100">
-              <div class="flex-auto">
-                <SvcQuery/>
+                <FactoryManage/>
               </div>
             </div>
           </div>
@@ -32,33 +20,15 @@
 </template>
 
 <script>
-import SvcInstall from './SvcInstall.vue'
-import SvcQuery from './SvcQuery.vue'
+import FactoryManage from "/@/views/factory/FactoryManage.vue";
 
 
 export default {
   components: {
-    SvcInstall,
-    SvcQuery,
-
+    FactoryManage,
   },
   data() {
     return {
-      installed: null,
-      detectionOptions: [],
-
-      loading: false,
-
-      // video source
-      info: null,
-
-      // selected video source label
-      selected_label: null,
-
-      state: null,
-      source_label: null,
-
-      kill_loading: false,
     }
   },
 }
@@ -78,7 +48,7 @@ $homeNavLengh: 8;
     .home-card-item {
       width: 100%;
       height: 150px;
-      border-radius: 4px;
+      border-radius: 2px;
       transition: all ease 0.3s;
       padding: 5px;
       overflow: hidden;
@@ -169,5 +139,13 @@ $homeNavLengh: 8;
   }
 
 
+
+  .dag-manage {
+    .home-card-item {
+      height: 100vh;
+      width: 100%;
+      overflow: scroll;
+    }
+  }
 }
 </style>

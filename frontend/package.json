@@ -3,7 +3,7 @@
   "version": "2.4.33",
   "type": "module",
   "description": "vue3 vite next admin template",
-  "author": "lyt_20201208",
+  "author": "skyrim & hys",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

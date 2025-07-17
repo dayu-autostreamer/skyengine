@@ -3,10 +3,6 @@
 		<div class="login-left">
 			<div class="login-left-logo">
 				<img :src="logoMini" />
-				<!-- <div class="login-left-logo-text">
-					<span>{{ getThemeConfig.globalViceTitle }}</span>
-					<span class="login-left-logo-text-msg">{{ getThemeConfig.globalViceTitleMsg }}</span>
-				</div> -->
 			</div>
 			<div class="login-left-img">
 				<img :src="loginMain" />
@@ -46,8 +42,6 @@ import loginBg from '/@/assets/login-bg.svg';
 
 // 引入组件
 const Account = defineAsyncComponent(() => import('/@/views/login/component/account.vue'));
-// const Mobile = defineAsyncComponent(() => import('/@/views/login/component/mobile.vue'));
-// const Scan = defineAsyncComponent(() => import('/@/views/login/component/scan.vue'));
 
 // 定义变量内容
 const storesThemeConfig = useThemeConfig();

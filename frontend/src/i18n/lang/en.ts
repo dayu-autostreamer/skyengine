@@ -1,8 +1,7 @@
 export default {
     router: {
         home: 'HomePage',
-        install: 'Application Installation',
-        dag: 'DAG Orchestration',
+        factory: 'Factory Orchestration',
         datasource: 'Source Configuration',
         result: 'Result Visualization',
         system: 'System Visualization',

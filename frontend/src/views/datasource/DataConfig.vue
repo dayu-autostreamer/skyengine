@@ -9,7 +9,6 @@
           <h3>Data Source</h3>
 
           <input type="file" ref="fileInput" style="width: 400px; margin-left: 20px;"/>
-          <!-- <button @click="uploadFile">上传文件</button> -->
           <el-button plain @click="uploadFile" style="margin-left: 20px;margin-bottom: 8px">Upload File</el-button>
         </div>
         <div><br/><br/></div>

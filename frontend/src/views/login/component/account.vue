@@ -2,7 +2,7 @@
   <el-form size="large" class="login-content-form">
     <el-form-item class="login-animation1">
       <div class="platform-description">
-        <h3>Welcome to Dayu System</h3>
+        <h3>Welcome to TianGong System</h3>
         <p>Provide infrastructure for cloud-edge collaborative stream data analysis.</p>
         <el-tag type="success">System Version: {{ dayuVersion }}</el-tag>
       </div>
@@ -11,7 +11,7 @@
     <el-form-item class="login-animation2">
       <el-button type="primary" class="login-content-submit" round v-waves @click="onSignIn"
                  :loading="state.loading.signIn">
-        <span>Enter Dayu System</span>
+        <span>Enter TianGong System</span>
       </el-button>
     </el-form-item>
   </el-form>

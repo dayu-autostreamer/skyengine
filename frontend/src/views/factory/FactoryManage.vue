@@ -6,24 +6,65 @@
 
     <div>
       <div class="new-dag-font-style">Upload Config Set</div>
-      <el-upload
-          class="upload-demo"
-          drag
-          action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
-          multiple
-      >
-        <el-icon class="el-icon--upload">
-          <upload-filled/>
-        </el-icon>
-        <div class="el-upload__text">
-          Drop file here or <em>click to upload</em>
-        </div>
-        <template #tip>
-          <div class="el-upload__tip">
-            A config set should contain 3 config files
-          </div>
-        </template>
-      </el-upload>
+      <div class="upload-config-box">
+        <ElRow>
+          <ElCol :span="8">
+            <el-card style="max-width: 550px;height: 180px">
+              <template #header>
+                <div class="card-header">
+                  <el-tag @click="test">Config Set Operation</el-tag>
+                </div>
+              </template>
+              <ElRow>
+                <ElCol :span="11">
+                  <ElButton type="success" plain @click="getStandardConfig">
+                    Get Standard
+                  </ElButton>
+                </ElCol>
+                <ElCol :span="5">
+                  <ElButton type="primary" plain @click="uploadConfigSet">
+                    Upload
+                  </ElButton>
+                </ElCol>
+                <ElCol :span="8">
+                  <ElInput placeholder="Set Config Name!" v-model="config_name">
+                  </ElInput>
+                </ElCol>
+              </ElRow>
+            </el-card>
+          </ElCol>
+          <ElCol :span="1">
+
+          </ElCol>
+          <ElCol :span="15">
+            <el-upload
+                ref="uploadRef"
+                drag
+                multiple
+                :auto-upload="false"
+                :on-change="handleChange"
+                :file-list="fileList"
+                :action="target_url"
+            >
+              <el-icon class="el-icon--upload">
+                <upload-filled/>
+              </el-icon>
+              <div class="el-upload__text">
+                Drop file here or <em>click to add !</em>
+              </div>
+              <template #tip>
+                <div class="el-upload__tip">
+                  A config set should contain 3 config files
+                </div>
+              </template>
+            </el-upload>
+          </ElCol>
+
+
+        </ElRow>
+
+      </div>
+
 
       <br/>
       <br/>
@@ -70,74 +111,11 @@
     </div>
     <br/>
 
-    <!--    <div>-->
-    <!--      <ElRow>-->
-    <!--        <ElCol :span="2">-->
-    <!--          <el-button type="warning" @click="draw">Draw</el-button>-->
-    <!--        </ElCol>-->
-    <!--        <ElCol :span="18"></ElCol>-->
-    <!--        <ElCol :span="2">-->
-    <!--          <el-button-->
-    <!--              type="primary"-->
-    <!--              round-->
-    <!--              @click="handleNewSubmit"-->
-    <!--              v-if="drawing"-->
-    <!--          >Add-->
-    <!--          </el-button-->
-    <!--          >-->
-    <!--        </ElCol>-->
-    <!--        <ElCol :span="2">-->
-    <!--          <el-button type="primary" round @click="clearInput" v-if="drawing"-->
-    <!--          >Clear-->
-    <!--          </el-button-->
-    <!--          >-->
-    <!--        </ElCol>-->
-    <!--      </ElRow>-->
-    <!--    </div>-->
-
     <!-- 绘制区域,自动绘制 -->
     <div>
       <ElRow>
         <ElCol :span="18">
-          <div
-              class="draw-container"
-              v-if="drawing"
-              @drop="onDrop($event, flowNodes, flowNodeMap)"
-          >
-            <VueFlow
-                class="main-flow"
-                :nodes="flowNodes"
-                :edges="flowEdges"
-                :default-viewport="{ zoom: 1.5 }"
-                :min-zoom="1"
-                :max-zoom="2"
-                :fit-view-on-init="false"
-                @dragover="onDragOver"
-                @dragleave="onDragLeave"
-            >
-              <div v-if="drawing" class="drag-tip">
-                <el-icon class="tip-icon">
-                  <MagicStick/>
-                </el-icon>
-                <span>Drag service nodes to build your workflow</span>
-              </div>
 
-              <Background pattern-color="#aaa" :gap="16"/>
-
-              <MiniMap/>
-              <Panel class="process-panel" position="top-right">
-                <div class="layout-panel">
-                  <button title="set horizontal layout" @click="layoutGraph('LR')">
-                    <Icon name="horizontal"/>
-                  </button>
-
-                  <button title="set vertical layout" @click="layoutGraph('TB')">
-                    <Icon name="vertical"/>
-                  </button>
-                </div>
-              </Panel>
-            </VueFlow>
-          </div>
         </ElCol>
         <ElCol :span="1">
 
@@ -149,7 +127,7 @@
           <el-card style="max-width: 480px">
             <el-button type="warning" @click="draw">Draw</el-button>
           </el-card>
-                    <el-card style="max-width: 480px">
+          <el-card style="max-width: 480px">
             <el-button type="warning" @click="draw">Draw</el-button>
           </el-card>
         </ElCol>
@@ -164,19 +142,16 @@
 
 <script>
 import {ElButton, ElCol, ElInput, ElMessage, ElRow, ElTable, ElTableColumn, ElTag, ElTooltip,} from "element-plus";
+
 import {nextTick, ref} from "vue";
-import {MarkerType, Panel, useVueFlow, VueFlow} from "@vue-flow/core";
 import {ControlButton, Controls} from "@vue-flow/controls";
 import {Background} from "@vue-flow/background";
 import {MiniMap} from "@vue-flow/minimap";
-import useDragAndDrop from "./useDnD";
-import Icon from "./Icon.vue";
-import {useLayout} from "./useLayout";
 import {Connection, Link, MagicStick, Right} from '@element-plus/icons-vue';
 import {UploadFilled} from '@element-plus/icons-vue'
 
 export default {
-  name: "DagManage",
+  name: "FactoryManage",
   components: {
     nextTick,
     ElTable,
@@ -188,15 +163,10 @@ export default {
     ElCol,
     ElRow,
     ElMessage,
-    VueFlow,
     Background,
-    MarkerType,
     MiniMap,
     ControlButton,
     Controls,
-    Icon,
-    Panel,
-
     Connection,
     Link,
     Right,
@@ -204,399 +174,97 @@ export default {
     UploadFilled
   },
   setup() {
-    const {onInit, onNodeDragStop, onConnect, fitView} = useVueFlow();
+    const uploadRef = ref();
+    const config_name = ref('');
+    const fileList = ref([]);
+    const target_url = ref('');
+    const handleChange = (uploadFile, uploadFiles) => {
+      console.log(uploadFile)
+      console.log(uploadFiles)
+      fileList.value.push(uploadFile)
+    }
+    const getStandardConfig = () => {
+      console.log("233")
+      fetch("/api/standard/get", {
+        method: "GET"
+      })
+          .then(response => {
+            // 从响应头获取 filename
+            const disposition = response.headers.get('Content-Disposition');
+            let filename = 'template_config_set.zip';  // 默认
 
-    const {onDragOver, onDrop, onDragLeave, isDragOver, onDragStart} =
-        useDragAndDrop();
+            if (disposition && disposition.includes('filename=')) {
+              filename = disposition.split('filename=')[1].replace(/"/g, '');
+            }
 
-    const layoutMethods = useLayout();
-
-
-    const flowNodes = ref([])
-    const flowEdges = ref([])
-    const flowNodeMap = ref({})
-
-    const layoutGraph = async (direction) => {
-      try {
-        const layoutNodes = layout(
-            [...flowNodes.value],
-            [...flowEdges.value],
-            direction
-        )
-        flowNodes.value = layoutNodes
-        await nextTick()
-        fitView()
-      } catch (e) {
-        console.error("Layout failed:", e)
-        ElMessage.error("DAG layout error")
-      }
+            return response.blob().then(blob => ({blob, filename}));
+          })
+          .then(({blob, filename}) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;  // 动态指定 filename
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          })
+          .catch(error => {
+            ElMessage.error("Download failed");
+            console.error(error);
+          });
     }
 
-    // life cycle callback
-    onInit((vueFlowInstance) => {
-      vueFlowInstance.fitView();
-    });
-    onNodeDragStop(({event, nodes, node}) => {
-    });
-    onConnect((connection) => {
-      const line = {
-        id: connection.source + "-" + connection.target,
-        source: connection.source,
-        target: connection.target,
-        label: "",
-        markerEnd: MarkerType.ArrowClosed,
-      };
-      flowEdges.value.push(line);
-      flowNodeMap.value[connection.source].data.succ.push(connection.target);
-      flowNodeMap.value[connection.target].data.prev.push(connection.source);
-    });
+    const uploadConfigSet = () => {
+      console.log(config_name.value)
+      target_url.value = '/api/' + config_name.value + '/yaml/upload'
+      uploadRef.value.submit()
+      fileList.value = []
+    }
+
+
+    const test = () => {
+      fetch("/api/test", {
+        method: "POST",
+        body: JSON.stringify({}),
+      })
+          .then((response) => {
+            console.log(response)
+          })
+          .then((data) => {
+
+          })
+          .catch((error) => {
+          });
+    }
 
     return {
-      onDragOver,
-      onDrop,
-      onDragLeave,
-      isDragOver,
-      onDragStart,
-      layoutGraph,
-      flowNodes,
-      flowEdges,
-      flowNodeMap,
-      ...layoutMethods,
+      uploadConfigSet,
+      getStandardConfig,
+      handleChange,
+      uploadRef,
+      test,
+      config_name,
+      target_url
     };
   },
 
   data() {
-    return {
-      services: [],
-      editInput: "",
-      newInputName: "",
-      newInputDag: "",
-      newInputDagId: "",
-      editDisabled: true,
-      editingIndex: -1,
-      editingRow: null,
-
-      // drawing flag
-      drawing: false,
-      dagList: [],
-
-      activeDag: null,
-      hoverPosition: {x: 0, y: 0},
-    };
+    return {};
   },
 
-  methods: {
-    flushDrawData() {
-      this.flowNodes = [];
-      this.flowEdges = [];
-      this.flowNodeMap = {};
-    },
-    draw() {
-      this.drawing = !this.drawing;
-    },
-    clearInput() {
-      this.newInputName = "";
-      this.newInputDag = "";
-      this.newInputDagId = "";
-      this.flushDrawData();
-    },
-    // delete dag
-    deleteWorkflow(index, dag_id) {
-      this.dagList.splice(index, 1);
-      const content = {
-        dag_id: dag_id,
-      };
-      fetch("/api/dag_workflow", {
-        method: "DELETE",
-        body: JSON.stringify(content),
-      })
-          .then((response) => response.json())
-          .then((data) => {
-            const state = data["state"];
-            let msg = data["msg"];
-            msg += ". Refreshing..";
-            this.showMsg(state, msg);
-            setTimeout(() => {
-              location.reload();
-            }, 500);
-          })
-          .catch((error) => {
-            ElMessage.error("Network error");
-            console.error(error);
-          });
-    },
-
-    handleNewSubmit() {
-      if (this.newInputName === "" || this.newInputName === null) {
-        ElMessage.error("Please fill the dag name");
-        return;
-      }
-      if (this.flowNodes === undefined || this.flowNodes.length === 0) {
-        ElMessage.error("Please choose services");
-        return;
-      }
-
-      // get graph
-      const constructDagGraph = () => {
-        const graph = {_start: []};
-        for (const flowNode of this.flowNodes) {
-
-          const serviceId = flowNode.id;
-          if (graph[serviceId]) {
-            throw new Error(`Duplicate service_id: ${serviceId}`);
-          }
-          const prev = flowNode.data?.prev ? [...flowNode.data.prev] : [];
-          const succ = flowNode.data?.succ ? [...flowNode.data.succ] : [];
-          graph[serviceId] = {service_id: serviceId, prev, succ};
-          graph[serviceId] = {
-            id: serviceId,
-            prev: prev,
-            succ: flowNode.data?.succ ?? [],
-          };
-
-          if (prev.length === 0) {
-            graph._start.push(serviceId);
-          }
-        }
-
-        return graph;
-      };
-      const graph = constructDagGraph();
-      const newData = {
-        dag_name: this.newInputName,
-        dag: graph,
-      };
-      // update all Daglist
-      this.updateDagList(newData);
-    },
-    // get dag from backen
-    getDagList() {
-      fetch("/api/dag_workflow")
-          .then((response) => response.json())
-          .then((data) => {
-            this.dagList = data.map(dag => {
-              const nodeList = this.parseDag(dag.dag);
-              const lineList = this.generateEdges(dag.dag);
-
-              const layoutNodes = this.layout(
-                  nodeList,
-                  lineList,
-                  "LR"
-              );
-
-              return {
-                ...dag,
-                nodeList: layoutNodes,  // 添加布局后的节点
-                lineList               // 添加边数据
-              };
-            });
-          })
-          .catch((error) => {
-            console.error('Error fetching data:', error);
-            // console.error("Error fetching data");
-          });
-    },
-    fetchData() {
-      this.getDagList();
-    },
-    showMsg(state, msg) {
-      if (state === "success") {
-        ElMessage({
-          message: msg,
-          showClose: true,
-          type: "success",
-          duration: 3000,
-        });
-      } else {
-        ElMessage({
-          message: msg,
-          showClose: true,
-          type: "error",
-          duration: 3000,
-        });
-      }
-    },
-    // update dag to backen
-    updateDagList(data) {
-      fetch("/api/dag_workflow", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-          .then((response) => response.json())
-          .then((data) => {
-            const state = data["state"];
-            const msg = data["msg"];
-            this.showMsg(state, msg);
-            if (state === "success") {
-              this.getDagList();
-              location.reload();
-              this.clearInput()
-            }
-          })
-          .catch((error) => {
-            console.error("Error sending data:", error);
-          });
-    },
-    async getServiceList() {
-      const response = await fetch("/api/service");
-      this.services = await response.json();
-    },
-
-
-    async layoutGraph(direction) {
-      try {
-        const layoutNodes = this.layout(
-            [...this.flowNodes],
-            [...this.flowEdges],
-            direction
-        )
-
-        this.flowNodes = [...layoutNodes]
-
-      } catch (e) {
-        console.error("Layout failed:", e);
-        ElMessage.error("DAG layout error");
-      }
-    },
-
-    /*methods for dag view*/
-    async showDagDetail(row, event) {
-      if (!row || !event) {
-        console.warn('Invalid parameters');
-        return;
-      }
-
-      try {
-        this.activeDag = row.dag_id;
-
-        const baseX = event.clientX || 0;
-        const baseY = event.clientY || 0;
-
-        const SAFE_MARGIN = 20;
-        const cardWidth = 400;
-        const cardHeight = 300;
-
-        let posX = baseX + 20;
-        let posY = baseY - 50;
-
-        if (posX + cardWidth > window.innerWidth) {
-          posX = window.innerWidth - cardWidth - SAFE_MARGIN;
-        }
-
-        if (posY + cardHeight > window.innerHeight) {
-          posY = window.innerHeight - cardHeight - SAFE_MARGIN;
-        }
-
-        this.hoverPosition = {x: posX, y: posY};
-
-
-        if (!row.nodeList) {
-          const nodeList = this.parseDag(row.dag);
-          const lineList = this.generateEdges(row.dag);
-
-
-          const layoutNodes = this.layout(
-              nodeList.map(n => ({
-                ...n,
-                dimensions: {width: 160, height: 40}
-              })),
-              lineList,
-              'LR'
-          )
-
-          Object.assign(row, {
-            nodeList: layoutNodes,
-            lineList
-          });
-        }
-      } catch (error) {
-        console.error('DAG detail error:', error);
-        this.activeDag = null;
-      }
-    },
-
-    hideDagDetail() {
-      this.activeDag = null;
-    },
-    countEdges(dag) {
-      let count = 0
-      for (const node of Object.values(dag)) {
-        if (node.succ && Array.isArray(node.succ)) {
-          count += node.succ.length
-        }
-      }
-      return count
-    },
-
-    randomColor() {
-      const colors = [
-        "#F0F4F8", "#E3F2FD", "#E8F5E9", "#F3E5F5",
-        "#FFF3E0", "#FBE9E7", "#E0F7FA", "#F1F8E9",
-        "#FCE4EC", "#EDE7F6", "#E8F5E6", "#FFEBEE",
-        "#E0F2F1", "#F5F5F5", "#FFF8E1", "#EFEBE9"
-      ];
-      return colors[Math.floor(Math.random() * colors.length)];
-    },
-
-
-    parseDag(dag) {
-      return Object.keys(dag)
-          .filter(k => k !== '_start')
-          .map(key => ({
-            id: key,
-            data: {label: key},
-            dimensions: {width: 200, height: 50},
-            style: {
-              backgroundColor: this.randomColor(),
-              border: '1px solid #e2e8f0'
-            }
-          }));
-    },
-
-
-    generateEdges(dag) {
-      const edges = []
-      for (const [source, node] of Object.entries(dag)) {
-        if (node.succ) {
-          node.succ.forEach(target => {
-            edges.push({
-              id: `${source}-${target}`,
-              source,
-              target,
-              markerEnd: MarkerType.ArrowClosed
-            })
-          })
-        }
-      }
-      return edges
-    },
-  }
+  methods: {}
   ,
   mounted() {
-    // init dag data list
-    this.fetchData();
-
     const getServiceInterval = () => {
       let timer;
       if (timer !== undefined) {
         clearInterval(timer);
       }
       timer = setInterval(() => {
-        this.fetchData();
       }, 5000);
     };
     getServiceInterval();
-
-    this.getServiceList();
-
-    // this.$nextTick(() => {
-    //   if (this.flowNodes.length > 0) {
-    //     this.layoutGraph('LR')
-    //   }
-    // })
   }
   ,
 }
@@ -604,6 +272,14 @@ export default {
 </script>
 
 <style scoped>
+.upload-config-box {
+  padding: 20px;
+  background-color: #f0f8ff; /* 浅蓝背景 */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin: 0 auto;
+}
+
 body {
   font-family: Arial, sans-serif;
   background-color: #f9f9f9;

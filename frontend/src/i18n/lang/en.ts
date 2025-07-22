@@ -1,10 +1,8 @@
 export default {
     router: {
-        home: 'HomePage',
         factory: 'Factory Orchestration',
-        datasource: 'Source Configuration',
-        result: 'Result Visualization',
-        system: 'System Visualization',
+        cases: 'Typical Cases',
+
 
         limits: 'limits',
         limitsFrontEnd: 'FrontEnd',

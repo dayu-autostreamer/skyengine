@@ -1,4 +1,7 @@
 class NetworkAPIPath:
+    # 测试接口
+    TEST = '/test'
+
     # 接口：工厂控制
     FACTORY_START = '/factory/start'
     FACTORY_PAUSE = '/factory/pause'
@@ -22,8 +25,16 @@ class NetworkAPIPath:
     # 接口：信息展示
     JOBS_PROGRESS = '/jobs/progress'
 
+    # 接口：上传,下载文件
+    YAML_UPLOAD = '/{config_name}/yaml/upload'
+    STANDARD_GET = '/standard/get'
+    LOG_DOWNLOAD = '/log/download'
+
 
 class NetworkAPIMethod:
+    # 测试接口
+    TEST = 'POST'
+
     # 接口：工厂控制
     FACTORY_START = 'POST'
     FACTORY_PAUSE = 'POST'
@@ -46,3 +57,8 @@ class NetworkAPIMethod:
 
     # 接口：信息展示
     JOBS_PROGRESS = 'GET'
+
+    # 接口：上传,下载文件
+    YAML_UPLOAD = 'POST'
+    LOG_DOWNLOAD = 'GET'
+    STANDARD_GET = 'GET'

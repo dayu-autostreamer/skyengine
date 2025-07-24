@@ -388,7 +388,7 @@ export default {
       // drawing flag
       drawing: false,
 
-      speedLevel: 3, // 默认值为 3,
+      speedLevel: parseInt(sessionStorage.getItem('speedLevel')) || 3, // 默认值为 3,
       selectedAgv: null,
       agvList: [],
       selectedMachine: null,
@@ -434,7 +434,7 @@ export default {
         const res = await axios.post('/api/factory/speed', {
           speedLevel: value
         });
-        localStorage.setItem('speedLevel', value);
+        sessionStorage.setItem('speedLevel', value);
         this.$message.success(`Speed has been adjusted to ${value}`);
         console.log('Speed adjustment successful:', res.data);
       } catch (error) {
@@ -527,8 +527,8 @@ export default {
       }
     },
     async loadJobs() {
-      // 检查 localStorage 是否已经有缓存数据
-      const cachedJobs = localStorage.getItem('jobList');
+      // 检查 sessionStorage 是否已经有缓存数据
+      const cachedJobs = sessionStorage.getItem('jobList');
 
       if (cachedJobs) {
         // 如果有缓存数据，直接使用
@@ -541,8 +541,8 @@ export default {
         const res = await axios.get('/api/jobs');
         this.jobList = res.data.jobs;
 
-        // 将数据保存到 localStorage，下次刷新时可以直接使用
-        localStorage.setItem('jobList', JSON.stringify(this.jobList));
+        // 将数据保存到 sessionStorage，下次刷新时可以直接使用
+        sessionStorage.setItem('jobList', JSON.stringify(this.jobList));
       } catch (error) {
         console.error('Failed to load task:', error);
         this.$message.error('Failed to load task list');
@@ -567,9 +567,6 @@ export default {
   }
   ,
   mounted() {
-    localStorage.removeItem('speedLevel');
-    localStorage.removeItem('jobList');
-
     // init agv, machine, job data list
     this.loadAgvs();
     this.loadMachines();

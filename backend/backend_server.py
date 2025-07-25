@@ -1,6 +1,6 @@
 import os
 
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, UploadFile, Form, Body
 from fastapi.routing import APIRoute
 from starlette.responses import JSONResponse, FileResponse
 
@@ -16,8 +16,6 @@ from service import file_service
 
 class BackendServer:
     def __init__(self):
-        self.server = BackendCore()
-
         # 初始化 FastAPI 实例
         handler = APIHandler()
 
@@ -30,67 +28,67 @@ class BackendServer:
 
             # 工厂控制
             APIRoute(NetworkAPIPath.FACTORY_START,
-                     handler.handle_factory_start,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.FACTORY_START]),
+                    handler.handle_factory_start,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.FACTORY_START]),
 
             APIRoute(NetworkAPIPath.FACTORY_PAUSE,
-                     handler.handle_factory_pause,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.FACTORY_PAUSE]),
+                    handler.handle_factory_pause,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.FACTORY_PAUSE]),
 
             APIRoute(NetworkAPIPath.FACTORY_RESET,
-                     handler.handle_factory_reset,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.FACTORY_RESET]),
+                    handler.handle_factory_reset,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.FACTORY_RESET]),
 
             APIRoute(NetworkAPIPath.FACTORY_SPEED,
-                     handler.handle_factory_speed,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.FACTORY_SPEED]),
+                    handler.handle_factory_speed,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.FACTORY_SPEED]),
 
             # AGV 控制
             APIRoute(NetworkAPIPath.AGVS,
-                     handler.handle_agvs,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.AGVS]),
+                    handler.handle_agvs,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.AGVS]),
 
             APIRoute(NetworkAPIPath.AGV_PAUSE,
-                     handler.handle_agv_pause,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.AGV_PAUSE]),
+                    handler.handle_agv_pause,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.AGV_PAUSE]),
 
             APIRoute(NetworkAPIPath.AGV_RESUME,
-                     handler.handle_agv_resume,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.AGV_RESUME]),
+                    handler.handle_agv_resume,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.AGV_RESUME]),
 
             # 机器控制
             APIRoute(NetworkAPIPath.MACHINES,
-                     handler.handle_machines,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.MACHINES]),
+                    handler.handle_machines,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.MACHINES]),
 
             APIRoute(NetworkAPIPath.MACHINE_PAUSE,
-                     handler.handle_machine_pause,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.MACHINE_PAUSE]),
+                    handler.handle_machine_pause,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.MACHINE_PAUSE]),
 
             APIRoute(NetworkAPIPath.MACHINE_RESUME,
-                     handler.handle_machine_resume,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.MACHINE_RESUME]),
+                    handler.handle_machine_resume,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.MACHINE_RESUME]),
 
             # Job 控制
             APIRoute(NetworkAPIPath.JOBS,
-                     handler.handle_jobs,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.JOBS]),
+                    handler.handle_jobs,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.JOBS]),
 
             APIRoute(NetworkAPIPath.JOB_ADD,
-                     handler.handle_job_add,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.JOB_ADD]),
+                    handler.handle_job_add,
+                    response_class=JSONResponse,
+                    methods=[NetworkAPIMethod.JOB_ADD]),
 
             # 信息展示
             APIRoute(NetworkAPIPath.JOBS_PROGRESS,
@@ -125,52 +123,64 @@ class BackendServer:
 
 
 class APIHandler:
+    def __init__(self):
+        self.server = BackendCore()
+
     async def just_test(self):
         return JSONResponse({"just_test": True})
 
     async def handle_factory_start(self):
+        self.server.factory_start()
         return JSONResponse({"action": "start"})
 
     async def handle_factory_pause(self):
+        self.server.factory_pause()
         return JSONResponse({"action": "pause"})
 
     async def handle_factory_reset(self):
+        self.server.factory_reset()
         return JSONResponse({"action": "reset"})
 
-    async def handle_factory_speed(self, speedLevel: int):
-        return JSONResponse({"speedLevel": speedLevel})
+    async def handle_factory_speed(self, data=Body(...)):
+        speedLevel = data["speedLevel"]
+        self.server.change_factory_speed(speedLevel)
+        return JSONResponse({'state': 'success', 'msg': f'change factory speed={speedLevel} success'})
 
     async def handle_agvs(self):
-        return JSONResponse({"agvs": [{"id": "1"}, {"id": "2"}]})
+        agv_list = self.server.get_agvs()
+        return JSONResponse({"agvs": agv_list})
 
     async def handle_agv_pause(self, agvId):
-        return JSONResponse({"agvId": agvId})
+        self.server.pause_agv(int(agvId))
+        return JSONResponse({'state': 'success', 'msg': f'pause agv id={agvId} success'})
 
     async def handle_agv_resume(self, agvId):
-        return JSONResponse({"agvId": agvId})
+        self.server.resume_agv(int(agvId))
+        return JSONResponse({'state': 'success', 'msg': f'resume agv id={agvId} success'})
 
     async def handle_machines(self):
-        return JSONResponse({"machines": [{"id": "1"}, {"id": "2"}]})
+        machine_list = self.server.get_machines()
+        return JSONResponse({"machines": machine_list})
 
     async def handle_machine_pause(self, machineId):
+        self.server.pause_machine(int(machineId))
         return JSONResponse({"machineId": machineId})
 
     async def handle_machine_resume(self, machineId):
+        self.server.resume_machine(int(machineId))
         return JSONResponse({"machineId": machineId})
 
     async def handle_jobs(self):
-        return JSONResponse({"jobs": [{"id": "1"}, {"id": "2"}]})
+        job_list = self.server.get_jobs()
+        return JSONResponse({"jobs": job_list})
 
     async def handle_job_add(self, jobId):
+        self.server.add_job(int(jobId))
         return JSONResponse({"jobId": jobId})
 
     async def handle_jobs_progress(self):
-        return JSONResponse({
-            "jobs": [
-                {"id": "1", "status": "STARTED", "progress": 75},
-                {"id": "2", "status": "FINISHED", "progress": 100},
-            ]
-        })
+        job_progress_list = self.server.get_jobs_progress()
+        return JSONResponse({"jobs": job_progress_list})
 
     async def handle_yaml_upload(self, config_name: str, file: UploadFile = File(...)):
         file_service.save_file(config_name, file)

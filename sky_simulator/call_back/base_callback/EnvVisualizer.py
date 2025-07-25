@@ -58,7 +58,7 @@ class EnvVisualizer(EnvCallback):
 
         self.clock = pygame.time.Clock()
 
-        self.restart = False
+        self.should_restart = False
         self.should_pause = False
         self.should_run = False
 
@@ -185,29 +185,41 @@ class EnvVisualizer(EnvCallback):
         pygame.display.flip()
         self.clock.tick(self.fps)
 
+    def restart(self):
+        self.should_restart = True
+
     def shouldRestart(self) -> bool:
         """
         :return: True if env should restart
         """
-        restart = self.restart
-        self.restart = False
-        return restart
+        should_restart = self.should_restart
+        self.should_restart = False
+        return should_restart
+    
+    def pause(self):
+        self.should_pause = True
 
     def shouldPause(self) -> bool:
         """
         :return: True if env should pause
         """
-        pause = self.should_pause
+        should_pause = self.should_pause
         self.should_pause = False
-        return pause
+        return should_pause
+    
+    def run(self):
+        self.should_run = True
 
     def shouldRun(self)->bool:
         """
         :return: True if env should running
         """
-        run = self.should_run
+        should_run = self.should_run
         self.should_run = False
-        return run
+        return should_run
+    
+    def change_speed(self, speed: int):
+        self.fps = speed
 
     def pause_agv(self, agv_id: int):
         """暂停指定AGV运行"""

@@ -72,6 +72,8 @@ class Job:
         self.status = status
 
     def get_status(self):
+        if self.is_finished():
+            self.status = JobStatus.FINISHED
         return self.status
     
     def get_progress(self):
@@ -80,7 +82,7 @@ class Job:
         """
         count = 0
         for operation in self.operations:
-            if operation.get_status() != OperationStatus.FINISHED:
+            if operation.get_status() == OperationStatus.FINISHED:
                 count += 1
         return count / len(self.operations)
 

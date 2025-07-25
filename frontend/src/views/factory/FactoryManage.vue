@@ -117,18 +117,90 @@
         <ElCol :span="18">
 
         </ElCol>
+
         <ElCol :span="1">
 
         </ElCol>
+
         <ElCol :span="5">
+          <!-- Start/Pause/Reset 控制按钮 -->
           <el-card style="max-width: 480px">
-            <el-button type="warning" @click="draw">Draw</el-button>
+            <el-button type="warning" @click="handleFactoryStart">Start Simulation</el-button>
           </el-card>
           <el-card style="max-width: 480px">
-            <el-button type="warning" @click="draw">Draw</el-button>
+            <el-button type="warning" @click="handleFactoryPause">Pause Simulation</el-button>
           </el-card>
           <el-card style="max-width: 480px">
-            <el-button type="warning" @click="draw">Draw</el-button>
+            <el-button type="warning" @click="handleFactoryReset">Reset Factory</el-button>
+          </el-card>
+
+          <!-- 速度调节 -->
+          <el-card style="max-width: 480px; margin-top: 10px">
+            <div style="text-align: center; margin-bottom: 10px;">Please Select Speed (Current: {{ speedLevel }})</div>
+            <el-slider v-model="speedLevel" :min="1" :max="10" show-input @change="changeSpeed"></el-slider>
+          </el-card>
+
+          <!-- AGV 控制 -->
+          <el-card style="max-width: 480px; margin-top: 10px">
+            <el-row :gutter="10">
+              <el-col :span="18">
+                <el-select v-model="selectedAgv" placeholder="Select AGV" style="width: 100%">
+                  <el-option
+                      v-for="agv in agvList"
+                      :key="agv.id"
+                      :label="'AGV' + agv.id"
+                      :value="agv.id"
+                  />
+                </el-select>
+              </el-col>
+              <el-col :span="8">
+                <el-button @click="pauseAgv" type="primary" style="width: 100%">Pause</el-button>
+              </el-col>
+              <el-col :span="8">
+                <el-button @click="resumeAgv" type="success" style="width: 100%">Resume</el-button>
+              </el-col>
+            </el-row>
+          </el-card>
+
+          <!-- 机器控制 -->
+          <el-card style="max-width: 480px; margin-top: 10px">
+            <el-row :gutter="10">
+              <el-col :span="18">
+                <el-select v-model="selectedMachine" placeholder="Select Machine" style="width: 100%">
+                  <el-option
+                      v-for="machine in machineList"
+                      :key="machine.id"
+                      :label="'Machine' + machine.id"
+                      :value="machine.id"
+                  />
+                </el-select>
+              </el-col>
+              <el-col :span="8">
+                <el-button @click="pauseMachine" type="primary" style="width: 100%">Pause</el-button>
+              </el-col>
+              <el-col :span="8">
+                <el-button @click="resumeMachine" type="success" style="width: 100%">Resume</el-button>
+              </el-col>
+            </el-row>
+          </el-card>
+
+          <!-- Job 控制 -->
+          <el-card style="max-width: 480px; margin-top: 10px">
+            <el-row :gutter="10">
+              <el-col :span="14">
+                <el-select v-model="selectedJob" placeholder="Select Job" style="width: 100%">
+                  <el-option
+                      v-for="job in jobList"
+                      :key="job.id"
+                      :label="'Job' + job.id"
+                      :value="job.id"
+                  />
+                </el-select>
+              </el-col>
+              <el-col :span="10">
+                <el-button @click="addJob" type="primary" style="width: 100%">Add</el-button>
+              </el-col>
+            </el-row>
           </el-card>
         </ElCol>
       </ElRow>
@@ -149,6 +221,7 @@ import {Background} from "@vue-flow/background";
 import {MiniMap} from "@vue-flow/minimap";
 import {Connection, Link, MagicStick, Right} from '@element-plus/icons-vue';
 import {UploadFilled} from '@element-plus/icons-vue'
+import axios from "axios";
 
 export default {
   name: "FactoryManage",
@@ -238,6 +311,39 @@ export default {
           });
     }
 
+    const factoryStart = async () => {
+      console.log("FactoryStart")
+      try {
+        const response = await axios.post('/api/factory/start');
+        console.log('Response: ', response.data);
+      } catch (error) {
+        console.error('API request failed:', error.response ? error.response.data : error.message);
+        throw error;
+      }
+    }
+
+    const factoryPause = async () => {
+      console.log("FactoryPause")
+      try {
+        const response = await axios.post('/api/factory/pause');
+        console.log('Response: ', response.data);
+      } catch (error) {
+        console.error('API request failed:', error.response ? error.response.data : error.message);
+        throw error;
+      }
+    }
+
+    const factoryReset = async () => {
+      console.log("FactoryReset")
+      try {
+        const response = await axios.post('/api/factory/reset');
+        console.log('Response: ', response.data);
+      } catch (error) {
+        console.error('API request failed:', error.response ? error.response.data : error.message);
+        throw error;
+      }
+    }
+
     return {
       uploadConfigSet,
       getStandardConfig,
@@ -245,26 +351,189 @@ export default {
       uploadRef,
       test,
       config_name,
-      target_url
+      target_url,
+      factoryStart,
+      factoryPause,
+      factoryReset,
     };
   },
 
   data() {
-    return {};
+    return {
+      speedLevel: parseInt(sessionStorage.getItem('speedLevel')) || 3, // 默认值为 3,
+      selectedAgv: null,
+      agvList: [],
+      selectedMachine: null,
+      machineList: [],
+      selectedJob: null,
+      jobList: [],
+    };
   },
 
-  methods: {}
+  methods: {
+    handleFactoryStart() {
+      this.factoryStart();
+    },
+
+    handleFactoryPause() {
+      this.factoryPause();
+    },
+
+    handleFactoryReset() {
+      this.factoryReset();
+    },
+
+    async changeSpeed(value) {
+      try {
+        const res = await axios.post('/api/factory/speed', {
+          speedLevel: value
+        });
+        sessionStorage.setItem('speedLevel', value);
+        this.$message.success(`Speed has been adjusted to ${value}`);
+        console.log('Speed adjustment successful:', res.data);
+      } catch (error) {
+        console.error('Speed adjustment failed:', error);
+        this.$message.error('Speed adjustment failed');
+      }
+    },
+
+    async loadAgvs() {
+      try {
+        const res = await axios.get('/api/agvs');
+        this.agvList = res.data.agvs;
+      } catch (error) {
+        this.$message.error('Failed to load AGV list');
+        console.error('Failed to load AGV:', error);
+      }
+    },
+
+    async pauseAgv() {
+      if (this.selectedAgv === null) {
+        this.$message.warning('Please Select AGV first');
+        return;
+      }
+      try {
+        await axios.post(`/api/agv/pause/${this.selectedAgv}`, {
+          agvId: this.selectedAgv
+        });
+        this.$message.success(`AGV ${this.selectedAgv} has been paused`);
+      } catch (error) {
+        console.error('Failed to pause AGV:', error);
+        this.$message.error('Failed to pause AGV');
+      }
+    },
+
+    async resumeAgv() {
+      if (this.selectedAgv === null) {
+        this.$message.warning('Please Select AGV first');
+        return;
+      }
+      try {
+        await axios.post(`/api/agv/resume/${this.selectedAgv}`, {
+          agvId: this.selectedAgv
+        });
+        this.$message.success(`AGV ${this.selectedAgv} has been resumed`);
+      } catch (error) {
+        console.error('Failed to resume AGV:', error);
+        this.$message.error('Failed to resume AGV');
+      }
+    },
+
+    async loadMachines() {
+      try {
+        const res = await axios.get('/api/machines');
+        this.machineList = res.data.machines;
+      } catch (error) {
+        console.error('Failed to load machine:', error);
+        this.$message.error('Failed to load machine list');
+      }
+    },
+
+    async pauseMachine() {
+      if (this.selectedMachine === null) {
+        this.$message.warning('Please select a machine first');
+        return;
+      }
+      try {
+        await axios.post(`/api/machine/pause/${this.selectedMachine}`, {
+          machineId: this.selectedMachine
+        });
+        this.$message.success(`Machine ${this.selectedMachine} has been paused`);
+      } catch (error) {
+        console.error('Failed to pause machine:', error);
+        this.$message.error('Failed to pause machine');
+      }
+    },
+
+    async resumeMachine() {
+      if (this.selectedMachine === null) {
+        this.$message.warning('Please select a machine first');
+        return;
+      }
+      try {
+        await axios.post(`/api/machine/resume/${this.selectedMachine}`, {
+          machineId: this.selectedMachine
+        });
+        this.$message.success(`Machine ${this.selectedMachine} has been resumed`);
+      } catch (error) {
+        console.error('Failed to resume machine:', error);
+        this.$message.error('Failed to resume machine');
+      }
+    },
+    async loadJobs() {
+      // 检查 sessionStorage 是否已经有缓存数据
+      const cachedJobs = sessionStorage.getItem('jobList');
+
+      if (cachedJobs) {
+        // 如果有缓存数据，直接使用
+        this.jobList = JSON.parse(cachedJobs);
+        return;
+      }
+
+      // 如果没有缓存数据，则从服务器获取
+      try {
+        const res = await axios.get('/api/jobs');
+        this.jobList = res.data.jobs;
+
+        // 将数据保存到 sessionStorage，下次刷新时可以直接使用
+        sessionStorage.setItem('jobList', JSON.stringify(this.jobList));
+      } catch (error) {
+        console.error('Failed to load task:', error);
+        this.$message.error('Failed to load task list');
+      }
+    },
+
+    async addJob() {
+      if (this.selectedJob === null) {
+        this.$message.warning('Please select a task first');
+        return;
+      }
+      try {
+        await axios.post(`/api/job/add/${this.selectedJob}`, {
+          jobId: this.selectedJob
+        });
+        this.$message.success(`Task ${this.selectedJob} has been added`);
+      } catch (error) {
+        console.error('Failed to add task:', error);
+        this.$message.error('Failed to add task');
+      }
+    },
+  }
   ,
   mounted() {
-    const getServiceInterval = () => {
-      let timer;
-      if (timer !== undefined) {
-        clearInterval(timer);
-      }
-      timer = setInterval(() => {
-      }, 5000);
-    };
-    getServiceInterval();
+    // const getServiceInterval = () => {
+    //   let timer;
+    //   if (timer !== undefined) {
+    //     clearInterval(timer);
+    //   }
+    //   timer = setInterval(() => {
+    //   }, 5000);
+    // };
+    // getServiceInterval();
+    // init agv, machine, job data list
+    this.loadAgvs();
+    this.loadMachines();
+    this.loadJobs();
   }
   ,
 }

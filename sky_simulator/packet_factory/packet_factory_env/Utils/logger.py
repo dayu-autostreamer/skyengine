@@ -1,9 +1,12 @@
 import logging
 import os
 
+from sky_simulator import get_project_root
 
 class Logger:
-    def __init__(self, log_file='logs/myapp.log', name: str = None):
+    def __init__(self, name: str = None):
+        log_file = os.path.join(get_project_root(), 'logs', 'myapp.log')
+
         self.logger = logging.getLogger(name)
 
         self.format = logging.Formatter(

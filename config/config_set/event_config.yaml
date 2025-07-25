@@ -20,15 +20,7 @@ config:
         type: packet_factory.JUST_TEST
         args: ['trigger',{'data':233}]
     - event:
-        timestamp: 2
-        type: packet_factory.MACHINE_FAIL
-        args: ['trigger',{'id': 1}]
-    - event:
         timestamp: 3
         type: packet_factory.JUST_TEST
         args: ['recover',{'data':'agv failed.'}]
-    - event:
-        timestamp: 4
-        type: packet_factory.MACHINE_FAIL
-        args: [ 'recover',{'id': 1} ]
 

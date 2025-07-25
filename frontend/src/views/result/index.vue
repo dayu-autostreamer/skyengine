@@ -130,8 +130,19 @@
           </div>
         </el-col>
       </template>
-
     </el-row>
+    
+    <el-card style="max-width: 480px; margin-top: 10px">
+      <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px">Job Process</div>
+      <div v-for="job in jobProgressList" :key="job.id" style="margin-bottom: 15px">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Job {{ job.id }}</span>
+          <span v-if="job.status === 'FINISHED'" style="color: green;">Finished</span>
+          <span v-else style="color: blue;">Processing...</span>
+        </div>
+        <el-progress :percentage="job.progress" :status="job.status === 'FINISHED' ? 'success' : undefined" />
+      </div>
+    </el-card>
   </div>
 </template>
 
@@ -159,6 +170,10 @@ export default {
 
       isSourceLoading: false,
       isUploading: false,
+
+      
+      jobProgressList: [], // 存储从接口获取的 Job 进度数据
+      progressInterval: null, // 用于保存定时器引用
     }
   },
   computed: {
@@ -201,8 +216,8 @@ export default {
 
     await this.autoRegisterComponents()
     this.componentsLoaded = true
-    await this.fetchDataSourceList()
-    this.setupDataPolling()
+    // await this.fetchDataSourceList()
+    // this.setupDataPolling()
 
     emitter.on('force-update-charts', () => {
       this.$nextTick(() => {
@@ -378,22 +393,22 @@ export default {
       emitter.emit('force-update-charts')
     },
 
-    async fetchDataSourceList() {
-      try {
-        const response = await fetch('/api/source_list')
-        const data = await response.json()
+    // async fetchDataSourceList() {
+    //   try {
+    //     const response = await fetch('/api/source_list')
+    //     const data = await response.json()
 
-        this.dataSourceList = data.map(source => ({
-          ...source,
-          id: String(source.id)
-        }))
-        this.dataSourceList.forEach(source => {
-          this.bufferedTaskCache[source.id] = reactive([])
-        })
-      } catch (error) {
-        console.error('Failed to fetch data sources:', error)
-      }
-    },
+    //     this.dataSourceList = data.map(source => ({
+    //       ...source,
+    //       id: String(source.id)
+    //     }))
+    //     this.dataSourceList.forEach(source => {
+    //       this.bufferedTaskCache[source.id] = reactive([])
+    //     })
+    //   } catch (error) {
+    //     console.error('Failed to fetch data sources:', error)
+    //   }
+    // },
 
     async fetchVisualizationConfig(sourceId) {
       try {
@@ -428,98 +443,98 @@ export default {
       }
     },
 
-    async getLatestResultData() {
-      try {
-        const response = await fetch('/api/task_result')
-        const data = await response.json()
+    // async getLatestResultData() {
+    //   try {
+    //     const response = await fetch('/api/task_result')
+    //     const data = await response.json()
 
-        // 创建新缓存对象保持响应式
-        const newCache = {...this.bufferedTaskCache}
-        const configUpdates = {}
+    //     // 创建新缓存对象保持响应式
+    //     const newCache = {...this.bufferedTaskCache}
+    //     const configUpdates = {}
 
-        Object.entries(data).forEach(([sourceIdStr, tasks]) => {
-          const sourceId = String(sourceIdStr)
-          if (!Array.isArray(tasks)) return
+    //     Object.entries(data).forEach(([sourceIdStr, tasks]) => {
+    //       const sourceId = String(sourceIdStr)
+    //       if (!Array.isArray(tasks)) return
 
-          const validTasks = tasks
-              .filter(task => task?.task_id && Array.isArray(task.data))
-              .map(task => ({
-                task_id: task.task_id,
-                data: task.data.map(item => ({
-                  id: String(item.id) || 'unknown',
-                  data: item.data || {}
-                }))
-              }))
+    //       const validTasks = tasks
+    //           .filter(task => task?.task_id && Array.isArray(task.data))
+    //           .map(task => ({
+    //             task_id: task.task_id,
+    //             data: task.data.map(item => ({
+    //               id: String(item.id) || 'unknown',
+    //               data: item.data || {}
+    //             }))
+    //           }))
 
-          // 合并新旧数据
-          newCache[sourceId] = [
-            ...(newCache[sourceId] || []),
-            ...validTasks
-          ].slice(-this.maxBufferedTaskCacheSize)
+    //       // 合并新旧数据
+    //       newCache[sourceId] = [
+    //         ...(newCache[sourceId] || []),
+    //         ...validTasks
+    //       ].slice(-this.maxBufferedTaskCacheSize)
 
-          tasks.forEach(task => {
-            task.data?.forEach(item => {
-              const vizId = String(item.id)
-              const newVariables = Object.keys(item.data || {})
+    //       tasks.forEach(task => {
+    //         task.data?.forEach(item => {
+    //           const vizId = String(item.id)
+    //           const newVariables = Object.keys(item.data || {})
 
-              // 查找对应配置
-              const vizConfig = (this.visualizationConfig[sourceId] || [])
-                  .find(v => v.id === vizId)
+    //           // 查找对应配置
+    //           const vizConfig = (this.visualizationConfig[sourceId] || [])
+    //               .find(v => v.id === vizId)
 
-              if (vizConfig && !this.arraysEqual(vizConfig.variables, newVariables)) {
-                configUpdates[sourceId] = configUpdates[sourceId] || []
-                configUpdates[sourceId].push({
-                  vizId,
-                  newVariables
-                })
-              }
-            })
-          })
+    //           if (vizConfig && !this.arraysEqual(vizConfig.variables, newVariables)) {
+    //             configUpdates[sourceId] = configUpdates[sourceId] || []
+    //             configUpdates[sourceId].push({
+    //               vizId,
+    //               newVariables
+    //             })
+    //           }
+    //         })
+    //       })
 
-        })
+    //     })
 
-        Object.entries(configUpdates).forEach(([sourceId, updates]) => {
-          const newConfig = [...(this.visualizationConfig[sourceId] || [])]
-          updates.forEach(({vizId, newVariables}) => {
-            const index = newConfig.findIndex(v => v.id === vizId)
-            if (index !== -1) {
-              const updatedViz = {
-                ...newConfig[index],
-                variables: [...newVariables],
-                variablesHash: this.calculateVariablesHash(newVariables)
-              }
-              newConfig.splice(index, 1, updatedViz)
-            }
-          })
-          this.visualizationConfig[sourceId] = newConfig
-        })
+    //     Object.entries(configUpdates).forEach(([sourceId, updates]) => {
+    //       const newConfig = [...(this.visualizationConfig[sourceId] || [])]
+    //       updates.forEach(({vizId, newVariables}) => {
+    //         const index = newConfig.findIndex(v => v.id === vizId)
+    //         if (index !== -1) {
+    //           const updatedViz = {
+    //             ...newConfig[index],
+    //             variables: [...newVariables],
+    //             variablesHash: this.calculateVariablesHash(newVariables)
+    //           }
+    //           newConfig.splice(index, 1, updatedViz)
+    //         }
+    //       })
+    //       this.visualizationConfig[sourceId] = newConfig
+    //     })
 
-        // 强制替换整个缓存对象
-        this.bufferedTaskCache = reactive({...newCache})
+    //     // 强制替换整个缓存对象
+    //     this.bufferedTaskCache = reactive({...newCache})
 
-        // 添加可视化配置刷新
-        if (this.selectedDataSource) {
-          const sourceId = this.selectedDataSource
-          if (this.visualizationConfig[sourceId]) {
-            this.visualizationConfig [sourceId] = this.visualizationConfig[sourceId].map(cfg => ({...cfg}))
-          }
-        }
+    //     // 添加可视化配置刷新
+    //     if (this.selectedDataSource) {
+    //       const sourceId = this.selectedDataSource
+    //       if (this.visualizationConfig[sourceId]) {
+    //         this.visualizationConfig [sourceId] = this.visualizationConfig[sourceId].map(cfg => ({...cfg}))
+    //       }
+    //     }
 
-        // 添加延迟更新确保DOM刷新
-        this.$nextTick(() => {
-          emitter.emit('force-update-charts')
-        })
-      } catch (error) {
-        console.error('Data fetch failed:', error)
-      }
-    },
+    //     // 添加延迟更新确保DOM刷新
+    //     this.$nextTick(() => {
+    //       emitter.emit('force-update-charts')
+    //     })
+    //   } catch (error) {
+    //     console.error('Data fetch failed:', error)
+    //   }
+    // },
 
-    setupDataPolling() {
-      this.getLatestResultData()
-      this.pollingInterval = setInterval(() => {
-        this.getLatestResultData()
-      }, 2000)
-    },
+    // setupDataPolling() {
+    //   this.getLatestResultData()
+    //   this.pollingInterval = setInterval(() => {
+    //     this.getLatestResultData()
+    //   }, 2000)
+    // },
 
     exportTaskLog() {
       fetch('/api/download_log')
@@ -552,7 +567,28 @@ export default {
         });
       }
     },
+
+    async fetchJobProgress() {
+      try {
+        const res = await fetch("/api/jobs/progress");
+        if (!res.ok) {
+          throw new Error("Failed to retrieve progress");
+        }
+        const data = await res.json();
+        this.jobProgressList = data.jobs;
+      } catch (error) {
+        console.error("Failed to retrieve task progress:", error);
+      }
+    }
   },
+  
+  mounted() {
+    this.fetchJobProgress(); // 首次加载
+    this.progressInterval = setInterval(() => {
+      this.fetchJobProgress();
+    }, 1000); // 每 1 秒刷新一次
+  }
+  ,
 }
 </script>
 

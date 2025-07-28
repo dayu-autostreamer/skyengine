@@ -37,7 +37,7 @@ class Logger:
 
 
 # 提供的默认LOGGER会存储到temp中去
-LOGGER = Logger(log_path=config.SYSTEM_CONFIG_DIR, name="temp").logger
+LOGGER = Logger(log_path=config.SYSTEM_LOG_DIR, name="temp").logger
 
 if __name__ == '__main__':
     LOGGER.info("233")

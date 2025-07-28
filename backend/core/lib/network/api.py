@@ -34,6 +34,8 @@ class NetworkAPIPath:
     MAP_UPDATE='/map/update'
     # 启动系统
     MAP_RENDER='/map/render'
+    # 获取工厂列表
+    FACTORY_LIST = '/factory/list'
 
 class NetworkAPIMethod:
     # 测试接口
@@ -71,3 +73,5 @@ class NetworkAPIMethod:
     MAP_UPDATE='GET'
     # 启动系统
     MAP_RENDER='POST'
+    # 获取工厂列表
+    FACTORY_LIST = 'GET'

@@ -6,6 +6,7 @@ from starlette.responses import JSONResponse, FileResponse, StreamingResponse
 
 from fastapi.middleware.cors import CORSMiddleware
 
+import config
 from core.lib.network import NetworkAPIMethod, NetworkAPIPath
 
 from backend_core import BackendCore
@@ -126,6 +127,12 @@ class BackendServer:
                      response_class=JSONResponse,
                      methods=[NetworkAPIMethod.MAP_RENDER]),
 
+            # 启动地图
+            APIRoute(NetworkAPIPath.FACTORY_LIST,
+                     handler.handle_file_list,
+                     response_class=JSONResponse,
+                     methods=[NetworkAPIMethod.FACTORY_LIST]),
+
         ], log_level='trace', timeout=6000)
 
         self.app.add_middleware(
@@ -212,18 +219,18 @@ class APIHandler:
 
     async def handle_log_download(self, request: Request):
         body = await request.json()
-        file_type=body.get("file_type")
-        print(file_type)
+        file_type = body.get("file_type")
         log_path = ""
         file_name = ""
         if file_type == "backend":
-            pass
+            log_path = file_service.get_log(config.BACKEND_LOG_DIR)
+            file_name = log_path.split("\\")[-1]
         elif file_type == "system":
-            pass
-
+            log_path = file_service.get_log(config.SYSTEM_LOG_DIR)
+            file_name = log_path.split("\\")[-1]
         return FileResponse(
             path=log_path,
-            filename="factory_log_output.log",
+            filename=file_name,
             media_type="text/plain"
         )
 
@@ -235,5 +242,13 @@ class APIHandler:
     async def handle_map_render(self):
         self.server.render_map()
         return JSONResponse({
+            "success": True
+        })
+
+    async def handle_file_list(self):
+        # 返回图片
+        config_list = file_service.get_config_list()
+        return JSONResponse({
+            config_list: config_list,
             "success": True
         })

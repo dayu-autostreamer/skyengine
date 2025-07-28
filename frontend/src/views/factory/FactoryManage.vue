@@ -117,7 +117,22 @@
         <el-col :span="6">
           <el-card style="max-width: 480px">
             <template #header>
-              <span>Simulation Control</span>
+              <ElRow>
+                <ElCol :span="8">
+                  <span>Control Panel</span>
+                </ElCol>
+                <ElCol :span="16">
+                  <el-select v-model="selectedFactory" placeholder="Select Factory" size="small" style="width: 100%">
+                    <el-option
+                        v-for="agv in agvList"
+                        :key="agv.id"
+                        :label="'AGV' + agv.id"
+                        :value="agv.id"
+                    />
+                  </el-select>
+                </ElCol>
+              </ElRow>
+
             </template>
             <el-row :gutter="10" class="mb-2">
               <el-col :span="6">
@@ -311,8 +326,6 @@ export default {
     });
 
     const handleChange = (uploadFile, uploadFiles) => {
-      console.log(uploadFile)
-      console.log(uploadFiles)
       fileList.value.push(uploadFile)
     }
     const getStandardConfig = () => {
@@ -347,10 +360,10 @@ export default {
     }
 
     const uploadConfigSet = () => {
-      console.log(config_name.value)
       target_url.value = '/api/' + config_name.value + '/yaml/upload'
       uploadRef.value.submit()
       fileList.value = []
+      ElMessage.success("Upload success!");
     }
 
 
@@ -368,6 +381,22 @@ export default {
           .catch((error) => {
           });
     }
+
+    const updateCurrentFactoryMapList = () => {
+      fetch("/api/test", {
+        method: "POST",
+        body: JSON.stringify({}),
+      })
+          .then((response) => {
+            console.log(response)
+          })
+          .then((data) => {
+
+          })
+          .catch((error) => {
+          });
+    }
+
 
     const handleFactoryRender = () => {
       fetch("/api/map/render", {

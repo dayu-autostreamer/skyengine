@@ -92,21 +92,6 @@ export const dynamicRoutes: Array<RouteRecordRaw> = [
                     icon: 'iconfont icon-zidingyibuju',
                 },
             },
-                        {
-                path: '/result',
-                name: 'result',
-                component: () => import('/@/views/result/index.vue'),
-                meta: {
-                    title: 'message.router.result',
-                    isLink: '',
-                    isHide: false,
-                    isKeepAlive: true,
-                    isAffix: false,
-                    isIframe: false,
-                    roles: ['dayu', 'common'],
-                    icon: 'iconfont icon-zidingyibuju',
-                },
-            },
         ],
     },
 ];

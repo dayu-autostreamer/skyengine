@@ -132,17 +132,6 @@
       </template>
     </el-row>
     
-    <el-card style="max-width: 480px; margin-top: 10px">
-      <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px">Job Process</div>
-      <div v-for="job in jobProgressList" :key="job.id" style="margin-bottom: 15px">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span>Job {{ job.id }}</span>
-          <span v-if="job.status === 'FINISHED'" style="color: green;">Finished</span>
-          <span v-else style="color: blue;">Processing...</span>
-        </div>
-        <el-progress :percentage="job.progress" :status="job.status === 'FINISHED' ? 'success' : undefined" />
-      </div>
-    </el-card>
   </div>
 </template>
 
@@ -170,10 +159,6 @@ export default {
 
       isSourceLoading: false,
       isUploading: false,
-
-      
-      jobProgressList: [], // 存储从接口获取的 Job 进度数据
-      progressInterval: null, // 用于保存定时器引用
     }
   },
   computed: {
@@ -568,25 +553,10 @@ export default {
       }
     },
 
-    async fetchJobProgress() {
-      try {
-        const res = await fetch("/api/jobs/progress");
-        if (!res.ok) {
-          throw new Error("Failed to retrieve progress");
-        }
-        const data = await res.json();
-        this.jobProgressList = data.jobs;
-      } catch (error) {
-        console.error("Failed to retrieve task progress:", error);
-      }
-    }
   },
   
   mounted() {
-    this.fetchJobProgress(); // 首次加载
-    this.progressInterval = setInterval(() => {
-      this.fetchJobProgress();
-    }, 1000); // 每 1 秒刷新一次
+    
   }
   ,
 }

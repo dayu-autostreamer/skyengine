@@ -219,6 +219,8 @@ class EnvVisualizer(EnvCallback):
         # cv2.imshow("Map", img_cv)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
+        
+        self.clock.tick(self.fps)
 
     def get_map(self):
         """获取地图"""

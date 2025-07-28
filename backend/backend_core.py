@@ -106,7 +106,8 @@ class BackendCore:
         # todo
         print("系统启动!")
         # 启动系统
-        threading.Thread(target=self.bootstrap).start()
+        if self.env is None:
+            threading.Thread(target=self.bootstrap, daemon=True).start()
 
     def get_map_current(self):
         pic = None

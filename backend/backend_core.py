@@ -3,7 +3,7 @@ import threading
 from typing import List
 
 from sky_simulator.lifecycle.bootstrap import bootstrap
-from logs.logger import LOGGER
+from sky_logs.logger import LOGGER
 from sky_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
 from sky_simulator.packet_factory.packet_factory_env.Job.Job import Job
 from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine

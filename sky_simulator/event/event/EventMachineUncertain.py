@@ -7,7 +7,7 @@
 '''
 import numpy as np
 
-from logs.logger import LOGGER
+from sky_logs.logger import LOGGER
 
 
 class MachineUncertaintySimulator:

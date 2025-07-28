@@ -43,7 +43,6 @@ def save_file(dir_name, file):
     return save_path
 
 
-
 def get_log():
     pass
 

@@ -3,7 +3,7 @@ from typing import Optional, Tuple, List
 from sky_simulator.event.event.BaseEvent import BaseEvent
 from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Utils.util import OperationStatus, MachineStatus
-from logs.logger import LOGGER
+from sky_logs.logger import LOGGER
 
 from sky_simulator.registry import register_component
 

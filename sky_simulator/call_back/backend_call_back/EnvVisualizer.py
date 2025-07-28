@@ -3,7 +3,7 @@ from typing import List
 import pygame
 import os
 from sky_simulator.call_back.EnvCallback import EnvCallback
-from logs.logger import LOGGER
+from sky_logs.logger import LOGGER
 from sky_simulator.registry import register_component
 from sky_simulator.packet_factory.packet_factory_env.Job.Job import Job
 from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine

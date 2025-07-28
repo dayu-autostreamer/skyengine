@@ -196,7 +196,7 @@ MANIFEST
 *.manifest
 *.spec
 
-# Installer logs
+# Installer sky_logs
 pip-log.txt
 pip-delete-this-directory.txt
 

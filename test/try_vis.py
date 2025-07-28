@@ -1,5 +1,5 @@
 from sky_simulator.packet_factory import packet_factory_v0 
-from logs.logger import LOGGER
+from sky_logs.logger import LOGGER
 
 # 创建环境与智能体
 random_Agent = packet_factory_v0.RandomAgent(name='sky', agent_id='1')

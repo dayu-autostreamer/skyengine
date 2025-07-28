@@ -1,5 +1,5 @@
 from typing import List, Optional, Tuple
-from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
+from logs.logger import LOGGER
 from sky_simulator.packet_factory.packet_factory_env.Utils.util import OperationStatus
 from sky_simulator.registry import register_component
 

@@ -5,8 +5,6 @@
 @Author  ：Skyrim
 @Date    ：2025/7/21 11:35 
 '''
-import os
-import yaml
 import backend.config_set as config
 
 def get_config_dir():

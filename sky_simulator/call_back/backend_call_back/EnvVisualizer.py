@@ -1,6 +1,7 @@
+import io
 from typing import List
 import pygame
-
+import os
 from sky_simulator.call_back.EnvCallback import EnvCallback
 from logs.logger import LOGGER
 from sky_simulator.registry import register_component
@@ -10,9 +11,11 @@ from sky_simulator.packet_factory.packet_factory_env.Agv.AGV import AGV
 from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Utils.util import OperationStatus, MachineStatus, AGVStatus
 
+os.environ["SDL_VIDEODRIVER"] = "dummy"  # 必须放在 pygame.init() 前面
+
 
 # 仿真环境创建前的初始化
-@register_component("base_callback.Visualizer")
+@register_component("backend_callback.Visualizer")
 class EnvVisualizer(EnvCallback):
     WIDTH, HEIGHT = 1024, 768
 
@@ -53,8 +56,8 @@ class EnvVisualizer(EnvCallback):
         super().__init__()
         self.fps = _fps
         self.env = None
-        pygame.init()
-        self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
+
+        pygame.font.init()
 
         self.clock = pygame.time.Clock()
 
@@ -67,11 +70,13 @@ class EnvVisualizer(EnvCallback):
         self.machine_pause_queue = []
         self.machine_resume_queue = []
         self.job_add_queue = []
-        
+
         self.uncertainty_event_queue = []
 
         self.overall_scale = None
         self.overall_shift = None
+
+        self.pic = None
 
     def __call__(self):
         """使类的实例可以像函数一样被调用"""
@@ -79,7 +84,7 @@ class EnvVisualizer(EnvCallback):
 
     def calculate_scale_and_shift(self, left, top, right, bottom):
         all_points = []
-        
+
         # 收集所有点的位置
         graph = self.env.getGraph()
         for point in graph.points:
@@ -111,8 +116,9 @@ class EnvVisualizer(EnvCallback):
 
         return scale_factor, (shift_x, shift_y)
 
-    def scaling(self, pos, shift=(0,0)):
-        return (int((pos[0] + shift[0]) * self.overall_scale + self.overall_shift[0]), int((pos[1] + shift[1]) * self.overall_scale + self.overall_shift[1] ))
+    def scaling(self, pos, shift=(0, 0)):
+        return (int((pos[0] + shift[0]) * self.overall_scale + self.overall_shift[0]),
+                int((pos[1] + shift[1]) * self.overall_scale + self.overall_shift[1]))
 
     def draw_agv(self, screen, agv: AGV):
         color = self.AGV_STATE_COLOR.get(agv.status, self.BLACK)
@@ -156,34 +162,70 @@ class EnvVisualizer(EnvCallback):
         if self.env is None:
             LOGGER.error("请先初始化环境")
 
+        # 离屏 Surface
+        surface = pygame.Surface((self.WIDTH, self.HEIGHT))
+
         if self.overall_scale is None or self.overall_shift is None:
             self.overall_scale, self.overall_shift = self.calculate_scale_and_shift(0, 0, self.WIDTH, self.HEIGHT)
 
-        self.screen.fill(self.WHITE)
+        surface.fill(self.WHITE)
 
+        # 渲染图结构
         graph = self.env.getGraph()
         for point in graph.points:
-            self.draw_point(self.screen, (point.x, point.y))
+            self.draw_point(surface, (point.x, point.y))
         for link in graph.links:
             point1 = graph.get_point_by_id(link.point1)
             point2 = graph.get_point_by_id(link.point2)
-            self.draw_link(self.screen, (point1.x, point1.y), (point2.x, point2.y))
+            self.draw_link(surface, (point1.x, point1.y), (point2.x, point2.y))
 
+        # 渲染机器和操作
         for machine in self.env.getMachines():
-            self.draw_machine(self.screen, machine)
+            self.draw_machine(surface, machine)
             for operation in machine.input_queue:
-                self.draw_operation(self.screen, operation, self.scaling(machine.get_xy(), shift=self.MACHINE_INPUT_SHIFT))
+                self.draw_operation(surface, operation, self.scaling(machine.get_xy(), shift=self.MACHINE_INPUT_SHIFT))
             for operation in machine.output_queue:
-                self.draw_operation(self.screen, operation, self.scaling(machine.get_xy(), shift=self.MACHINE_OUTPUT_SHIFT))
+                self.draw_operation(surface, operation, self.scaling(machine.get_xy(), shift=self.MACHINE_OUTPUT_SHIFT))
 
         for agv in self.env.getAGVs():
-            self.draw_agv(self.screen, agv)
+            self.draw_agv(surface, agv)
             agv_operation = agv.get_operation()
             if agv_operation is not None:
-                self.draw_operation(self.screen, agv_operation, self.scaling(agv.get_xy(), shift=self.AGV_OPERATION_SHIFT))
+                self.draw_operation(surface, agv_operation, self.scaling(agv.get_xy(), shift=self.AGV_OPERATION_SHIFT))
 
-        pygame.display.flip()
-        self.clock.tick(self.fps)
+        import cv2
+        import numpy as np
+
+        # 将 surface 转换为字符串（字节数组），格式为 RGB
+        image_str = pygame.image.tostring(surface, 'RGB')
+        width, height = surface.get_size()
+
+        # 转为 NumPy 数组（H, W, C）
+        img_np = np.frombuffer(image_str, dtype=np.uint8).reshape((height, width, 3))
+
+        # 编码成 PNG 格式
+        success, encoded_image = cv2.imencode('.png', img_np)
+        if not success:
+            raise RuntimeError("图像编码失败")
+
+        # 转为 BytesIO
+        image_bytes = io.BytesIO(encoded_image.tobytes())
+
+        self.pic = image_bytes
+        # 注意：Pygame 使用 RGB，而 OpenCV 使用 BGR，所以需要转换一下颜色通道
+        # img_cv = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+
+        # 显示图像
+        # cv2.imshow("Map", img_cv)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+    def get_map(self):
+        """获取地图"""
+        if self.pic is None:
+            self.visualize_env()
+
+        return self.pic
 
     def restart(self):
         self.should_restart = True
@@ -195,7 +237,7 @@ class EnvVisualizer(EnvCallback):
         should_restart = self.should_restart
         self.should_restart = False
         return should_restart
-    
+
     def pause(self):
         self.should_pause = True
 
@@ -206,18 +248,18 @@ class EnvVisualizer(EnvCallback):
         should_pause = self.should_pause
         self.should_pause = False
         return should_pause
-    
+
     def run(self):
         self.should_run = True
 
-    def shouldRun(self)->bool:
+    def shouldRun(self) -> bool:
         """
         :return: True if env should running
         """
         should_run = self.should_run
         self.should_run = False
         return should_run
-    
+
     def change_speed(self, speed: int):
         self.fps = speed
 
@@ -348,7 +390,6 @@ class EnvVisualizer(EnvCallback):
                 "type": "",
                 "data": None
             })
-
 
         for paused_agv in self.getPausedAGVs():
             result.append({

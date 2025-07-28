@@ -30,6 +30,10 @@ class NetworkAPIPath:
     STANDARD_GET = '/standard/get'
     LOG_DOWNLOAD = '/log/download'
 
+    # 获取图片
+    MAP_UPDATE='/map/update'
+    # 启动系统
+    MAP_RENDER='/map/render'
 
 class NetworkAPIMethod:
     # 测试接口
@@ -60,5 +64,10 @@ class NetworkAPIMethod:
 
     # 接口：上传,下载文件
     YAML_UPLOAD = 'POST'
-    LOG_DOWNLOAD = 'GET'
+    LOG_DOWNLOAD = 'POST'
     STANDARD_GET = 'GET'
+
+    # 获取图片
+    MAP_UPDATE='GET'
+    # 启动系统
+    MAP_RENDER='POST'

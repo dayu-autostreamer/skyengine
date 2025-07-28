@@ -6,7 +6,7 @@ from sky_simulator.packet_factory.packet_factory_env.Agv.AGV import AGV
 import time
 
 from sky_simulator.registry import register_component
-from ..packet_factory_env.Utils.logger import LOGGER
+from logs.logger import LOGGER
 
 
 @register_component("packet_factory.GreedyAgent")

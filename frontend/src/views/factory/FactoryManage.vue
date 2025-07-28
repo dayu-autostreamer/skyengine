@@ -114,37 +114,40 @@
     <!-- 绘制区域,自动绘制 -->
     <div>
       <ElRow>
-        <ElCol :span="18">
-
-        </ElCol>
-
-        <ElCol :span="1">
-
-        </ElCol>
-
-        <ElCol :span="5">
-          <!-- Start/Pause/Reset 控制按钮 -->
+        <el-col :span="6">
           <el-card style="max-width: 480px">
-            <el-button type="warning" @click="handleFactoryStart">Start Simulation</el-button>
-          </el-card>
-          <el-card style="max-width: 480px">
-            <el-button type="warning" @click="handleFactoryPause">Pause Simulation</el-button>
-          </el-card>
-          <el-card style="max-width: 480px">
-            <el-button type="warning" @click="handleFactoryReset">Reset Factory</el-button>
+            <template #header>
+              <span>Simulation Control</span>
+            </template>
+            <el-row :gutter="10" class="mb-2">
+              <el-col :span="6">
+                <el-button type="primary" @click="handleFactoryRender" style="width: 100%">Render</el-button>
+              </el-col>
+              <el-col :span="6">
+                <el-button type="success" @click="handleFactoryStart" style="width: 100%">Start</el-button>
+              </el-col>
+              <el-col :span="6">
+                <el-button type="warning" @click="handleFactoryPause" style="width: 100%">Pause</el-button>
+              </el-col>
+              <el-col :span="6">
+                <el-button type="danger" @click="handleFactoryReset" style="width: 100%">Reset</el-button>
+              </el-col>
+            </el-row>
+
+            <div class="mb-2">
+              <div style="text-align: center; margin-bottom: 6px;">Speed Level: {{ speedLevel }}</div>
+              <el-slider v-model="speedLevel" :min="1" :max="10" show-input size="small" @change="changeSpeed"/>
+            </div>
           </el-card>
 
-          <!-- 速度调节 -->
-          <el-card style="max-width: 480px; margin-top: 10px">
-            <div style="text-align: center; margin-bottom: 10px;">Please Select Speed (Current: {{ speedLevel }})</div>
-            <el-slider v-model="speedLevel" :min="1" :max="10" show-input @change="changeSpeed"></el-slider>
-          </el-card>
 
-          <!-- AGV 控制 -->
-          <el-card style="max-width: 480px; margin-top: 10px">
-            <el-row :gutter="10">
-              <el-col :span="18">
-                <el-select v-model="selectedAgv" placeholder="Select AGV" style="width: 100%">
+          <el-card class="mt-3" style="max-width: 480px">
+            <template #header>
+              <span>AGV Control</span>
+            </template>
+            <el-row :gutter="8" class="mb-2">
+              <el-col :span="16">
+                <el-select v-model="selectedAgv" placeholder="Select AGV" size="small" style="width: 100%">
                   <el-option
                       v-for="agv in agvList"
                       :key="agv.id"
@@ -154,19 +157,21 @@
                 </el-select>
               </el-col>
               <el-col :span="8">
-                <el-button @click="pauseAgv" type="primary" style="width: 100%">Pause</el-button>
-              </el-col>
-              <el-col :span="8">
-                <el-button @click="resumeAgv" type="success" style="width: 100%">Resume</el-button>
+                <el-button-group style="width: 100%">
+                  <el-button @click="pauseAgv" type="warning" size="small">Pause</el-button>
+                  <el-button @click="resumeAgv" type="success" size="small">Go</el-button>
+                </el-button-group>
               </el-col>
             </el-row>
           </el-card>
 
-          <!-- 机器控制 -->
-          <el-card style="max-width: 480px; margin-top: 10px">
-            <el-row :gutter="10">
-              <el-col :span="18">
-                <el-select v-model="selectedMachine" placeholder="Select Machine" style="width: 100%">
+          <el-card class="mt-3" style="max-width: 480px">
+            <template #header>
+              <span>Machine Control</span>
+            </template>
+            <el-row :gutter="8" class="mb-2">
+              <el-col :span="16">
+                <el-select v-model="selectedMachine" placeholder="Select Machine" size="small" style="width: 100%">
                   <el-option
                       v-for="machine in machineList"
                       :key="machine.id"
@@ -176,19 +181,21 @@
                 </el-select>
               </el-col>
               <el-col :span="8">
-                <el-button @click="pauseMachine" type="primary" style="width: 100%">Pause</el-button>
-              </el-col>
-              <el-col :span="8">
-                <el-button @click="resumeMachine" type="success" style="width: 100%">Resume</el-button>
+                <el-button-group style="width: 100%">
+                  <el-button @click="pauseMachine" type="warning" size="small">Pause</el-button>
+                  <el-button @click="resumeMachine" type="success" size="small">Go</el-button>
+                </el-button-group>
               </el-col>
             </el-row>
           </el-card>
 
-          <!-- Job 控制 -->
-          <el-card style="max-width: 480px; margin-top: 10px">
-            <el-row :gutter="10">
-              <el-col :span="14">
-                <el-select v-model="selectedJob" placeholder="Select Job" style="width: 100%">
+          <el-card class="mt-3" style="max-width: 480px">
+            <template #header>
+              <span>Job Control</span>
+            </template>
+            <el-row :gutter="8">
+              <el-col :span="16">
+                <el-select v-model="selectedJob" placeholder="Select Job" size="small" style="width: 100%">
                   <el-option
                       v-for="job in jobList"
                       :key="job.id"
@@ -197,15 +204,43 @@
                   />
                 </el-select>
               </el-col>
-              <el-col :span="10">
-                <el-button @click="addJob" type="primary" style="width: 100%">Add</el-button>
+              <el-col :span="8">
+                <el-button @click="addJob" type="primary" size="small" style="width: 100%">Add</el-button>
               </el-col>
             </el-row>
           </el-card>
+
+          <el-card class="mt-3" style="max-width: 480px">
+            <template #header>
+              <span>Log Download</span>
+            </template>
+            <el-row :gutter="8" class="mb-2">
+              <el-col :span="8">
+
+              </el-col>
+              <el-col :span="8">
+                <el-button @click="downloadLog('backend')" type="success" size="small" style="width: 100%">Backend Log
+                </el-button>
+              </el-col>
+              <el-col :span="8">
+                <el-button @click="downloadLog('system')" type="success" size="small" style="width: 100%">System Log
+                </el-button>
+              </el-col>
+            </el-row>
+          </el-card>
+        </el-col>
+
+        <ElCol :span="2"></ElCol>
+
+        <ElCol :span="16">
+          <div class="block">
+            <el-image :src="map_src" style="max-width: 100%; max-height: 100%;" fit="cover">
+
+            </el-image>
+          </div>
         </ElCol>
+
       </ElRow>
-
-
     </div>
     <br/>
     <br/>
@@ -213,13 +248,15 @@
 </template>
 
 <script>
-import {ElButton, ElCol, ElInput, ElMessage, ElRow, ElTable, ElTableColumn, ElTag, ElTooltip,} from "element-plus";
+import {
+  ElButton, ElCol, ElInput, ElMessage, ElRow, ElTable, ElTableColumn, ElTag, ElTooltip, ElImage,
+} from "element-plus";
 
-import {nextTick, ref} from "vue";
+import {nextTick, ref, onMounted, onUnmounted} from "vue";
 import {ControlButton, Controls} from "@vue-flow/controls";
 import {Background} from "@vue-flow/background";
 import {MiniMap} from "@vue-flow/minimap";
-import {Connection, Link, MagicStick, Right} from '@element-plus/icons-vue';
+import {Connection, Link, MagicStick, Right, Picture as IconPicture} from '@element-plus/icons-vue';
 import {UploadFilled} from '@element-plus/icons-vue'
 import axios from "axios";
 
@@ -228,6 +265,7 @@ export default {
   components: {
     nextTick,
     ElTable,
+    ElImage,
     ElTableColumn,
     ElTooltip,
     ElTag,
@@ -244,20 +282,40 @@ export default {
     Link,
     Right,
     MagicStick,
-    UploadFilled
+    UploadFilled,
+    IconPicture
   },
   setup() {
     const uploadRef = ref();
     const config_name = ref('');
     const fileList = ref([]);
     const target_url = ref('');
+    const map_src = ref("");
+    const fps = ref(1);
+    let intervalId = null;
+
+    function updateMapSrcBuffered() {
+      const preloadImg = new Image();
+      const newSrc = `/api/map/update?_t=${Date.now()}`;
+
+      preloadImg.onload = () => {
+        map_src.value = newSrc; // 图片加载完后再替换
+      };
+      preloadImg.src = newSrc;
+    }
+
+    onMounted(() => {
+    });
+    onUnmounted(() => {
+      clearInterval(intervalId);
+    });
+
     const handleChange = (uploadFile, uploadFiles) => {
       console.log(uploadFile)
       console.log(uploadFiles)
       fileList.value.push(uploadFile)
     }
     const getStandardConfig = () => {
-      console.log("233")
       fetch("/api/standard/get", {
         method: "GET"
       })
@@ -311,6 +369,59 @@ export default {
           });
     }
 
+    const handleFactoryRender = () => {
+      fetch("/api/map/render", {
+        method: "POST",
+        body: JSON.stringify({}),
+      })
+          .then((response) => {
+            console.log(response)
+            // 启动成功,则每隔 0.2 秒更新一次图片
+            intervalId = setInterval(updateMapSrcBuffered, 200);
+          })
+          .catch((error) => {
+          });
+    }
+
+    const downloadLog = (file_type) => {
+      console.log(file_type)
+      console.log("start download")
+      fetch("/api/log/download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({file_type: file_type}),
+      })
+          .then(response => {
+            console.log(response)
+            // 从响应头获取 filename
+            const disposition = response.headers.get('Content-Disposition');
+            let filename = 'log.txt';  // 默认
+
+            if (disposition && disposition.includes('filename=')) {
+              filename = disposition.split('filename=')[1].replace(/"/g, '');
+            }
+
+            return response.blob().then(blob => ({blob, filename}));
+          })
+          .then(({blob, filename}) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;  // 动态指定 filename
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          })
+          .catch(error => {
+            ElMessage.error("Download failed");
+            console.error(error);
+          });
+
+    }
+
     const factoryStart = async () => {
       console.log("FactoryStart")
       try {
@@ -348,6 +459,7 @@ export default {
       uploadConfigSet,
       getStandardConfig,
       handleChange,
+      handleFactoryRender,
       uploadRef,
       test,
       config_name,
@@ -355,6 +467,9 @@ export default {
       factoryStart,
       factoryPause,
       factoryReset,
+      downloadLog,
+      map_src,
+      fps
     };
   },
 
@@ -541,6 +656,18 @@ export default {
 </script>
 
 <style scoped>
+.block {
+  background-color: #f0f8ff; /* 浅蓝背景 */
+  padding: 10px;
+  border: 1px solid #ddd;
+  min-height: 400px; /* 最小高度可以按需调整 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
 .upload-config-box {
   padding: 20px;
   background-color: #f0f8ff; /* 浅蓝背景 */

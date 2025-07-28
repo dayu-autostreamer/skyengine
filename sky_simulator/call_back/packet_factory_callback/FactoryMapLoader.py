@@ -9,7 +9,7 @@ from sky_simulator.packet_factory.packet_factory_env.Utils.util import Operation
 from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Job.Job import Job
 from sky_simulator.packet_factory.packet_factory_env.Graph.Graph import Point, Link, Graph
-from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
+from logs.logger import LOGGER
 import dataset
 import config
 

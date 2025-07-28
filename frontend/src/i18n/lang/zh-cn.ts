@@ -2,7 +2,7 @@ export default {
     router: {
         factory: 'Factory Orchestration',
         cases: 'Typical Cases',
-
+        result: 'Result',
 
         limits: 'limits',
         limitsFrontEnd: 'FrontEnd',

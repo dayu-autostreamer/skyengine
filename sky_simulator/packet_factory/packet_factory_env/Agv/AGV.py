@@ -6,7 +6,7 @@ from sky_simulator.packet_factory.packet_factory_env.Utils.util import AGVStatus
 from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine
 from sky_simulator.packet_factory.packet_factory_env.Graph.Graph import Graph
-from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
+from logs.logger import LOGGER
 from sky_simulator.registry import register_component
 
 

@@ -7,7 +7,7 @@
 '''
 import numpy as np
 
-from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
+from logs.logger import LOGGER
 
 
 class AGVUncertaintySimulator:

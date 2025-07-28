@@ -1,5 +1,5 @@
 from sky_simulator.lifecycle.bootstrap import bootstrap
-from sky_simulator.packet_factory.packet_factory_env.Utils.logger import LOGGER
+from logs.logger import LOGGER
 import argparse
 
 if __name__ == '__main__':

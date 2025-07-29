@@ -4,7 +4,7 @@
       <div class="platform-description">
         <h3>Welcome to TianGong System</h3>
         <p>Provide infrastructure for flexible manufacturing data analysis.</p>
-        <el-tag type="success">System Version: {{ dayuVersion }}</el-tag>
+        <el-tag type="success">System Version: {{ tiangongVersion }}</el-tag>
       </div>
     </el-form-item>
 
@@ -32,7 +32,7 @@ import {formatAxis} from '/@/utils/formatTime';
 import {NextLoading} from '/@/utils/loading';
 
 // 定义变量内容
-const dayuVersion = import.meta.env.VITE_DAYU_VERSION || 'v1.0';
+const tiangongVersion = import.meta.env.VITE_TIANGONG_VERSION || 'v1.0';
 const {t} = useI18n();
 const storesThemeConfig = useThemeConfig();
 const {themeConfig} = storeToRefs(storesThemeConfig);
@@ -40,7 +40,7 @@ const route = useRoute();
 const router = useRouter();
 const state = reactive({
   ruleForm: {
-    userName: 'dayu',
+    userName: 'tiangong',
   },
   loading: {
     signIn: false,

@@ -1,7 +1,7 @@
 
 from sky_simulator.event.event_manager.EventManager import EventManager
 from sky_simulator.registry.factory import create_component_by_id
-
+import config as global_config
 
 def initialize_event_manager(config):
     event_config = config.get(config.get("env_type")).get('event_config')

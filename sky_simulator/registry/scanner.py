@@ -15,7 +15,7 @@ from sky_simulator.registry.registry import component_registry
 from pathlib import Path
 
 
-def load_config(config: str):
+def load_config(config: str | dict):
     if isinstance(config, str):
         if not os.path.exists(config):
             raise FileNotFoundError(f"Configuration file not found: {config}")
@@ -33,8 +33,9 @@ def load_config(config: str):
         component_registry['config'] = sky_config
     elif isinstance(config, dict):
         # 保存配置文件的路径
-        component_registry['config'] = config
-        
+        component_registry['config_path'] = config
+
+
 def scan_and_register_components():
     """
     自动导入并触发装饰器注册

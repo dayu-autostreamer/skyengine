@@ -235,12 +235,12 @@ class APIHandler:
         )
 
     async def handle_map_display(self):
-        # 返回图片
         image_bytes = self.server.get_map_current()
         return StreamingResponse(image_bytes, media_type="image/png")
 
-    async def handle_map_render(self):
-        self.server.render_map()
+    async def handle_map_render(self, request: Request):
+        body = await request.json()
+        self.server.render_map(body.get("target_factory"))
         return JSONResponse({
             "success": True
         })

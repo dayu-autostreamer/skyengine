@@ -429,7 +429,7 @@ export default {
 
             console.log(response);
             // 启动成功,则每隔 0.2 秒更新一次图片
-            intervalId = setInterval(updateMapSrcBuffered, 200);
+            intervalId = setInterval(updateMapSrcBuffered, 250);
           })
           .catch((error) => {
           });

@@ -10,10 +10,10 @@ from sky_simulator.registry import scan_and_register_components, load_config
 from .context_creator import create_context
 
 
-def bootstrap(config_path):
+def bootstrap(config):
     # ---------- 读取配置 ----------
     print("[Bootstrap] Loading configuration...")
-    load_config(config_path)
+    load_config(config)
 
     # ---------- 扫描组件 ----------
     print("[Bootstrap] Scanning and registering components...")

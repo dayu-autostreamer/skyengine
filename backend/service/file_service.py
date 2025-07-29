@@ -5,6 +5,8 @@
 @Author  ：Skyrim
 @Date    ：2025/7/21 11:35 
 '''
+import yaml
+
 import backend.config_set as config
 import config
 
@@ -124,6 +126,41 @@ def get_config_set(relative_dir_path='template_config_set'):
     return config_set
 
 
+def load_factory_config(target_factory: str):
+    base_dir = os.path.join(config.BACKEND_DATA_DIR, target_factory)
+
+    event_config_path = os.path.join(base_dir, "event_config.yaml")
+    job_config_path = os.path.join(base_dir, "job_config.yaml")
+    map_config_path = os.path.join(base_dir, "map_config.yaml")
+
+    return {
+        "event_config": event_config_path,
+        "job_config": job_config_path,
+        "map_config": map_config_path
+    }
+
+
+def get_new_config_file(target_factory: str):
+    # 配置文件插入
+    specific_config_files = load_factory_config(target_factory)
+    print(specific_config_files)
+    template_config_path = os.path.join(config.CONFIG_DIR, 'application_config.yaml')
+
+    with open(template_config_path, 'r') as f:
+        specific_config = yaml.safe_load(f)
+
+    env_type = specific_config['config']['env_type']
+    specific_config['config'][env_type]['task_config']['file'] = specific_config_files['job_config']
+    specific_config['config'][env_type]['event_config']['file'] = specific_config_files['event_config']
+    specific_config['config'][env_type]['factory_config']['file'] = specific_config_files['map_config']
+
+    new_config_path = os.path.join(config.CONFIG_DIR, f'{target_factory}_config.yaml')
+    # 写入新配置
+    with open(new_config_path, 'w') as f:
+        yaml.dump(specific_config, f, default_flow_style=False, allow_unicode=True)
+
+    specific_config['config_path'] = new_config_path
+    return specific_config
+
 if __name__ == '__main__':
-    print(get_config_list())
-    print(get_log(config.BACKEND_CONFIG_DIR))
+    get_new_config_file('template_config_set')

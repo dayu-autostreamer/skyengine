@@ -35,7 +35,6 @@ class EventMachineFail(BaseEvent):
         """
         恢复该事件的现场
         """
-        print('EventMachineFail.trigger()')
         from sky_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
         self.judge_env(PacketFactoryEnv)
         self.env: PacketFactoryEnv

@@ -357,7 +357,7 @@ class AGV:
         - 如果传入 event_id，则回滚到该事件之前，期间的所有事件都会被撤销。
         """
         if not self.history_stack:
-            print("没有可以恢复的事件")
+            LOGGER.info("没有可以恢复的事件")
             return
         pass
 

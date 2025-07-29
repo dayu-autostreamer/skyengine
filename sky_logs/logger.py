@@ -22,14 +22,15 @@ class Logger:
         )
 
         # 控制台输出
-        # console_handler = logging.StreamHandler()
-        # console_handler.setFormatter(self.format)
-        # self.logger.addHandler(console_handler)
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(self.format)
+        self.logger.addHandler(console_handler)
         # 文件输出
         os.makedirs(os.path.dirname(log_file), exist_ok=True)  # 自动创建目录
         file_handler = logging.FileHandler(log_file, mode='w', encoding='utf-8')
         file_handler.setFormatter(self.format)
         self.logger.addHandler(file_handler)
+        self.logger.addHandler(console_handler)
 
         self.logLevel = 'INFO'
         self.logger.setLevel(level=self.logLevel)
@@ -38,6 +39,7 @@ class Logger:
 
 # 提供的默认LOGGER会存储到system中去
 LOGGER = Logger(log_path=config.SYSTEM_LOG_DIR, name="system").logger
+BACKEND_LOGGER = Logger(log_path=config.BACKEND_LOG_DIR, name="backend").logger
 
 if __name__ == '__main__':
     LOGGER.info("233")

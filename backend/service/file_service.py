@@ -35,9 +35,10 @@ def save_file(dir_name, file):
     - file: FastAPI UploadFile 对象
     """
     # 确保目录存在
-    create_dir(os.path.join(config.BACKEND_DATA_DIR, dir_name))
+    dir_path=os.path.join(config.BACKEND_DATA_DIR, dir_name)
+    create_dir(dir_path)
     # 构建完整保存路径
-    save_path = os.path.join(config.BACKEND_DATA_DIR, file.filename)
+    save_path = os.path.join(dir_path, file.filename)
     # 保存文件
     with open(save_path, "wb") as f:
         content = file.file.read()

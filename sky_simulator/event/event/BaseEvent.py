@@ -4,6 +4,7 @@ from pettingzoo import ParallelEnv
 
 from sky_simulator.event.EventType import EventType
 
+from sky_logs.logger import LOGGER
 
 class BaseEvent:
     # 类变量 事件ID计数器
@@ -33,7 +34,7 @@ class BaseEvent:
         """
         返回当前事件是否执行成功
         """
-        print(f"[Event] {self.event_type} Event {self.status} | Payload: {self.payload}")
+        LOGGER.info(f"[Event] {self.event_type} Event {self.status} | Payload: {self.payload}")
 
         if self.status == "trigger":
             res = self.trigger()
@@ -62,4 +63,4 @@ class BaseEvent:
 
     def set_env(self, env):
         self.env = env
-        print(f"[Event] {self.event_type} Event combined with env")
+        LOGGER.info(f"[Event] {self.event_type} Event combined with env")

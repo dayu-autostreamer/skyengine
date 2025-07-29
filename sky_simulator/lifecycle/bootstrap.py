@@ -8,23 +8,23 @@
 # bootstrap.py
 from sky_simulator.registry import scan_and_register_components, load_config
 from .context_creator import create_context
-
+from sky_logs.logger import LOGGER
 
 def bootstrap(config):
     # ---------- 读取配置 ----------
-    print("[Bootstrap] Loading configuration...")
+    LOGGER.info("[Bootstrap] Loading configuration...")
     load_config(config)
 
     # ---------- 扫描组件 ----------
-    print("[Bootstrap] Scanning and registering components...")
+    LOGGER.info("[Bootstrap] Scanning and registering components...")
     scan_and_register_components()
 
     # ---------- 创建环境 ----------
-    print("[Bootstrap] Creating context...")
+    LOGGER.info("[Bootstrap] Creating context...")
     environment, agent = create_context()
 
     # ---------- 检查环境 ----------
-    print("[Bootstrap] Checking context...")
+    LOGGER.info("[Bootstrap] Checking context...")
 
-    print("[Bootstrap] Env, Agent Created Successfully...")
+    LOGGER.info("[Bootstrap] Env, Agent Created Successfully...")
     return environment, agent

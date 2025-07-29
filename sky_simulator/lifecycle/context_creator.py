@@ -8,16 +8,17 @@
 from sky_simulator.registry.registry import component_registry
 from sky_simulator.lifecycle.initializer.env_initializer import initialize_env
 from sky_simulator.lifecycle.initializer.agent_initializer import initialize_agent
+from sky_logs.logger import LOGGER
 
 
 def create_context():
     '''
     创建环境并整合组件
     '''
-    print(f"[Context] Creating 'Env,Agent'...")
+    LOGGER.info(f"[Context] Creating 'Env,Agent'...")
 
     config = component_registry.get('config')
-    print(config)
+
     assert isinstance(config, dict) and config is not None
 
     # ---------- 智能体创建 ----------
@@ -28,5 +29,5 @@ def create_context():
     # 初始化环境本身的文件（例如地图、数据源等）
     env = initialize_env(config, agent)
 
-    print(f"[Context] Created.")
+    LOGGER.info(f"[Context] Created.")
     return env, agent

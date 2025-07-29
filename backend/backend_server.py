@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI, File, UploadFile, Form, Body, Request
 from fastapi.routing import APIRoute
 from starlette.responses import JSONResponse, FileResponse, StreamingResponse, Response
+from contextlib import asynccontextmanager
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,15 +15,19 @@ from backend_core import BackendCore
 # service引入
 from service import file_service
 
-from sky_logs.logger import Logger
-
-LOGGER = Logger(log_path=config.BACKEND_LOG_DIR, name="backend").logger
+from sky_logs.logger import BACKEND_LOGGER as LOGGER
 
 
 class BackendServer:
     def __init__(self):
         # 初始化 FastAPI 实例
         handler = APIHandler()
+
+        @asynccontextmanager
+        async def lifespan(app: FastAPI):
+            LOGGER.info("[Startup] 后端服务已启动成功 ✅")
+            yield
+            LOGGER.info("[Closedown] 后端服务已成功关闭 ✅")
 
         self.app = FastAPI(routes=[
             # 测试连通性
@@ -136,7 +141,7 @@ class BackendServer:
                      handler.handle_file_list,
                      response_class=JSONResponse,
                      methods=[NetworkAPIMethod.FACTORY_LIST]),
-            
+
             # 获取案例
             APIRoute(NetworkAPIPath.CASES_IMAGE,
                      handler.handle_cases_image,
@@ -148,7 +153,7 @@ class BackendServer:
                      response_class=FileResponse,
                      methods=[NetworkAPIMethod.CASES_CONFIG]),
 
-        ], log_level='trace', timeout=6000)
+        ], log_level='trace', timeout=6000, lifespan=lifespan)
 
         self.app.add_middleware(
             CORSMiddleware, allow_origins=["*"], allow_credentials=True,
@@ -284,13 +289,13 @@ class APIHandler:
             image_path = os.path.join(file_service.get_config_dir(), 'map2.png')
         else:
             return Response(content="Image file not found.", media_type="text/plain", status_code=404)
-        
+
         # 以二进制模式打开图片文件
         with open(image_path, "rb") as image_file:
             image_bytes = image_file.read()
-        
+
         return Response(content=image_bytes, media_type="image/png")
-    
+
     async def handle_cases_config(self, type: str):
         # 获取案例配置
         if type == "custom_config_1":

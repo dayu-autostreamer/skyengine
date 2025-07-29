@@ -1,8 +1,6 @@
 class NetworkAPIPath:
-    # 测试接口
-    TEST = '/test'
-
     # 接口：工厂控制
+    FACTORY_ALIVE = '/factory/alive'
     FACTORY_START = '/factory/start'
     FACTORY_PAUSE = '/factory/pause'
     FACTORY_RESET = '/factory/reset'
@@ -42,10 +40,8 @@ class NetworkAPIPath:
     CASES_CONFIG = '/cases/config'
 
 class NetworkAPIMethod:
-    # 测试接口
-    TEST = 'POST'
-
     # 接口：工厂控制
+    FACTORY_ALIVE = 'GET'
     FACTORY_START = 'POST'
     FACTORY_PAUSE = 'POST'
     FACTORY_RESET = 'POST'

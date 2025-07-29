@@ -83,6 +83,9 @@ class BackendCore:
 
         LOGGER.info(f"total makespan: {env.env_timeline}s")
 
+    def is_factory_alive(self):
+        return self.env is not None
+
     def factory_start(self):
         print("factory_start")
         self.env.env_visualizer.run()

@@ -323,6 +323,8 @@ export default {
     const machineList = ref([]);
     const jobList = ref([]);
 
+    let checkAliveInterval = null; // 用于持续检查 factory/alive 的定时器
+
     function updateMapSrcBuffered() {
       const preloadImg = new Image();
       const newSrc = `/api/map/update?_t=${Date.now()}`;
@@ -426,17 +428,47 @@ export default {
         body: JSON.stringify({target_factory: selectedFactory.value}),
       })
           .then((response) => {
-            loadAgvs();
-            loadMachines();
-            loadJobs();
-
             console.log(response);
-            // 启动成功,则每隔 0.2 秒更新一次图片
-            intervalId = setInterval(updateMapSrcBuffered, 250);
           })
           .catch((error) => {
           });
     }
+
+    // 测试factory是否alive，若alive则更新下拉菜单和图片
+    const checkFactoryAlive = async () => { 
+      fetch("/api/factory/alive", {
+        method: "GET",
+      })
+          .then((response) => {
+            console.log(response)
+            return response.json();
+          })
+          .then((data) => {
+            console.log(data);
+            if (data.is_alive) {
+              loadAgvs();
+              loadMachines();
+              loadJobs();
+
+              // 启动成功,则每隔 0.2 秒更新一次图片
+              intervalId = setInterval(updateMapSrcBuffered, 250);
+
+              clearInterval(checkAliveInterval);
+            }
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+    };
+
+    // 启动持续检查：每 1 秒检查一次，直到启动成功
+    function startCheckingFactory() {
+      // 每 500ms 检查一次（不要太频繁，避免压垮服务器）
+      checkAliveInterval = setInterval(checkFactoryAlive, 500);
+    }
+
+    // 启动整个检查流程
+    startCheckingFactory();
 
     const downloadLog = (file_type) => {
       console.log(file_type)

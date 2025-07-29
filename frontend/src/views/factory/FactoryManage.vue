@@ -350,6 +350,10 @@ export default {
         method: "GET"
       })
           .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+            }
+            
             // 从响应头获取 filename
             const disposition = response.headers.get('Content-Disposition');
             let filename = 'template_config_set.zip';  // 默认

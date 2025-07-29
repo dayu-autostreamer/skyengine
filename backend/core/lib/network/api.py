@@ -37,6 +37,10 @@ class NetworkAPIPath:
     # 获取工厂列表
     FACTORY_LIST = '/factory/list'
 
+    # 获取案例
+    CASES_IMAGE = '/cases/image'
+    CASES_CONFIG = '/cases/config'
+
 class NetworkAPIMethod:
     # 测试接口
     TEST = 'POST'
@@ -75,3 +79,7 @@ class NetworkAPIMethod:
     MAP_RENDER='POST'
     # 获取工厂列表
     FACTORY_LIST = 'GET'
+
+    # 获取案例
+    CASES_IMAGE = 'GET'
+    CASES_CONFIG = 'GET'

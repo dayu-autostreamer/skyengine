@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI, File, UploadFile, Form, Body, Request
 from fastapi.routing import APIRoute
-from starlette.responses import JSONResponse, FileResponse, StreamingResponse
+from starlette.responses import JSONResponse, FileResponse, StreamingResponse, Response
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -127,11 +127,22 @@ class BackendServer:
                      response_class=JSONResponse,
                      methods=[NetworkAPIMethod.MAP_RENDER]),
 
-            # 启动地图
+            # 获取工厂列表
             APIRoute(NetworkAPIPath.FACTORY_LIST,
                      handler.handle_file_list,
                      response_class=JSONResponse,
                      methods=[NetworkAPIMethod.FACTORY_LIST]),
+            
+            # 获取案例
+            APIRoute(NetworkAPIPath.CASES_IMAGE,
+                     handler.handle_cases_image,
+                     response_class=StreamingResponse,
+                     methods=[NetworkAPIMethod.CASES_IMAGE]),
+
+            APIRoute(NetworkAPIPath.CASES_CONFIG,
+                     handler.handle_cases_config,
+                     response_class=FileResponse,
+                     methods=[NetworkAPIMethod.CASES_CONFIG]),
 
         ], log_level='trace', timeout=6000)
 
@@ -252,3 +263,36 @@ class APIHandler:
             config_list: config_list,
             "success": True
         })
+
+    async def handle_cases_image(self, map: str):
+        # 获取案例图片
+        if map == "map1":
+            image_path = os.path.join(file_service.get_config_dir(), 'map1.png')
+        elif map == "map2":
+            image_path = os.path.join(file_service.get_config_dir(), 'map2.png')
+        else:
+            return Response(content="Image file not found.", media_type="text/plain", status_code=404)
+        
+        # 以二进制模式打开图片文件
+        with open(image_path, "rb") as image_file:
+            image_bytes = image_file.read()
+        
+        return Response(content=image_bytes, media_type="image/png")
+    
+    async def handle_cases_config(self, type: str):
+        # 获取案例配置
+        if type == "custom_config_1":
+            file_name = "template_config_set.zip"
+        elif type == "custom_config_2":
+            file_name = "template_config_set2.zip"
+        else:
+            file_name = "template_config_set.zip"
+
+        # 生成 zip 压缩包
+        zip_path = os.path.join(file_service.get_config_dir(), file_name)
+        # 返回压缩包
+        return FileResponse(
+            path=zip_path,
+            filename=file_name,
+            media_type="application/zip"
+        )

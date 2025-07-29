@@ -8,7 +8,7 @@
           <div style="height: 100%">
             <div class="flex-margin flex w100">
               <div class="flex-auto">
-                <FactoryManage/>
+                <CasesManage/>
               </div>
             </div>
           </div>
@@ -20,12 +20,12 @@
 </template>
 
 <script>
-import FactoryManage from "/@/views/factory/FactoryManage.vue";
+import CasesManage from "/@/views/cases/CasesManage.vue";
 
 
 export default {
   components: {
-    FactoryManage,
+    CasesManage,
   },
   data() {
     return {

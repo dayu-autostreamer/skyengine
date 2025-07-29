@@ -5,12 +5,12 @@
 @Author  ：Skyrim
 @Date    ：2025/7/21 11:35 
 '''
-import backend.config_set as config
+import backend.config_set as backend_config
 import config
 
 
 def get_config_dir():
-    return config.dir_path
+    return backend_config.dir_path
 
 
 import os

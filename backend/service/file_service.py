@@ -143,24 +143,26 @@ def load_factory_config(target_factory: str):
 def get_new_config_file(target_factory: str):
     # 配置文件插入
     specific_config_files = load_factory_config(target_factory)
-    print(specific_config_files)
+
     template_config_path = os.path.join(config.CONFIG_DIR, 'application_config.yaml')
 
     with open(template_config_path, 'r') as f:
         specific_config = yaml.safe_load(f)
 
-    env_type = specific_config['config']['env_type']
-    specific_config['config'][env_type]['task_config']['file'] = specific_config_files['job_config']
-    specific_config['config'][env_type]['event_config']['file'] = specific_config_files['event_config']
-    specific_config['config'][env_type]['factory_config']['file'] = specific_config_files['map_config']
+    sky_config = specific_config['config']
+    env_type = sky_config['env_type']
+    sky_config[env_type]['task_config']['file'] = specific_config_files['job_config']
+    sky_config[env_type]['event_config']['file'] = specific_config_files['event_config']
+    sky_config[env_type]['factory_config']['file'] = specific_config_files['map_config']
 
     new_config_path = os.path.join(config.CONFIG_DIR, f'{target_factory}_config.yaml')
     # 写入新配置
     with open(new_config_path, 'w') as f:
         yaml.dump(specific_config, f, default_flow_style=False, allow_unicode=True)
 
-    specific_config['config_path'] = new_config_path
-    return specific_config
+    sky_config['config_path'] = new_config_path
+    print(sky_config)
+    return sky_config
 
 if __name__ == '__main__':
     get_new_config_file('template_config_set')

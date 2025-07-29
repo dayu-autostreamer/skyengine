@@ -14,6 +14,10 @@ from backend_core import BackendCore
 # service引入
 from service import file_service
 
+from sky_logs.logger import Logger
+
+LOGGER = Logger(log_path=config.BACKEND_LOG_DIR, name="backend").logger
+
 
 class BackendServer:
     def __init__(self):
@@ -236,6 +240,8 @@ class APIHandler:
 
     async def handle_map_display(self):
         image_bytes = self.server.get_map_current()
+        if image_bytes == b'':
+            LOGGER.warning("No Image Available.")
         return StreamingResponse(image_bytes, media_type="image/png")
 
     async def handle_map_render(self, request: Request):

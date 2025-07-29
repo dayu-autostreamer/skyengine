@@ -9,6 +9,7 @@ from sky_simulator.registry.registry import component_registry
 from sky_simulator.lifecycle.initializer.env_initializer import initialize_env
 from sky_simulator.lifecycle.initializer.agent_initializer import initialize_agent
 
+
 def create_context():
     '''
     创建环境并整合组件
@@ -16,7 +17,7 @@ def create_context():
     print(f"[Context] Creating 'Env,Agent'...")
 
     config = component_registry.get('config')
-
+    print(config)
     assert isinstance(config, dict) and config is not None
 
     # ---------- 智能体创建 ----------

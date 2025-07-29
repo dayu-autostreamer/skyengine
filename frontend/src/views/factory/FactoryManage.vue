@@ -244,7 +244,7 @@
             </el-row>
           </el-card>
 
-          
+
           <el-card style="max-width: 480px; margin-top: 10px">
             <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px">Job Process</div>
             <div v-for="job in jobProgressList" :key="job.id" style="margin-bottom: 15px">
@@ -253,7 +253,7 @@
                 <span v-if="job.status === 'FINISHED'" style="color: green;">Finished</span>
                 <span v-else style="color: blue;">Processing...</span>
               </div>
-              <el-progress :percentage="job.progress" :status="job.status === 'FINISHED' ? 'success' : undefined" />
+              <el-progress :percentage="job.progress" :status="job.status === 'FINISHED' ? 'success' : undefined"/>
             </div>
           </el-card>
         </el-col>
@@ -420,7 +420,7 @@ export default {
     const handleFactoryRender = () => {
       fetch("/api/map/render", {
         method: "POST",
-        body: JSON.stringify({}),
+        body: JSON.stringify({target_factory: selectedFactory.value}),
       })
           .then((response) => {
             loadAgvs();
@@ -530,7 +530,7 @@ export default {
             retries++;
             console.warn(`Received empty AGV list (attempt ${retries}/${MAX_RETRIES})`);
 
-          return;
+            return;
             if (retries >= MAX_RETRIES) {
               ElMessage.warning('Loaded AGV list is empty after multiple attempts');
               return;
@@ -597,7 +597,7 @@ export default {
       }
     };
 
-     const loadJobs = async () => {
+    const loadJobs = async () => {
       const MAX_RETRIES = 5;
       const RETRY_DELAY = 2000;
 
@@ -694,7 +694,7 @@ export default {
       selectedAgv: null,
       selectedMachine: null,
       selectedJob: null,
-      jobProgressList: [], 
+      jobProgressList: [],
       progressInterval: null, // 用于保存定时器引用
     };
   },

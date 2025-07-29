@@ -33,7 +33,7 @@ def load_config(config: str | dict):
         component_registry['config'] = sky_config
     elif isinstance(config, dict):
         # 保存配置文件的路径
-        component_registry['config_path'] = config
+        component_registry['config'] = config
 
 
 def scan_and_register_components():

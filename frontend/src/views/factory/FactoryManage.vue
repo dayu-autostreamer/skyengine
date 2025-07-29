@@ -515,10 +515,24 @@ export default {
         try {
           const res = await axios.get('/api/agvs');
           
-          agvList.value = res.data.agvs;
-          console.log('AGV data:', res.data.agvs);
+          // 检查是否成功获取数据且 agvs 存在
+          if (res.data && Array.isArray(res.data.agvs) && res.data.agvs.length > 0) {
+            agvList.value = res.data.agvs;
+            console.log('AGV data:', res.data.agvs);
+            return; // 成功获取非空数据，退出
+          } else {
+            // 数据为空，视为需要重试的情况
+            retries++;
+            console.warn(`Received empty AGV list (attempt ${retries}/${MAX_RETRIES})`);
 
-          return; 
+            if (retries >= MAX_RETRIES) {
+              ElMessage.warning('Loaded AGV list is empty after multiple attempts');
+              return;
+            }
+
+            // 等待后重试
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          }
         } catch (error) {
           retries++;
           console.error(`Failed to load AGV (attempt ${retries}/${MAX_RETRIES}):`, error);
@@ -543,9 +557,25 @@ export default {
       while (retries < MAX_RETRIES) {
         try {
           const res = await axios.get('/api/machines');
-          machineList.value = res.data.machines;
-          console.log('Machine data:', res.data.machines);
-          return; 
+          
+          // 判断是否成功获取非空的 machines 数据
+          if (res.data && Array.isArray(res.data.machines) && res.data.machines.length > 0) {
+            machineList.value = res.data.machines;
+            console.log('Machine data:', res.data.machines);
+            return; // 成功获取有效数据，退出
+          } else {
+            // 返回数据格式正确但 machines 为空数组
+            retries++;
+            console.warn(`Received empty machine list (attempt ${retries}/${MAX_RETRIES})`);
+
+            if (retries >= MAX_RETRIES) {
+              ElMessage.warning('Loaded machine list is empty after multiple attempts');
+              return;
+            }
+            
+            // 等待后重试
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          }
         } catch (error) {
           retries++;
           console.error(`Failed to load machine (attempt ${retries}/${MAX_RETRIES}):`, error);
@@ -585,19 +615,34 @@ export default {
       while (retries < MAX_RETRIES) {
         try {
           const res = await axios.get('/api/jobs');
-          jobList.value = res.data.jobs;
-          console.log('Job data:', res.data.jobs);
+          
+          // 检查响应数据是否存在且 jobs 是非空数组
+          if (res.data && Array.isArray(res.data.jobs) && res.data.jobs.length > 0) {
+            jobList.value = res.data.jobs;
+            console.log('Job data:', res.data.jobs);
 
-          // 将成功获取的数据保存到 sessionStorage，供下次使用
-          try {
-            sessionStorage.setItem('jobList', JSON.stringify(jobList.value));
-          } catch (storageError) {
-            console.warn('Failed to save job list to sessionStorage', storageError);
-            // 可选：清理失效缓存
-            // sessionStorage.removeItem('jobList');
+            // 将成功获取的数据保存到 sessionStorage，供下次使用
+            try {
+              sessionStorage.setItem('jobList', JSON.stringify(jobList.value));
+            } catch (storageError) {
+              console.warn('Failed to save job list to sessionStorage', storageError);
+              sessionStorage.removeItem('jobList');
+            }
+
+            return; // 成功获取非空数据，退出重试循环
+          } else {
+            // 数据为空或格式不符合预期（如 jobs 不存在或非数组）
+            retries++;
+            console.warn(`Received empty or invalid job list (attempt ${retries}/${MAX_RETRIES})`);
+
+            if (retries >= MAX_RETRIES) {
+              ElMessage.warning('Loaded job list is empty or invalid after multiple attempts');
+              return;
+            }
+              
+            // 等待后重试
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
           }
-
-          return; // 成功后退出
         } catch (error) {
           retries++;
           console.error(`Failed to load task (attempt ${retries}/${MAX_RETRIES}):`, error);

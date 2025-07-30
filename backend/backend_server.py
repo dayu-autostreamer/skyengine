@@ -30,13 +30,12 @@ class BackendServer:
             LOGGER.info("[Closedown] 后端服务已成功关闭 ✅")
 
         self.app = FastAPI(routes=[
-            # 测试连通性
-            APIRoute(NetworkAPIPath.TEST,
-                     handler.just_test,
-                     response_class=JSONResponse,
-                     methods=[NetworkAPIMethod.TEST]),
-
             # 工厂控制
+            APIRoute(NetworkAPIPath.FACTORY_ALIVE,
+                     handler.handle_factory_alive,
+                     response_class=JSONResponse,
+                     methods=[NetworkAPIMethod.FACTORY_ALIVE]),
+
             APIRoute(NetworkAPIPath.FACTORY_START,
                      handler.handle_factory_start,
                      response_class=JSONResponse,
@@ -165,8 +164,9 @@ class APIHandler:
     def __init__(self):
         self.server = BackendCore()
 
-    async def just_test(self):
-        return JSONResponse({"just_test": True})
+    async def handle_factory_alive(self):
+        is_alive = self.server.is_factory_alive()
+        return JSONResponse({"is_alive": is_alive})
 
     async def handle_factory_start(self):
         self.server.factory_start()

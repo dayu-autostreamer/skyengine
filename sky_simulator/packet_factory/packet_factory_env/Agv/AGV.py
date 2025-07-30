@@ -45,7 +45,6 @@ class AGV:
             "y": self.y,
             "point_id": self.point_id,
             "path_stage": self.path_stage,
-            "timer": self.timer,
             "velocity": self.velocity,
             "status": self.status.name if hasattr(self.status, 'name') else self.status,
         }
@@ -56,7 +55,6 @@ class AGV:
         self.y = data["y"]
         self.point_id = data["point_id"]
         self.path_stage = data["path_stage"]
-        self.timer = data["timer"]
         self.velocity = data["velocity"]
         self.status = AGVStatus[data["status"]] if isinstance(data["status"], str) else data["status"]
 
@@ -369,6 +367,7 @@ class AGV:
             self.set_status(AGVStatus.READY)
         else:
             self.unpack(self.history_stack[-1]['field'])
+            self.history_stack.pop()
 
 if __name__ == '__main__':
     k = 10

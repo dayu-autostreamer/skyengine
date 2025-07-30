@@ -225,9 +225,12 @@ class EnvVisualizer(EnvCallback):
         """暂停指定AGV运行"""
         for agv in self.env.getAGVs():
             if agv.get_id() == agv_id:
-                self.agv_pause_queue.append(agv)
                 self.insertNewUncertaintyEvent(f"AGV {agv_id} paused!")
-                break
+                if agv.status == AGVStatus.EXCEPTION or agv in self.agv_pause_queue:
+                    break
+                else:
+                    self.agv_pause_queue.append(agv)
+                    break
 
     def getPausedAGVs(self) -> List[AGV]:
         """
@@ -257,9 +260,12 @@ class EnvVisualizer(EnvCallback):
         """暂停指定 Machine"""
         for machine in self.env.getMachines():
             if machine.get_id() == machine_id:
-                self.machine_pause_queue.append(machine)
                 self.insertNewUncertaintyEvent(f"Machine {machine_id} paused!")
-                break
+                if machine.status == MachineStatus.FAILED or machine in self.machine_pause_queue:
+                    break
+                else:
+                    self.machine_pause_queue.append(machine)
+                    break
 
     def getPausedMachines(self) -> List[Machine]:
         """

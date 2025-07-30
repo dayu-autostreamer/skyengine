@@ -40,7 +40,6 @@ class Machine:
             "x": self.x,
             "y": self.y,
             "point_id": self.point_id,
-            "timer": self.timer,
             "status": self.status.name,
         }
 
@@ -53,7 +52,6 @@ class Machine:
         self.y = field["y"]
         self.point_id = field["point_id"]
         self.status = MachineStatus[field["status"]]
-        self.timer = field["timer"]
 
     def __repr__(self):
         return (f"<{self.__class__.__name__} "
@@ -187,3 +185,4 @@ class Machine:
             self.set_status(MachineStatus.READY)
         else:
             self.unpack(self.history_stack[-1]['field'])
+            self.history_stack.pop()

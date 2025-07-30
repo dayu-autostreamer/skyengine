@@ -37,13 +37,13 @@
                     <template #header>
                       <div>
                         <el-row>
-                          <el-col :span="12">
-                            <el-tag>Factory Name {{ config.buttonText }}</el-tag>
+                          <el-col :span="9">
+                            <el-tag>{{config.factoryName}}</el-tag>
                           </el-col>
                           <el-col :span="2">
 
                           </el-col>
-                          <el-col :span="10">
+                          <el-col :span="13">
                             <el-button
                                 type="success"
                                 icon="el-icon-download"
@@ -51,7 +51,7 @@
                                 @click="getStandardConfig(config.buttonParam)"
                                 style="width: 100%;"
                             >
-                              {{ config.buttonText }}
+                              {{config.buttonText}}
                             </el-button>
                           </el-col>
                         </el-row>
@@ -64,14 +64,14 @@
                         :column="4"
                         border
                     >
-                      <el-descriptions-item label="MachineNumber">6</el-descriptions-item>
-                      <el-descriptions-item label="AGVNumber">4</el-descriptions-item>
-                      <el-descriptions-item label="FactorySize" :span="2">30*20</el-descriptions-item>
+                      <el-descriptions-item label="MachineNumber">{{config.machineNumber}}</el-descriptions-item>
+                      <el-descriptions-item label="AGVNumber">{{config.agvNumber}}</el-descriptions-item>
+                      <el-descriptions-item label="FactorySize" :span="2">{{config.factorySize}}</el-descriptions-item>
                       <el-descriptions-item label="FactoryInfo">
-                        <el-tag size="small">Circle</el-tag>
+                        <el-tag size="small">{{config.factoryInfo}}</el-tag>
                       </el-descriptions-item>
-                      <el-descriptions-item label="description">
-                        Single Pipeline Job.
+                      <el-descriptions-item label="Description">
+                        {{config.description}}
                       </el-descriptions-item>
                     </el-descriptions>
                   </el-card>
@@ -133,12 +133,28 @@ export default {
       {
         mapParam: 'map1', // 用于生成图片URL的参数
         buttonText: 'Get Standard Config 1',
-        buttonParam: {type: 'custom_config_1'} // 传给下载函数的参数
+        buttonParam: {type: 'custom_config_1'}, // 传给下载函数的参数
+
+        factoryName: 'Standard Config 1',
+
+        machineNumber: 5,
+        agvNumber: 2,
+        factorySize: '30*20',
+        factoryInfo: 'Pipeline',
+        description: 'Single Pipeline Job.'
       },
       {
         mapParam: 'map2',
         buttonText: 'Get Standard Config 2',
-        buttonParam: {type: 'custom_config_2'}
+        buttonParam: {type: 'custom_config_2'},
+
+        factoryName: 'Standard Config 2',
+
+        machineNumber: 6,
+        agvNumber: 4,
+        factorySize: '30*20',
+        factoryInfo: 'Cycle',
+        description: 'Single Cycle Job.'
       },
       // 可以添加更多配置
     ]);

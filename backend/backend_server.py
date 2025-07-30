@@ -301,11 +301,11 @@ class APIHandler:
     async def handle_cases_config(self, type: str):
         # 获取案例配置
         if type == "custom_config_1":
-            file_name = "template_config_set.zip"
+            file_name = "pipeline_config_set.zip"
         elif type == "custom_config_2":
-            file_name = "template_config_set2.zip"
-        else:
             file_name = "template_config_set.zip"
+        else:
+            return Response(content="Config file not found.", media_type="text/plain", status_code=404)
 
         # 生成 zip 压缩包
         zip_path = os.path.join(file_service.get_config_dir(), file_name)

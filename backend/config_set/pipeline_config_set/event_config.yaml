@@ -1,0 +1,15 @@
+# 当前声明的额外不确定性事件以及对应的处理回调函数。
+
+config:
+  event_type: # 交给manager管理
+    - packet_factory.JUST_TEST
+
+    - packet_factory.ENV_PAUSED
+    - packet_factory.ENV_RECOVER
+    - packet_factory.ENV_RESTART
+
+    - packet_factory.AGV_FAIL
+
+    - packet_factory.MACHINE_FAIL
+
+    - packet_factory.JOB_ADD

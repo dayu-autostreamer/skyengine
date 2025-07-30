@@ -21,8 +21,8 @@ config:
     callback:
       map_callback:
         graph_loader:
-          name: packet_factory_callback.MapLoader
-          args: [ /brandimarte/mk01.txt, /map_config.yaml ]
+          name: backend_callback.MapLoader
+          args: [ ]
         visualizer:
           name: backend_callback.Visualizer
           args: [ 3 ]    #  fps

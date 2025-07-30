@@ -25,8 +25,10 @@ class BackendServer:
 
         @asynccontextmanager
         async def lifespan(app: FastAPI):
+            print("[Startup] 后端服务已启动成功 ✅")
             LOGGER.info("[Startup] 后端服务已启动成功 ✅")
             yield
+            print("[Closedown] 后端服务已成功关闭 ✅")
             LOGGER.info("[Closedown] 后端服务已成功关闭 ✅")
 
         self.app = FastAPI(routes=[

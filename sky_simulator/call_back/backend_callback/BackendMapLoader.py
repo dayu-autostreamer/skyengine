@@ -22,24 +22,18 @@ class FactoryMapLoader(EnvCallback):
         self.config=component_registry.get('config').get(self.env_type)
         self.job_config_file_path =  self.config.get("task_config").get('file')    # 对应 job_config.yaml
         self.map_config_file_path =  self.config.get("factory_config").get('file') # 对应 map_config.yaml
+        
+        map_file = self.map_config_file_path
+        map_yaml = yaml.safe_load(open(map_file, 'rb'))
+        self.map_config = map_yaml['config']
 
-        self.jobs: List[Job] = []
-        self.machines: List[Machine] = []
-        self.agvs: List[AGV] = []
-        self.graph: List[Graph] = []
-
-        self.create_jobs()
-        self.create_graph()
-        self.create_machines()
-        self.create_agvs()
 
     def create_jobs(self):
-        job_file =self.job_config_file_path
-        print(job_file)
+        job_file = self.job_config_file_path
         job_yaml = yaml.safe_load(open(job_file, 'rb'))
         job_config = job_yaml['config']
 
-        self.jobs = []
+        jobs = []
         operation_count = 0
         for job_entry in job_config.get('jobs', []):
             job_data = job_entry['job']
@@ -52,12 +46,12 @@ class FactoryMapLoader(EnvCallback):
                 ]
                 operations.append(Operation(operation_count, OperationStatus.WAITING, durations))
                 operation_count += 1
-            self.jobs.append(Job(job_data['id'], operations))
+            jobs.append(Job(job_data['id'], operations))
+        
+        return jobs
 
     def create_graph(self):
-        map_file = self.map_config_file_path
-        map_yaml = yaml.safe_load(open(map_file, 'rb'))
-        map_config = map_yaml['config']
+        map_config = self.map_config
 
         points = []
         for point in map_config.get('points', []):
@@ -69,32 +63,38 @@ class FactoryMapLoader(EnvCallback):
             l = link['link']
             links.append(Link(l['id'], l['begin'], l['end']))
 
-        self.graph = Graph(points, links)
-        self.map_config = map_config  # 存起来供其他方法使用
+        graph = Graph(points, links)
+        return graph
 
-    def create_machines(self):
-        self.machines = []
+    def create_machines(self, graph: Graph):
+        machines = []
         for machine in self.map_config.get('machines', []):
             m = machine['machine']
-            point = self.graph.get_point_by_id(m['point_id'])
+            point = graph.get_point_by_id(m['point_id'])
             if point is None:
                 LOGGER.error(f"Machine Point ID {m['point_id']} not found in the graph")
                 continue
-            self.machines.append(Machine(m['id'], point.x, point.y, m['point_id']))
+            machines.append(Machine(m['id'], point.x, point.y, m['point_id']))
+        return machines
 
-    def create_agvs(self):
-        self.agvs = []
+    def create_agvs(self, graph: Graph):
+        agvs = []
         for agv in self.map_config.get('agvs', []):
             a = agv['agv']
-            point = self.graph.get_point_by_id(a['point_id'])
+            point = graph.get_point_by_id(a['point_id'])
             if point is None:
                 LOGGER.error(f"AGV Point ID {a['point_id']} not found in the graph")
                 continue
-            self.agvs.append(AGV(a['id'], point.x, point.y, a['point_id'], a['velocity'], self.graph))
+            agvs.append(AGV(a['id'], point.x, point.y, a['point_id'], a['velocity'], graph))
+        return agvs
 
     def __call__(self):
-        """返回构建好的结构"""
-        return self.jobs, self.machines, self.agvs, self.graph
+        jobs: List[Job] = self.create_jobs()
+        graph: Graph = self.create_graph()
+        machines: List[Machine] =self.create_machines(graph=graph)
+        agvs: List[AGV] = self.create_agvs(graph=graph)
+
+        return jobs, machines, agvs, graph
 
 if __name__ == '__main__':
     mapLoader = FactoryMapLoader()

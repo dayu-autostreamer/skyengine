@@ -560,7 +560,7 @@ export default {
 
       while (retries < MAX_RETRIES) {
         try {
-          const res = await axios.get('/api/agvs');
+          const res = await axios.get(`/api/agvs?_t=${Date.now()}`);
 
           agvList.value = res.data.agvs;
           console.log('AGV data:', res.data.agvs);
@@ -606,7 +606,7 @@ export default {
 
       while (retries < MAX_RETRIES) {
         try {
-          const res = await axios.get('/api/machines');
+          const res = await axios.get(`/api/machines?_t=${Date.now()}`);
 
           // 判断是否成功获取非空的 machines 数据
           if (res.data && Array.isArray(res.data.machines) && res.data.machines.length > 0) {
@@ -649,7 +649,7 @@ export default {
       let retries = 0;
       while (retries < MAX_RETRIES) {
         try {
-          const res = await axios.get('/api/jobs');
+          const res = await axios.get(`/api/jobs?_t=${Date.now()}`);
 
           // 检查响应数据是否存在且 jobs 是非空数组
           if (res.data && Array.isArray(res.data.jobs) && res.data.jobs.length > 0) {

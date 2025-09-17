@@ -79,7 +79,7 @@ class PacketFactoryEnv(ParallelEnv):
 
         LOGGER.info("Environment Initialized Successfully.")
 
-    def action_space(self, agent):
+    def action_space(self, agent: BaseAgent):
         decisions, step_time = agent.sample(self.agvs, self.machines,
                                             self.jobs)  # type: List[Tuple[Operation, AGV,  Machine]], float
         return {
@@ -198,12 +198,11 @@ class PacketFactoryEnv(ParallelEnv):
         return event_happen
 
     def step(self, actions=None):
-        LOGGER.info(f"--------- 当前循环步为{self.env_timeline} ---------")
+        LOGGER.info(f"--------- 当前环境时间为{self.env_timeline} ---------")
 
         # === 0. Agent 决策动作 ===
         decisions = actions['decisions']
 
-        # todo: Agent的执行时间不再决定要step多久，而是不确定性事件发生时才重新决策
         step_time = 1
 
         LOGGER.info(f"step_time: {step_time},decisions: {decisions}")
@@ -227,10 +226,10 @@ class PacketFactoryEnv(ParallelEnv):
         terminations = {self.agent}
         obs = self._get_obs()
 
-        # ---------- 更新可视化 ----------
+        #  === 3. 更新可视化 ===
         self.env_visualizer.visualize_env()
-    
-        # ---------- 触发事件队列相关机制 ----------
+
+        #  === 4. 触发事件队列相关机制 ===
         event_happen = self.deal_event()
 
         LOGGER.info(f"--------- 结束当前循环步 ---------")
@@ -275,7 +274,7 @@ class PacketFactoryEnv(ParallelEnv):
 
     def getJobs(self) -> List[Job]:
         return self.jobs
-    
+
     def getJobTemplates(self) -> List[Job]:
         return self.job_templates
 

@@ -68,20 +68,20 @@ class BackendCore:
         observations = env.reset()
 
         # 运行一个 episode（直到结束）
-        while not env.env_is_finished() and not stop_event.is_set():
+        while not self.env.env_is_finished() and not stop_event.is_set():
             # 输入获得环境状态并决策
-            actions = env.action_space(agent)
+            actions = self.env.action_space(agent)
 
             # agent在外部决策
-            observations, rewards, terminations, truncations, infos = env.step(actions)
+            observations, rewards, terminations, truncations, infos = self.env.step(actions)
 
             # 渲染当前状态（控制台打印）
-            env.render()
+            self.env.render()
 
             # 更新 done 状态
             done = terminations
 
-        LOGGER.info(f"total makespan: {env.env_timeline}s")
+        LOGGER.info(f"total makespan: {self.env.env_timeline}s")
 
     def is_factory_alive(self):
         return self.env is not None

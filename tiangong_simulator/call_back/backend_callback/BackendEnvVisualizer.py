@@ -79,7 +79,7 @@ class BackendEnvVisualizer(EnvVisualizer):
         # 注意：Pygame 使用 RGB，而 OpenCV 使用 BGR，所以需要转换一下颜色通道
         # img_cv = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
 
-        # 显示图像
+        # 显示图像,此处是测试代码
         # cv2.imshow("Map", img_cv)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()

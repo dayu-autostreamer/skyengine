@@ -8,6 +8,7 @@ from tiangong_simulator.packet_factory.packet_factory_env.Machine.Machine import
 from tiangong_simulator.packet_factory.packet_factory_env.Graph.Graph import Graph
 from tiangong_logs.logger import LOGGER
 from tiangong_simulator.registry import register_component
+from tiangong_simulator.call_back.callback_manager.AGVCallbackManager import AGVCallbackManager
 
 
 @register_component("packet_factory.Agv")
@@ -29,7 +30,6 @@ class AGV:
         self.velocity: float = velocity
         self.status = AGVStatus.READY
 
-
         self.operation: Optional[Operation] = None
         self.todo_queue: List[Tuple[str, Machine | Operation]] = []
         self.running_queue: List[Tuple[str, Machine | Operation]] = []
@@ -37,6 +37,16 @@ class AGV:
         # 事件相关 字段包括
         self.history_stack: List = []
 
+        # 需要记录的数据
+        self.data_pool = {
+
+        }
+        # 事件回调机制
+        self.callback_manager= AGVCallbackManager()
+
+    def set_callback_manager(self, callback_manager: AGVCallbackManager):
+        self.callback_manager = callback_manager
+        LOGGER.info("CallbackManager Created Successfully.")
 
     def pack(self) -> dict:
         return {
@@ -46,7 +56,8 @@ class AGV:
             "point_id": self.point_id,
             "path_stage": self.path_stage,
             "velocity": self.velocity,
-            "status": self.status.name if hasattr(self.status, 'name') else self.status,
+            "status": self.status.name,
+            "data_pool": self.data_pool
         }
 
     def unpack(self, data: dict):
@@ -56,7 +67,8 @@ class AGV:
         self.point_id = data["point_id"]
         self.path_stage = data["path_stage"]
         self.velocity = data["velocity"]
-        self.status = AGVStatus[data["status"]] if isinstance(data["status"], str) else data["status"]
+        self.status = AGVStatus[data["status"]]
+        self.data_pool = data["data_pool"]
 
     def __repr__(self):
         # 获取当前操作的名称（如果有）
@@ -124,7 +136,7 @@ class AGV:
         从machine上获得对应的operation
         :return: 是否成功, 若失败需要在下一轮step重新调用该函数
         """
-        
+
         if self.status == AGVStatus.READY:
             self.set_status(AGVStatus.ASSIGNED)
 
@@ -164,7 +176,7 @@ class AGV:
         将AGV前往machine
         :return: 是否成功, 若失败则调用该函数的上一级步骤也失败
         """
-        
+
         # todo: 维护一个agv的状态（event队列去修改的），如果当前agv状态=宕机，把self.timer变成final_time，但是不移动坐标
 
         # todo: 现在的改成：随机生成宕机若干秒的事件
@@ -213,7 +225,7 @@ class AGV:
         if self.status is not AGVStatus.LOADED:
             LOGGER.info(f"AGV id={self.id} is not loaded")
             return False
-        
+
         if self.operation is None:
             LOGGER.warning(f"AGV id={self.id} has no operation")
             return False
@@ -221,7 +233,7 @@ class AGV:
         path = self.graph.get_path(self.point_id, machine.point_id)
         if not self.heading(machine, path, final_time):
             return False
-        
+
         agv_operation: Operation = self.operation
         machine.input_push_operation(agv_operation)
         agv_operation.set_current_machine(machine)
@@ -248,10 +260,10 @@ class AGV:
 
     def todo_queue_is_empty(self):
         return len(self.todo_queue) == 0
-    
+
     def todo_queue_clear(self):
         self.todo_queue.clear()
-    
+
     def running_queue_push(self, todo: Tuple[str, Machine | Operation]):
         self.running_queue.append(todo)
 
@@ -260,11 +272,11 @@ class AGV:
             return None
         else:
             return self.running_queue.pop(0)
-        
+
     def running_queue_is_empty(self):
         return len(self.running_queue) == 0
 
-    def push_process(self,final_time: float):
+    def push_process(self, final_time: float):
         """
         执行队列中的任务, running队列代表执行了一半不能被中断的任务, todo队列代表还没被分配可以重新分配的任务
         """
@@ -279,14 +291,14 @@ class AGV:
                     if todo_load[0] == "load":
                         if type(todo_load[1]) != Operation:
                             raise ValueError(f"Invalid todo type: {todo_load}")
-                        
+
                         # 如果operation是等待状态, 前序operation的机器没有处理完成, 则直接返回, 等待下次调用再处理
                         if todo_load[1].get_status() == OperationStatus.WAITING:
                             return
-                        
+
                         assert todo_load[1].get_status() == OperationStatus.READY, f"{todo_load[1]} is not ready"
-                        
-                        todo_load[1].set_status(OperationStatus.MOVING) # 修改Operation的状态, 代表已经开始执行了, 不能被中断
+
+                        todo_load[1].set_status(OperationStatus.MOVING)  # 修改Operation的状态, 代表已经开始执行了, 不能被中断
                         last_machine = todo_load[1].get_current_machine()
                         if last_machine is None:
                             # 从头开始
@@ -297,7 +309,7 @@ class AGV:
                             self.running_queue_push(("load", todo_load[1]))
                     else:
                         raise ValueError(f"Invalid todo type: {todo_load}")
-                            
+
                     if todo_unload[0] == "unload":
                         if type(todo_unload[1]) != Machine:
                             raise ValueError(f"Invalid todo type: {todo_unload}")
@@ -305,7 +317,6 @@ class AGV:
                         self.running_queue_push(("unload", todo_unload[1]))
                     else:
                         raise ValueError(f"Invalid todo type: {todo_unload}")
-
 
             todo = self.running_queue[0]
             LOGGER.info(f"AGV id={self.id} current todo: {todo}")
@@ -335,9 +346,10 @@ class AGV:
             self.todo_queue_push(("unload", action[1]))
             LOGGER.info(f"AGV id={self.id} assigned todo: {action}")
         self.push_process(final_time)
+        self.callback_manager.use_all(self.pack())
 
     # ---------- 修改状态的函数,便于事件使用 ----------
-    def record(self, event:BaseEvent):
+    def record(self, event: BaseEvent):
         """
         执行事件并记录
         """
@@ -368,6 +380,7 @@ class AGV:
         else:
             self.unpack(self.history_stack[-1]['field'])
             self.history_stack.pop()
+
 
 if __name__ == '__main__':
     k = 10

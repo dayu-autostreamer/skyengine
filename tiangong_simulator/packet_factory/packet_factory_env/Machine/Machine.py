@@ -4,6 +4,7 @@ from tiangong_simulator.event.event.BaseEvent import BaseEvent
 from tiangong_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from tiangong_simulator.packet_factory.packet_factory_env.Utils.util import OperationStatus, MachineStatus
 from tiangong_logs.logger import LOGGER
+from tiangong_simulator.call_back.callback_manager.MachineCallbackManager import MachineCallbackManager
 
 from tiangong_simulator.registry import register_component
 
@@ -31,16 +32,24 @@ class Machine:
         # 事件相关 记录某个状态在修改前的取值
         self.history_stack: List = []
 
+        # 需要记录的数据
+        self.data_pool = {
+
+        }
+        # 事件回调机制
+        self.callback_manager: MachineCallbackManager = MachineCallbackManager()
+
     def pack(self) -> dict:
         """
         将所有可能变化的状态打包（用于事件记录/恢复）
         """
         return {
-            "id":self.id,
+            "id": self.id,
             "x": self.x,
             "y": self.y,
             "point_id": self.point_id,
             "status": self.status.name,
+            "data_pool": self.data_pool
         }
 
     def unpack(self, field: dict):
@@ -52,6 +61,11 @@ class Machine:
         self.y = field["y"]
         self.point_id = field["point_id"]
         self.status = MachineStatus[field["status"]]
+        self.data_pool = field["data_pool"]
+
+    def set_callback_manager(self, callback_manager: MachineCallbackManager):
+        self.callback_manager = callback_manager
+        LOGGER.info("CallbackManager Created Successfully.")
 
     def __repr__(self):
         return (f"<{self.__class__.__name__} "
@@ -153,9 +167,10 @@ class Machine:
         else:
             LOGGER.info(f"Machine {self.id} is failed")
 
-    # ---------- 修改状态的函数,便于事件使用 ----------
+        self.callback_manager.use_all()
 
-    def record(self, event:BaseEvent):
+    # ---------- 修改状态的函数,便于事件使用 ----------
+    def record(self, event: BaseEvent):
         """
         执行事件并记录
         """

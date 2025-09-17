@@ -39,9 +39,10 @@ class RandomAgent(BaseAgent):
 
     def decision(self, *args, **kwargs):
         return 0
+
     def sample(self, agvs, machines, jobs):
         """
-        返回本次采样结果
+        返回本次采样结果,和当前的算法决策时延
         """
         time_start = time.time()
         current_sample = []

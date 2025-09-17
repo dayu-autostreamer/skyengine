@@ -7,7 +7,7 @@ from tiangong_simulator.call_back.base_callback.EventQueue import EventQueue
 
 class CallbackManager:
     def __init__(self):
-        self._callbacks: Dict[str, EnvCallback] = {
+        self._callbacks: Dict[str, EnvCallback | list] = {
             'load_graph': EnvMapLoader("/brandimarte/simple_agv.txt"),
             'initialize_visualizer': EnvVisualizer(),
             'event_queue': EventQueue()
@@ -34,3 +34,18 @@ class CallbackManager:
     def list_all(self) -> Dict[str, EnvCallback]:
         """列出所有已注册的回调"""
         return self._callbacks.copy()
+
+    def use_all(self, *args, **kwargs):
+        """
+        依次调用所有回调。
+        args / kwargs 会传递给每个回调。
+        """
+        results = {}
+        for name, cb in self._callbacks.items():
+            try:
+                # 假设 EnvCallback 实现了 __call__
+                results[name] = cb(*args, **kwargs)
+            except Exception as e:
+                print(f"[CallbackManager] 回调 '{name}' 执行出错: {e}")
+                results[name] = None
+        return results

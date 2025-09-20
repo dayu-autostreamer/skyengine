@@ -15,7 +15,7 @@ if __name__ == '__main__':
     path = config.get('config_path')
 
     event_config = config.get(config.get("env_type")).get('event_config').get('file')
-    target_path = path.parent / './config_set/event_config.yaml'
+    target_path = path.parent / './template_config_set/event_config.yaml'
 
     event_manager=EventManager()
     event_manager.load_event(target_path)

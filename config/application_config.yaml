@@ -4,14 +4,12 @@ config:
   simulation:
     env_name: packet_factory
 
-    factory_config:
-      file: ./config_set/map_config.yaml
-
-    task_config:
-      file: ./config_set/job_config.yaml
-
     event_config:
-      file: ./config_set/event_config.yaml
+      file: E:\Project\PythonPro\tiangong\backend\config_set\template_config_set\event_config.yaml
+    factory_config:
+      file: E:\Project\PythonPro\tiangong\backend\config_set\template_config_set\map_config.yaml
+    task_config:
+      file: E:\Project\PythonPro\tiangong\backend\config_set\template_config_set\job_config.yaml
 
     agent:
       agent_name: packet_factory.RandomAgent
@@ -35,4 +33,20 @@ config:
           args: [ ]
         after_decision:
           name: base_callback.AfterDecision
+          args: [ ]
+
+
+      agv_callback:
+        after_work:
+          name: [ agv_callback.BaseCount ]
+          args: [ ]
+
+      machine_callback:
+        after_work:
+          name: [ machine_callback.BaseCount ]
+          args: [ ]
+
+      job_callback:
+        after_work:
+          name: [ job_callback.BaseCount ]
           args: [ ]

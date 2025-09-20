@@ -6,32 +6,36 @@
 @Date    ：2025/9/17 20:22 
 '''
 from tiangong_simulator.call_back.callback_manager.CallbackManager import CallbackManager
-from tiangong_simulator.call_back.agv_callback.BaseCount import BaseCount
+from tiangong_simulator.call_back.component_callback.agv_callback.BaseCount import BaseCount
+from tiangong_logs.logger import AGV_LOGGER as LOGGER
 
 
 class AGVCallbackManager(CallbackManager):
     def __init__(self):
         super().__init__()
         self._callbacks.clear()
-        # 这里可以根据 AGV 环境需要，替换或新增一些回调
         self._callbacks.update({
-            "statis": BaseCount()
+            "after_work": [BaseCount()]
         })
 
-    def use_all(self, env_state=None, *args, **kwargs):
+    def use_all_after_work(self, component=None):
         """
-        执行所有回调，但这里可以做一些 AGV 特定的前后处理
+        执行所有 'after_work' 回调
         """
-        print("[AGVCallbackManager] 开始执行所有回调...")
+        LOGGER("[AGVCallbackManager] 开始执行所有 after_work 回调...")
         results = {}
-        for name, cb in self._callbacks.items():
+
+        for cb in self._callbacks.get("after_work", []):
+            cb_name = cb.__class__.__name__
             try:
-                if env_state is not None:
-                    results[name] = cb(env_state, *args, **kwargs)
+                if component is not None:
+                    result = cb(component)
                 else:
-                    results[name] = cb(*args, **kwargs)
+                    result = cb()
+                results[cb_name] = result
             except Exception as e:
-                print(f"[AGVCallbackManager] 回调 '{name}' 执行出错: {e}")
-                results[name] = None
-        print("[AGVCallbackManager] 所有回调执行完成")
+                LOGGER(f"[AGVCallbackManager] 回调 '{cb_name}' 执行出错: {e}")
+                results[cb_name] = None
+
+        LOGGER("[AGVCallbackManager] after_work 回调执行完成")
         return results

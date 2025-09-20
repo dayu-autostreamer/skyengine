@@ -29,9 +29,9 @@ class NetworkAPIPath:
     LOG_DOWNLOAD = '/log/download'
 
     # 获取图片
-    MAP_UPDATE='/map/update'
+    MAP_UPDATE = '/map/update'
     # 启动系统
-    MAP_RENDER='/map/render'
+    MAP_RENDER = '/map/render'
     # 获取工厂列表
     FACTORY_LIST = '/factory/list'
 
@@ -43,6 +43,13 @@ class NetworkAPIPath:
     # 获取Agent
     AGENT_LIST = '/agent/list'
     SET_AGENT = '/agent/set'
+
+    # ========== MONITOR相关操作 ==========
+    AGV_MONITOR = '/monitor/agv'
+    MACHINE_MONITOR = '/monitor/machine'
+    JOB_MONITOR = '/monitor/job'
+    SYSTEM_MONITOR = '/monitor/system'
+
 
 class NetworkAPIMethod:
     # 接口：工厂控制
@@ -75,9 +82,9 @@ class NetworkAPIMethod:
     STANDARD_GET = 'GET'
 
     # 获取图片
-    MAP_UPDATE='GET'
+    MAP_UPDATE = 'GET'
     # 启动系统
-    MAP_RENDER='POST'
+    MAP_RENDER = 'POST'
     # 获取工厂列表
     FACTORY_LIST = 'GET'
 
@@ -89,3 +96,7 @@ class NetworkAPIMethod:
     AGENT_LIST = 'GET'
     SET_AGENT = 'POST'
 
+    AGV_MONITOR = 'GET'
+    MACHINE_MONITOR = 'GET'
+    JOB_MONITOR = 'GET'
+    SYSTEM_MONITOR = 'GET'

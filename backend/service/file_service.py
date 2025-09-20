@@ -130,7 +130,8 @@ def get_config_set(relative_dir_path='template_config_set'):
 
 def load_factory_config(target_factory: str):
     base_dir = os.path.join(config.BACKEND_DATA_DIR, target_factory)
-
+    # if target_factory == '':
+    #     base_dir = os.path.join(config.BACKEND_DATA_DIR, "template_config_set")
     event_config_path = os.path.join(base_dir, "event_config.yaml")
     job_config_path = os.path.join(base_dir, "job_config.yaml")
     map_config_path = os.path.join(base_dir, "map_config.yaml")
@@ -146,6 +147,7 @@ def get_new_config_file(target_factory: str):
     # 配置文件插入
     specific_config_files = load_factory_config(target_factory)
 
+    # 以config文件夹下的application_config.yaml为基础进行修改
     template_config_path = os.path.join(config.CONFIG_DIR, 'application_config.yaml')
 
     with open(template_config_path, 'r') as f:

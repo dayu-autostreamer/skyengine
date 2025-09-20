@@ -5,22 +5,23 @@
 @Author  ：Skyrim
 @Date    ：2025/9/17 20:51 
 '''
-from typing import List, Tuple
+from typing import List
 
 from tiangong_simulator.call_back.EnvCallback import EnvCallback
 from tiangong_simulator.call_back.callback_manager.MachineCallbackManager import MachineCallbackManager
 from tiangong_simulator.call_back.callback_manager.AGVCallbackManager import AGVCallbackManager
-from tiangong_simulator.registry import register_component
+from tiangong_simulator.call_back.callback_manager.JobCallbackManager import JobCallbackManager
+
+from tiangong_simulator.registry import register_component, component_registry
+from tiangong_simulator.registry.factory import create_component_by_id
+
 from tiangong_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine
 from tiangong_simulator.packet_factory.packet_factory_env.Agv.AGV import AGV
 from tiangong_simulator.packet_factory.packet_factory_env.Utils.util import OperationStatus
 from tiangong_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from tiangong_simulator.packet_factory.packet_factory_env.Job.Job import Job
 from tiangong_simulator.packet_factory.packet_factory_env.Graph.Graph import Point, Link, Graph
-import dataset
 import yaml
-import config
-from tiangong_simulator.registry import component_registry
 from tiangong_logs.logger import LOGGER
 
 
@@ -38,6 +39,13 @@ class FactoryMapLoader(EnvCallback):
         self.map_config = map_yaml['config']
 
     def create_jobs(self):
+        # 给每一个job添加回调管理器,它们都会有相同的回调
+        job_callback_manager = JobCallbackManager()
+        # 创建job相关的callback
+        after_work_configs = self.config.get("callback").get("job_callback").get("after_work").get("name")
+        for callback_name in after_work_configs:
+            job_callback_manager.add_callback_to_group('after_work', create_component_by_id(callback_name))
+
         job_file = self.job_config_file_path
         job_yaml = yaml.safe_load(open(job_file, 'rb'))
         job_config = job_yaml['config']
@@ -46,16 +54,19 @@ class FactoryMapLoader(EnvCallback):
         operation_count = 0
         for job_entry in job_config.get('jobs', []):
             job_data = job_entry['job']
-            operations: List[Operation] = []
-            for op_entry in job_data.get('operations', []):
-                op_data = op_entry['operation']
-                durations = [
-                    (int(m['id']), float(m['time']))
-                    for m in op_data.get('machines', [])
-                ]
-                operations.append(Operation(operation_count, OperationStatus.WAITING, durations))
-                operation_count += 1
-            jobs.append(Job(job_data['id'], operations))
+        operations: List[Operation] = []
+        for op_entry in job_data.get('operations', []):
+            op_data = op_entry['operation']
+        durations = [
+            (int(m['id']), float(m['time']))
+            for m in op_data.get('machines', [])
+        ]
+        operations.append(Operation(operation_count, OperationStatus.WAITING, durations))
+        operation_count += 1
+        job = Job(job_data['id'], operations)
+        job.set_callback_manager(job_callback_manager)
+
+        jobs.append(Job(job_data['id'], operations))
 
         return jobs
 
@@ -79,6 +90,10 @@ class FactoryMapLoader(EnvCallback):
         machines = []
         # 给每一个machine添加回调管理器,它们都会有相同的回调
         machine_callback_manager = MachineCallbackManager()
+        # 创建machine相关的callback
+        after_work_configs = self.config.get("callback").get("machine_callback").get("after_work").get("name")
+        for callback_name in after_work_configs:
+            machine_callback_manager.add_callback_to_group('after_work', create_component_by_id(callback_name))
 
         for machine in self.map_config.get('machines', []):
             m = machine['machine']
@@ -86,7 +101,7 @@ class FactoryMapLoader(EnvCallback):
             if point is None:
                 LOGGER.error(f"Machine Point ID {m['point_id']} not found in the graph")
                 continue
-            machine=Machine(m['id'], point.x, point.y, m['point_id'])
+            machine = Machine(m['id'], point.x, point.y, m['point_id'])
             machine.set_callback_manager(machine_callback_manager)
             machines.append(machine)
         return machines
@@ -95,13 +110,18 @@ class FactoryMapLoader(EnvCallback):
         agvs = []
         # 给每一个agv添加回调管理器,它们都会有相同的回调
         agv_callback_manager = AGVCallbackManager()
+        # 创建agv相关的callback
+        after_work_configs = self.config.get("callback").get("agv_callback").get("after_work").get("name")
+        for callback_name in after_work_configs:
+            agv_callback_manager.add_callback_to_group('after_work', create_component_by_id(callback_name))
+
         for agv in self.map_config.get('agvs', []):
             a = agv['agv']
             point = graph.get_point_by_id(a['point_id'])
             if point is None:
                 LOGGER.error(f"AGV Point ID {a['point_id']} not found in the graph")
                 continue
-            agv=AGV(a['id'], point.x, point.y, a['point_id'], a['velocity'], graph)
+            agv = AGV(a['id'], point.x, point.y, a['point_id'], a['velocity'], graph)
             agv.set_callback_manager(agv_callback_manager)
             agvs.append(agv)
         return agvs

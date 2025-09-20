@@ -1,15 +1,16 @@
 '''
 @Project ：tiangong 
-@File    ：MachineCallbackManager.py.py
+@File    ：JobCallbackManager.py.py
 @IDE     ：PyCharm 
 @Author  ：Skyrim
 @Date    ：2025/9/17 20:22 
 '''
 from tiangong_simulator.call_back.callback_manager.CallbackManager import CallbackManager
-from tiangong_simulator.call_back.component_callback.machine_callback.BaseCount import BaseCount
-from tiangong_logs.logger import MACHINE_LOGGER as LOGGER
+from tiangong_simulator.call_back.component_callback.job_callback.BaseCount import BaseCount
+from tiangong_logs.logger import JOB_LOGGER as LOGGER
 
-class MachineCallbackManager(CallbackManager):
+
+class JobCallbackManager(CallbackManager):
     def __init__(self):
         super().__init__()
         self._callbacks.clear()
@@ -21,7 +22,7 @@ class MachineCallbackManager(CallbackManager):
         """
         执行所有 'after_work' 回调
         """
-        LOGGER("[MACHINECallbackManager] 开始执行所有 after_work 回调...")
+        LOGGER("[JOBCallbackManager] 开始执行所有 after_work 回调...")
         results = {}
 
         for cb in self._callbacks.get("after_work", []):
@@ -33,8 +34,8 @@ class MachineCallbackManager(CallbackManager):
                     result = cb()
                 results[cb_name] = result
             except Exception as e:
-                LOGGER(f"[MACHINECallbackManager] 回调 '{cb_name}' 执行出错: {e}")
+                LOGGER(f"[JOBCallbackManager] 回调 '{cb_name}' 执行出错: {e}")
                 results[cb_name] = None
 
-        LOGGER("[MACHINECallbackManager] after_work 回调执行完成")
+        LOGGER("[JOBCallbackManager] after_work 回调执行完成")
         return results

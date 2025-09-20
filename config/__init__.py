@@ -19,6 +19,9 @@ BACKEND_LOG_DIR = os.path.join(LOG_DIR, 'backend_logs')
 SYSTEM_LOG_DIR = os.path.join(LOG_DIR, 'system_logs')
 TEST_LOG_DIR = os.path.join(LOG_DIR, 'test_logs')
 
+CACHE_DIR=os.path.join(LOG_DIR, 'cache')
+
+
 if __name__ == '__main__':
     print(CONFIG_DIR)
     print(LOG_DIR)

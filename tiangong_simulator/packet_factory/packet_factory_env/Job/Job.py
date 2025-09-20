@@ -3,6 +3,9 @@ from typing import List
 from tiangong_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from tiangong_simulator.packet_factory.packet_factory_env.Utils.util import JobStatus, OperationStatus
 from tiangong_simulator.registry import register_component
+from tiangong_simulator.call_back.callback_manager.JobCallbackManager import JobCallbackManager
+from tiangong_logs.logger import JOB_LOGGER as LOGGER
+
 
 @register_component("packet_factory.Job")
 class Job:
@@ -22,6 +25,12 @@ class Job:
 
         self.status = JobStatus.B4START
         self.target_count = target_count  # 目标处理工件数，可选
+        # 需要记录的数据
+        self.data_pool = {
+
+        }
+        # 事件回调机制
+        self.callback_manager: JobCallbackManager = JobCallbackManager()
 
     def __repr__(self):
         # 获取操作数量
@@ -47,7 +56,11 @@ class Job:
             f"status={self.status}> "
             f"operations={self.operations} "
         )
-    
+
+    def set_callback_manager(self, callback_manager: JobCallbackManager):
+        self.callback_manager = callback_manager
+        LOGGER.info("CallbackManager Created Successfully.")
+
     def get_id(self) -> int:
         return self.id
 
@@ -75,7 +88,7 @@ class Job:
         if self.is_finished():
             self.status = JobStatus.FINISHED
         return self.status
-    
+
     def get_progress(self):
         """
         计算当前Job的进度
@@ -92,7 +105,11 @@ class Job:
         """
         # todo: 待完善job状态转移
         # return self.status == JobStatus.FINISHED
-        return self.operations[self.get_operation_count()-1].get_status() == OperationStatus.FINISHED
+        if self.operations[self.get_operation_count() - 1].get_status() == OperationStatus.FINISHED:
+            # 传入自己,计算所有指标
+            self.callback_manager.use_all_after_work(self)
+            return True
+        return False
 
     # 赋值一个新的Job，状态完全处于最新状态
     def clone(self):

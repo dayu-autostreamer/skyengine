@@ -167,8 +167,8 @@ class Machine:
             self.push_process(final_time)
         else:
             LOGGER.info(f"Machine {self.id} is failed")
-
-        self.callback_manager.use_all()
+        # 传入自己,计算当前的所有指标
+        self.callback_manager.use_all_after_work(self)
 
     # ---------- 修改状态的函数,便于事件使用 ----------
     def record(self, event: BaseEvent):

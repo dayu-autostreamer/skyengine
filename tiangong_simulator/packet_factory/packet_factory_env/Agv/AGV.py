@@ -42,7 +42,7 @@ class AGV:
 
         }
         # 事件回调机制
-        self.callback_manager= AGVCallbackManager()
+        self.callback_manager = AGVCallbackManager()
 
     def set_callback_manager(self, callback_manager: AGVCallbackManager):
         self.callback_manager = callback_manager
@@ -346,7 +346,8 @@ class AGV:
             self.todo_queue_push(("unload", action[1]))
             LOGGER.info(f"AGV id={self.id} assigned todo: {action}")
         self.push_process(final_time)
-        self.callback_manager.use_all(self.pack())
+        # 传入自己,计算当前的所有指标
+        self.callback_manager.use_all_after_work(self)
 
     # ---------- 修改状态的函数,便于事件使用 ----------
     def record(self, event: BaseEvent):

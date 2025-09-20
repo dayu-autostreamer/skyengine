@@ -32,17 +32,23 @@ class CallbackManager:
         """列出所有已注册的回调"""
         return self._callbacks.copy()
 
-    def use_all(self, *args, **kwargs):
+    def add_callback_to_group(self, name: str, callback: EnvCallback):
         """
-        依次调用所有回调。
-        args / kwargs 会传递给每个回调。
+        向名为 name 的回调组中添加一个回调。
+        如果原本是单个回调，会自动转为列表。
         """
-        results = {}
-        for name, cb in self._callbacks.items():
-            try:
-                # 假设 EnvCallback 实现了 __call__
-                results[name] = cb(*args, **kwargs)
-            except Exception as e:
-                print(f"[CallbackManager] 回调 '{name}' 执行出错: {e}")
-                results[name] = None
-        return results
+        if not isinstance(callback, EnvCallback):
+            raise TypeError(f"[CallbackManager] 回调 '{name}' 必须继承 EnvCallback")
+
+        if name not in self._callbacks:
+            raise KeyError(f"[CallbackManager] 未找到名为 '{name}' 的回调")
+
+        existing = self._callbacks[name]
+
+        # 如果原来是单个回调，转换为 list
+        if isinstance(existing, EnvCallback):
+            self._callbacks[name] = [existing, callback]
+        elif isinstance(existing, list):
+            self._callbacks[name].append(callback)
+        else:
+            raise TypeError(f"[CallbackManager] 回调 '{name}' 的类型错误: {type(existing)}")

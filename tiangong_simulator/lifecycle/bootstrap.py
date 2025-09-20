@@ -23,7 +23,7 @@ def bootstrap(config):
     LOGGER.info("[Bootstrap] Creating context...")
     environment, agent = create_context()
 
-    # ---------- 检查环境 ----------
+    # ---------- 检查环境,todo----------
     LOGGER.info("[Bootstrap] Checking context...")
 
     LOGGER.info("[Bootstrap] Env, Agent Created Successfully...")

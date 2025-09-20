@@ -13,6 +13,21 @@ config:
         before_decision:
           args: []
           name: base_callback.BeforeDecision
+      agv_callback:
+        after_work:
+          args: []
+          name:
+          - agv_callback.BaseCount
+      job_callback:
+        after_work:
+          args: []
+          name:
+          - job_callback.BaseCount
+      machine_callback:
+        after_work:
+          args: []
+          name:
+          - machine_callback.BaseCount
       map_callback:
         event_queue:
           args: []
@@ -26,8 +41,8 @@ config:
           name: backend_callback.Visualizer
     env_name: packet_factory
     event_config:
-      file: E:\Project\PythonPro\tiangong\backend\config_set\event_config.yaml
+      file: E:\Project\PythonPro\tiangong\backend\config_set\pipeline_config_set\event_config.yaml
     factory_config:
-      file: E:\Project\PythonPro\tiangong\backend\config_set\map_config.yaml
+      file: E:\Project\PythonPro\tiangong\backend\config_set\pipeline_config_set\map_config.yaml
     task_config:
-      file: E:\Project\PythonPro\tiangong\backend\config_set\job_config.yaml
+      file: E:\Project\PythonPro\tiangong\backend\config_set\pipeline_config_set\job_config.yaml

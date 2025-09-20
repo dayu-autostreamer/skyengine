@@ -47,6 +47,8 @@ JOB_LOGGER = Logger(log_path=os.path.join(config.LOG_DIR, 'component_logs'), nam
 AGV_LOGGER = Logger(log_path=os.path.join(config.LOG_DIR, 'component_logs'), name="agv").logger
 MACHINE_LOGGER = Logger(log_path=os.path.join(config.LOG_DIR, 'component_logs'), name="machine").logger
 
+
+
 TEST_LOGGER = Logger(log_path=config.TEST_LOG_DIR, name="test").logger
 
 if __name__ == '__main__':

@@ -14,6 +14,7 @@ from backend_core import BackendCore
 
 # service引入
 from service import file_service
+from service import agent_service
 
 from tiangong_logs.logger import BACKEND_LOGGER as LOGGER
 
@@ -25,13 +26,11 @@ class BackendServer:
 
         @asynccontextmanager
         async def lifespan(app: FastAPI):
-            print("[Startup] 后端服务已启动成功 ✅")
             LOGGER.info("[Startup] 后端服务已启动成功 ✅")
             yield
-            print("[Closedown] 后端服务已成功关闭 ✅")
             LOGGER.info("[Closedown] 后端服务已成功关闭 ✅")
 
-        self.app = FastAPI(routes=[
+        self.routes = [
             # 工厂控制
             APIRoute(NetworkAPIPath.FACTORY_ALIVE,
                      handler.handle_factory_alive,
@@ -100,7 +99,9 @@ class BackendServer:
                      handler.handle_job_add,
                      response_class=JSONResponse,
                      methods=[NetworkAPIMethod.JOB_ADD]),
+        ]
 
+        self.map_routes = [
             # 信息展示
             APIRoute(NetworkAPIPath.JOBS_PROGRESS,
                      handler.handle_jobs_progress,
@@ -153,8 +154,21 @@ class BackendServer:
                      handler.handle_cases_config,
                      response_class=FileResponse,
                      methods=[NetworkAPIMethod.CASES_CONFIG]),
+        ]
+        self.agent_routes = [
+            APIRoute(NetworkAPIPath.AGENT_LIST,
+                     handler.get_agent_list,
+                     response_class=JSONResponse,
+                     methods=[NetworkAPIMethod.AGENT_LIST]),
+            APIRoute(NetworkAPIPath.SET_AGENT,
+                     handler.set_agent,
+                     response_class=JSONResponse,
+                     methods=[NetworkAPIMethod.SET_AGENT]),
+        ]
+        self.routes.extend(self.map_routes)
+        self.routes.extend(self.agent_routes)
 
-        ], log_level='trace', timeout=6000, lifespan=lifespan)
+        self.app = FastAPI(routes=self.routes, log_level='trace', timeout=6000, lifespan=lifespan)
 
         self.app.add_middleware(
             CORSMiddleware, allow_origins=["*"], allow_credentials=True,
@@ -315,3 +329,24 @@ class APIHandler:
             filename=file_name,
             media_type="application/zip"
         )
+
+    async def handle_map_render(self, request: Request):
+        body = await request.json()
+        self.server.render_map(body.get("target_factory"))
+        return JSONResponse({
+            "success": True
+        })
+
+    async def set_agent(self, request: Request):
+        body = await request.json()
+        self.server.set_agent(body.get('agent'))
+        return JSONResponse({
+            "success": True
+        })
+
+    async def get_agent_list(self):
+        agent_list = agent_service.get_agent_list()
+        return JSONResponse({
+            "success": True,
+            "agent_list": agent_list,
+        })

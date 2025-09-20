@@ -245,27 +245,76 @@
           </el-card>
 
 
-          <el-card style="max-width: 480px; margin-top: 10px">
-            <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px">Job Process</div>
-            <div v-for="job in jobProgressList" :key="job.id" style="margin-bottom: 15px">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Job {{ job.id }}</span>
-                <span v-if="job.status === 'FINISHED'" style="color: green;">Finished</span>
-                <span v-else style="color: blue;">Processing...</span>
-              </div>
-              <el-progress :percentage="job.progress" :status="job.status === 'FINISHED' ? 'success' : undefined"/>
-            </div>
-          </el-card>
+<el-card style="max-width: 480px; margin-top: 10px">
+  <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px">
+    Job Pools
+  </div>
+
+  <!-- 绑定 v-model，控制展开的项 -->
+  <el-collapse>
+    <!-- 遍历 jobDict 的每个分组 -->
+    <el-collapse-item
+      v-for="(jobs, jobId) in jobDict"
+      :key="jobId"
+      :name="jobId"
+    >
+      <!-- 折叠面板标题 -->
+      <template #title>
+        <span style="font-size: 15px; font-weight: bold;">
+          Job Pool {{ jobId }}
+        </span>
+      </template>
+
+      <!-- 折叠内容：当前分组下的 jobs -->
+      <div v-for="job in jobs" :key="job.id" style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Job {{ job.id }}</span>
+          <span v-if="job.status === 'FINISHED'" style="color: green;">Finished</span>
+          <span v-else style="color: blue;">Processing...</span>
+        </div>
+        <el-progress
+          :percentage="job.progress"
+          :status="job.status === 'FINISHED' ? 'success' : undefined"
+        />
+      </div>
+    </el-collapse-item>
+  </el-collapse>
+</el-card>
         </el-col>
 
         <ElCol :span="2"></ElCol>
 
         <ElCol :span="16">
-          <div class="block">
-            <el-image :src="map_src" style="max-width: 100%; max-height: 100%;" fit="cover">
+          <el-card>
+            <template #header>
+              <ElRow>
+                <ElCol :span="16">
+                  <span style="font-weight: bolder;font-size: 20px">Current Factory Map</span>
+                </ElCol>
+                <ElCol :span="8">
+                  <ElButton type="success" plain @click="updateAgent">
+                    Agent选择
+                  </ElButton>
+                  <ElSelect v-model="selectedAgent" placeholder="请选择Agent" style="width: 200px">
+                    <ElOption
+                        v-for="item in agentList"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                    />
+                  </ElSelect>
+                </ElCol>
+              </ElRow>
 
-            </el-image>
-          </div>
+            </template>
+            <div class="block">
+              <el-image :src="map_src" style="max-width: 100%; max-height: 100%;" fit="cover">
+              </el-image>
+            </div>
+
+          </el-card>
+
+
         </ElCol>
 
       </ElRow>
@@ -322,6 +371,36 @@ export default {
     let intervalId = null;
     const stores = useFactoryState()
 
+
+    // ---------- 智能体相关流程 ----------
+    const selectedAgent = ref("") //系统开始时会返回当前init agent
+    const agentList = ref([
+      {value: "agent1", label: "智能Agent 1"},
+      {value: "agent2", label: "智能Agent 2"},
+      {value: "agent3", label: "智能Agent 3"},
+    ])
+
+    const updateAgent = () => {
+      const data = {
+        'agent': selectedAgent.value
+      }
+      fetch("/api/agent/update", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }).then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          }
+      )
+          .then((data) => {
+            console.log(data)
+          })
+          .catch((error) => {
+          });
+    }
+
     const agvList = ref([]);
     const machineList = ref([]);
     const jobList = ref([]);
@@ -361,7 +440,7 @@ export default {
             if (!response.ok) {
               throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
             }
-            
+
             // 从响应头获取 filename
             const disposition = response.headers.get('Content-Disposition');
             let filename = 'template_config_set.zip';  // 默认
@@ -445,7 +524,7 @@ export default {
     }
 
     // 测试factory是否alive，若alive则更新下拉菜单和图片
-    const checkFactoryAlive = async () => { 
+    const checkFactoryAlive = async () => {
       fetch("/api/factory/alive", {
         method: "GET",
       })
@@ -705,17 +784,23 @@ export default {
       fps,
       factoryList,
       selectedFactory,
-      stores
+      stores,
+      agentList,
+      selectedAgent,
+      updateAgent
     };
   },
 
   data() {
     return {
-      speedLevel: parseInt(sessionStorage.getItem('speedLevel')) || 3, 
+      speedLevel: parseInt(sessionStorage.getItem('speedLevel')) || 3,
       selectedAgv: null,
       selectedMachine: null,
       selectedJob: null,
+
       jobProgressList: [],
+      jobDict: {},
+
       progressInterval: null, // 用于保存定时器引用
     };
   },
@@ -835,6 +920,15 @@ export default {
         }
         const data = await res.json();
         this.jobProgressList = data.jobs;
+        // 根据 id 分组
+        this.jobDict = {};
+        for (const job of data.jobs) {
+          const key = String(job.id);
+          if (!this.jobDict[key]) {
+            this.jobDict[key] = [];
+          }
+          this.jobDict[key].push(job);
+        }
       } catch (error) {
         console.error("Failed to retrieve task progress:", error);
       }

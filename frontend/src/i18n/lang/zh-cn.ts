@@ -2,6 +2,10 @@ export default {
     router: {
         factory: 'Factory Orchestration',
         cases: 'Typical Cases',
+        train: 'Train Management',
+        statis:'Information Collect',
+
+
         result: 'Result',
 
         limits: 'limits',

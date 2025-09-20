@@ -24,7 +24,7 @@ from tiangong_simulator.registry import component_registry
 from tiangong_logs.logger import LOGGER
 
 
-@register_component("base_callback.MapLoader")
+@register_component("base_callback.NewMapLoader")
 class FactoryMapLoader(EnvCallback):
     def __init__(self):
         super().__init__()

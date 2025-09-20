@@ -8,6 +8,7 @@
 
 from tiangong_simulator.call_back.EnvCallback import EnvCallback
 from tiangong_simulator.registry import register_component
+from tiangong_logs.logger import MACHINE_LOGGER as LOGGER
 
 
 @register_component("machine_callback.BaseCount")
@@ -17,4 +18,4 @@ class BaseCount(EnvCallback):
 
     def __call__(self):
         """使类的实例可以像函数一样被调用"""
-        print("测试Machine的回调")
+        LOGGER.info("测试Machine的回调")

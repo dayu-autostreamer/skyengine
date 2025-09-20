@@ -1,16 +1,13 @@
 from typing import Dict
 from tiangong_simulator.call_back.EnvCallback import EnvCallback
-from tiangong_simulator.call_back.base_callback.EnvMapLoader import EnvMapLoader
-from tiangong_simulator.call_back.base_callback.EnvVisualizer import EnvVisualizer
-from tiangong_simulator.call_back.base_callback.EventQueue import EventQueue
 
 
 class CallbackManager:
     def __init__(self):
-        self._callbacks: Dict[str, EnvCallback | list] = {
-            'load_graph': EnvMapLoader("/brandimarte/simple_agv.txt"),
-            'initialize_visualizer': EnvVisualizer(),
-            'event_queue': EventQueue()
+        self._callbacks: Dict[str, EnvCallback | list ] = {
+            'load_graph': EnvCallback(),
+            'initialize_visualizer': EnvCallback(),
+            'event_queue': EnvCallback()
         }
 
     def register(self, name: str, callback: EnvCallback):

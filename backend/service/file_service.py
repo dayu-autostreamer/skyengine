@@ -9,6 +9,7 @@ import yaml
 
 import backend.config_set as backend_config
 import config
+from tiangong_logs.logger import BACKEND_LOGGER as LOGGER
 
 
 def get_config_dir():
@@ -35,7 +36,7 @@ def save_file(dir_name, file):
     - file: FastAPI UploadFile 对象
     """
     # 确保目录存在
-    dir_path=os.path.join(config.BACKEND_DATA_DIR, dir_name)
+    dir_path = os.path.join(config.BACKEND_DATA_DIR, dir_name)
     create_dir(dir_path)
     # 构建完整保存路径
     save_path = os.path.join(dir_path, file.filename)
@@ -113,7 +114,7 @@ def get_config_set(relative_dir_path='template_config_set'):
     dir_path = config.dir_path + '/' + relative_dir_path
     # 检查目录是否存在
     if not os.path.exists(dir_path):
-        print(f"警告: 目录 '{dir_path}' 不存在")
+        LOGGER.info(f"警告: 目录 '{dir_path}' 不存在")
         return config_set
 
     # 遍历目录中的所有文件
@@ -122,7 +123,7 @@ def get_config_set(relative_dir_path='template_config_set'):
 
         # 检查是否为文件且为yaml格式
         if os.path.isfile(file_path) and filename.endswith(('.yaml', '.yml')):
-            print(file_path)
+            LOGGER.info(file_path)
 
     return config_set
 
@@ -162,8 +163,8 @@ def get_new_config_file(target_factory: str):
         yaml.dump(specific_config, f, default_flow_style=False, allow_unicode=True)
 
     sky_config['config_path'] = new_config_path
-    print(sky_config)
     return sky_config
+
 
 if __name__ == '__main__':
     get_new_config_file('template_config_set')

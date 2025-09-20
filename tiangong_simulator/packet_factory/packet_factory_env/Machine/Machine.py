@@ -3,10 +3,11 @@ from typing import Optional, Tuple, List
 from tiangong_simulator.event.event.BaseEvent import BaseEvent
 from tiangong_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
 from tiangong_simulator.packet_factory.packet_factory_env.Utils.util import OperationStatus, MachineStatus
-from tiangong_logs.logger import LOGGER
 from tiangong_simulator.call_back.callback_manager.MachineCallbackManager import MachineCallbackManager
 
 from tiangong_simulator.registry import register_component
+
+from tiangong_logs.logger import MACHINE_LOGGER as LOGGER
 
 
 @register_component("packet_factory.Machine")

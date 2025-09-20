@@ -39,6 +39,11 @@ class NetworkAPIPath:
     CASES_IMAGE = '/cases/image'
     CASES_CONFIG = '/cases/config'
 
+    # ========== AGENT相关操作 ==========
+    # 获取Agent
+    AGENT_LIST = '/agent/list'
+    SET_AGENT = '/agent/set'
+
 class NetworkAPIMethod:
     # 接口：工厂控制
     FACTORY_ALIVE = 'GET'
@@ -79,3 +84,8 @@ class NetworkAPIMethod:
     # 获取案例
     CASES_IMAGE = 'GET'
     CASES_CONFIG = 'GET'
+
+    # 获取支持的Agent列表
+    AGENT_LIST = 'GET'
+    SET_AGENT = 'POST'
+

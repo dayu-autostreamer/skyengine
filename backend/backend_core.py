@@ -6,6 +6,7 @@ from typing import Callable
 import yaml
 
 from tiangong_simulator.lifecycle.bootstrap import bootstrap
+from tiangong_simulator.packet_factory.Agent import BaseAgent
 from tiangong_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
 from tiangong_simulator.packet_factory.packet_factory_env.Job.Job import Job
 from tiangong_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine
@@ -54,6 +55,7 @@ class BackendCore:
     def __init__(self):
         # 环境本身
         self.env: PacketFactoryEnv = None
+        self.agent: BaseAgent = None
         # 线程池,但是实际按照当前的core实现大概只能有单个线程(受到env限制)...后续再修改吧!
         self.thread_pool = ThreadPool()
 
@@ -63,6 +65,7 @@ class BackendCore:
         env, agent = bootstrap(specific_config)
 
         self.env = env
+        self.agent = agent
 
         # 重置环境
         observations = env.reset()
@@ -70,7 +73,7 @@ class BackendCore:
         # 运行一个 episode（直到结束）
         while not self.env.env_is_finished() and not stop_event.is_set():
             # 输入获得环境状态并决策
-            actions = self.env.action_space(agent)
+            actions = self.env.action_space(self.agent)
 
             # agent在外部决策
             observations, rewards, terminations, truncations, infos = self.env.step(actions)
@@ -87,19 +90,19 @@ class BackendCore:
         return self.env is not None
 
     def factory_start(self):
-        print("factory_start")
+        LOGGER.info("factory_start")
         self.env.env_visualizer.run()
 
     def factory_pause(self):
-        print("factory_pause")
+        LOGGER.info("factory_pause")
         self.env.env_visualizer.pause()
 
     def factory_reset(self):
-        print("factory_reset")
+        LOGGER.info("factory_reset")
         self.env.env_visualizer.restart()
 
     def change_factory_speed(self, speed_level: int):
-        print(f"change_factory_speed: {speed_level}")
+        LOGGER.info(f"change_factory_speed: {speed_level}")
         self.env.env_visualizer.change_speed(speed_level)
 
     def get_agvs(self):
@@ -110,11 +113,11 @@ class BackendCore:
         return agv_list
 
     def pause_agv(self, agv_id):
-        print("pause_agv")
+        LOGGER.info("pause_agv")
         self.env.env_visualizer.pause_agv(agv_id)
 
     def resume_agv(self, agv_id):
-        print("resume_agv")
+        LOGGER.info("resume_agv")
         self.env.env_visualizer.resume_agv(agv_id)
 
     def get_machines(self):
@@ -125,11 +128,11 @@ class BackendCore:
         return machine_list
 
     def pause_machine(self, machine_id):
-        print("pause_machine")
+        LOGGER.info("pause_machine")
         self.env.env_visualizer.pause_machine(machine_id)
 
     def resume_machine(self, machine_id):
-        print("resume_machine")
+        LOGGER.info("resume_machine")
         self.env.env_visualizer.resume_machine(machine_id)
 
     def get_job_templates(self):
@@ -140,7 +143,7 @@ class BackendCore:
         return job_list
 
     def add_job(self, job_id: int):
-        print(f"Job {job_id} added")
+        LOGGER.info(f"Job {job_id} added")
         self.env.env_visualizer.add_job(job_id)
 
     def get_jobs_progress(self):
@@ -161,5 +164,8 @@ class BackendCore:
         try:
             pic = self.env.env_visualizer.get_map()
         except Exception as e:
-            print(e)
+            LOGGER.info(e)
         return pic
+
+    def set_agent(self, new_agent):
+        self.agent = new_agent

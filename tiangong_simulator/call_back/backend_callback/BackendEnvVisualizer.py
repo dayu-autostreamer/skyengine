@@ -18,7 +18,7 @@ class BackendEnvVisualizer(EnvVisualizer):
         super().__init__(_fps)
 
         pygame.font.init()
-
+        self.env=None
         self.pic = None
 
     def visualize_env(self, env=None):

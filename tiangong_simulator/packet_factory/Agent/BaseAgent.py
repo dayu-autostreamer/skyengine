@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 
 from tiangong_simulator.registry import register_component
 
-
+# todo 当前没尝试
 @register_component("packet_factory.BaseAgent")
 class BaseAgent(ABC):
     def __init__(self, name=None, agent_id=None, context=None):

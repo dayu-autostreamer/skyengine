@@ -4,6 +4,7 @@ import os
 import config
 import time
 
+
 class Logger:
     def __init__(self, log_path=config.LOG_DIR, name="mylog"):
         # 定义时间戳格式（年-月-日_时-分）
@@ -39,7 +40,14 @@ class Logger:
 
 # 提供的默认LOGGER会存储到system中去
 LOGGER = Logger(log_path=config.SYSTEM_LOG_DIR, name="system").logger
+# 提供backend logger,后续开发请注意更换
 BACKEND_LOGGER = Logger(log_path=config.BACKEND_LOG_DIR, name="backend").logger
+
+JOB_LOGGER = Logger(log_path=os.path.join(config.LOG_DIR, 'component_logs'), name="job").logger
+AGV_LOGGER = Logger(log_path=os.path.join(config.LOG_DIR, 'component_logs'), name="agv").logger
+MACHINE_LOGGER = Logger(log_path=os.path.join(config.LOG_DIR, 'component_logs'), name="machine").logger
+
+TEST_LOGGER = Logger(log_path=config.TEST_LOG_DIR, name="test").logger
 
 if __name__ == '__main__':
     LOGGER.info("233")

@@ -1,0 +1,33 @@
+config:
+  env_type: simulation
+  simulation:
+    agent:
+      agent_name: packet_factory.RandomAgent
+      id: 1
+      name: 1
+    callback:
+      agent_callback:
+        after_decision:
+          args: []
+          name: base_callback.AfterDecision
+        before_decision:
+          args: []
+          name: base_callback.BeforeDecision
+      map_callback:
+        event_queue:
+          args: []
+          name: base_callback.EventQueue
+        graph_loader:
+          args: []
+          name: backend_callback.MapLoader
+        visualizer:
+          args:
+          - 3
+          name: backend_callback.Visualizer
+    env_name: packet_factory
+    event_config:
+      file: E:\Project\PythonPro\tiangong\backend\config_set\template_config_set\event_config.yaml
+    factory_config:
+      file: E:\Project\PythonPro\tiangong\backend\config_set\template_config_set\map_config.yaml
+    task_config:
+      file: E:\Project\PythonPro\tiangong\backend\config_set\template_config_set\job_config.yaml

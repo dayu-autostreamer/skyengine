@@ -12,7 +12,7 @@ from tiangong_simulator.packet_factory.packet_factory_env.Utils.util import Oper
 
 
 # 仿真环境创建前的初始化
-@register_component("base_callback.Visualizer")
+@register_component("base_callback.NewEnvisualizer")
 class EnvVisualizer(EnvCallback):
     WIDTH, HEIGHT = 1024, 768
 
@@ -67,7 +67,7 @@ class EnvVisualizer(EnvCallback):
         self.machine_pause_queue = []
         self.machine_resume_queue = []
         self.job_add_queue = []
-        
+
         self.uncertainty_event_queue = []
 
         self.overall_scale = None
@@ -79,7 +79,7 @@ class EnvVisualizer(EnvCallback):
 
     def calculate_scale_and_shift(self, left, top, right, bottom):
         all_points = []
-        
+
         # 收集所有点的位置
         graph = self.env.getGraph()
         for point in graph.points:
@@ -111,8 +111,9 @@ class EnvVisualizer(EnvCallback):
 
         return scale_factor, (shift_x, shift_y)
 
-    def scaling(self, pos, shift=(0,0)):
-        return (int((pos[0] + shift[0]) * self.overall_scale + self.overall_shift[0]), int((pos[1] + shift[1]) * self.overall_scale + self.overall_shift[1] ))
+    def scaling(self, pos, shift=(0, 0)):
+        return (int((pos[0] + shift[0]) * self.overall_scale + self.overall_shift[0]),
+                int((pos[1] + shift[1]) * self.overall_scale + self.overall_shift[1]))
 
     def draw_agv(self, screen, agv: AGV):
         color = self.AGV_STATE_COLOR.get(agv.status, self.BLACK)
@@ -172,15 +173,18 @@ class EnvVisualizer(EnvCallback):
         for machine in self.env.getMachines():
             self.draw_machine(self.screen, machine)
             for operation in machine.input_queue:
-                self.draw_operation(self.screen, operation, self.scaling(machine.get_xy(), shift=self.MACHINE_INPUT_SHIFT))
+                self.draw_operation(self.screen, operation,
+                                    self.scaling(machine.get_xy(), shift=self.MACHINE_INPUT_SHIFT))
             for operation in machine.output_queue:
-                self.draw_operation(self.screen, operation, self.scaling(machine.get_xy(), shift=self.MACHINE_OUTPUT_SHIFT))
+                self.draw_operation(self.screen, operation,
+                                    self.scaling(machine.get_xy(), shift=self.MACHINE_OUTPUT_SHIFT))
 
         for agv in self.env.getAGVs():
             self.draw_agv(self.screen, agv)
             agv_operation = agv.get_operation()
             if agv_operation is not None:
-                self.draw_operation(self.screen, agv_operation, self.scaling(agv.get_xy(), shift=self.AGV_OPERATION_SHIFT))
+                self.draw_operation(self.screen, agv_operation,
+                                    self.scaling(agv.get_xy(), shift=self.AGV_OPERATION_SHIFT))
 
         pygame.display.flip()
         self.clock.tick(self.fps)
@@ -195,7 +199,7 @@ class EnvVisualizer(EnvCallback):
         should_restart = self.should_restart
         self.should_restart = False
         return should_restart
-    
+
     def pause(self):
         self.should_pause = True
 
@@ -206,18 +210,18 @@ class EnvVisualizer(EnvCallback):
         should_pause = self.should_pause
         self.should_pause = False
         return should_pause
-    
+
     def run(self):
         self.should_run = True
 
-    def shouldRun(self)->bool:
+    def shouldRun(self) -> bool:
         """
         :return: True if env should running
         """
         should_run = self.should_run
         self.should_run = False
         return should_run
-    
+
     def change_speed(self, speed: int):
         self.fps = speed
 
@@ -354,7 +358,6 @@ class EnvVisualizer(EnvCallback):
                 "type": "",
                 "data": None
             })
-
 
         for paused_agv in self.getPausedAGVs():
             result.append({

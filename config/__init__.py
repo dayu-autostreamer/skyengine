@@ -17,6 +17,7 @@ LOG_DIR = os.path.join(ROOT_DIR, 'tiangong_logs')
 TEMP_LOG_DIR = os.path.join(LOG_DIR, 'temp_logs')
 BACKEND_LOG_DIR = os.path.join(LOG_DIR, 'backend_logs')
 SYSTEM_LOG_DIR = os.path.join(LOG_DIR, 'system_logs')
+TEST_LOG_DIR = os.path.join(LOG_DIR, 'test_logs')
 
 if __name__ == '__main__':
     print(CONFIG_DIR)

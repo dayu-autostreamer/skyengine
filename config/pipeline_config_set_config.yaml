@@ -18,23 +18,26 @@ config:
           args: []
           name:
           - agv_callback.BaseCount
+          - agv_callback.TransportCount
       job_callback:
         after_work:
           args: []
           name:
           - job_callback.BaseCount
+          - job_callback.DelayCount
       machine_callback:
         after_work:
           args: []
           name:
           - machine_callback.BaseCount
+          - machine_callback.ProcessCount
       map_callback:
         event_queue:
           args: []
           name: base_callback.EventQueue
         graph_loader:
           args: []
-          name: backend_callback.MapLoader
+          name: base_callback.NewMapLoader
         visualizer:
           args:
           - 3

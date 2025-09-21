@@ -7,7 +7,7 @@
 '''
 # 该回调计算machine完成操作的工件数量
 
-from tiangong_simulator.call_back.component_callback.machine_callback import BaseCount
+from tiangong_simulator.call_back.component_callback.machine_callback.BaseCount import BaseCount
 from tiangong_simulator.registry import register_component
 from tiangong_logs.logger import MACHINE_LOGGER as LOGGER
 
@@ -21,10 +21,9 @@ class ProcessCount(BaseCount):
     def __call__(self, *args, **kwargs):
         """计算machine完成操作的工件数量"""
         machine_component = kwargs.get('machine', None)
-        item_id = kwargs.get('item_id', None)
 
         if machine_component is None:
-            LOGGER.warning("传入machine_component为none")
+            LOGGER.info("传入machine_component为none")
             return {'success': False, 'message': "machine_component is None"}
 
         machine_id = machine_component.id
@@ -43,11 +42,10 @@ class ProcessCount(BaseCount):
         data = {
             'success': True,
             'machine_id': machine_id,
-            'item_id': item_id,
             'process_count': self.process_counts[machine_id],
             'indicator_type': 'machine_process_count'
         }
         # 返回指标数据，将被记录到cache中
         self.dc_helper.append_to_list(
-            f'MACHINE_{machine_component.id}', data, machine_component.timer
+            f"MACHINE_{machine_component.id:02d}", data, machine_component.timer
         )

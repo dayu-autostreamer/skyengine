@@ -9,6 +9,15 @@ from tiangong_logs.dc_helper import DiskCacheHelper
 import config
 
 
+def delete_all():
+    dc = DiskCacheHelper(config.CACHE_DIR, expire=600)
+    res = dc.keys()
+    print(res)
+    for key in res:
+        temp = dc.delete(key)
+        print(f"{key}当前删除的结果为{temp}")
+
+
 def test_logs():
     dc = DiskCacheHelper(config.CACHE_DIR, expire=60)
     # 写入
@@ -18,8 +27,20 @@ def test_logs():
     dc.set("system_indicator", {"status": "running", "throughput": 32})
 
 
+def test_load_all():
+    # 查找当前所有的键,按照AGV,MACHINE,JOB分组返回
+    dc = DiskCacheHelper(config.CACHE_DIR, expire=600)
+    res = dc.keys()
+    print(res)
+    for key in res:
+        temp = dc.get(key, [])
+        print(f"{key}当前的值为{temp}")
+
+
 if __name__ == "__main__":
-    test_logs()
+    delete_all()
+    # test_load_all()
+    # test_logs()
     # dc = DiskCacheHelper(config.CACHE_DIR, expire=60)
     #
     # # 写入

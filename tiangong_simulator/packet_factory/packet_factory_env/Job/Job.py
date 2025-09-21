@@ -90,7 +90,7 @@ class Job:
         self.status = status
 
     def get_status(self):
-        if self.is_finished():
+        if self.is_finished(self.timer):
             self.status = JobStatus.FINISHED
         return self.status
 
@@ -109,7 +109,7 @@ class Job:
         计算当前Job是否已经完成
         """
         # todo: 待完善job状态转移
-        self.timer = current_env_time
+        self.timer = max(self.timer,current_env_time)
         # return self.status == JobStatus.FINISHED
         if self.operations[self.get_operation_count() - 1].get_status() == OperationStatus.FINISHED:
             # 传入自己,计算所有指标

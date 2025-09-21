@@ -76,10 +76,14 @@ class RandomAgent(BaseAgent):
 
         time_end = time.time()
         LOGGER.info(f"Finished jobs: {cnt}")
-        if cnt == len(jobs):
+        if self.is_finish(cnt, len(jobs)):
             self.alive = False
             return [], 0
         return current_sample, (time_end - time_start) * 500 + 1
+
+    def is_finish(self, cnt, job_count):
+        """判断任务是否完成"""
+        return cnt == job_count
 
     def __repr__(self):
         return f"<{self.__class__.__name__} id={self.agent_id} name={self.name}>"

@@ -9,6 +9,7 @@ from tiangong_simulator.call_back.callback_manager.CallbackManager import Callba
 from tiangong_simulator.call_back.component_callback.machine_callback.BaseCount import BaseCount
 from tiangong_logs.logger import MACHINE_LOGGER as LOGGER
 
+
 class MachineCallbackManager(CallbackManager):
     def __init__(self):
         super().__init__()
@@ -21,14 +22,14 @@ class MachineCallbackManager(CallbackManager):
         """
         执行所有 'after_work' 回调
         """
-        LOGGER("[MACHINECallbackManager] 开始执行所有 after_work 回调...")
+        LOGGER.info("[MACHINECallbackManager] 开始执行所有 after_work 回调...")
         results = {}
 
         for cb in self._callbacks.get("after_work", []):
             cb_name = cb.__class__.__name__
             try:
                 if component is not None:
-                    result = cb(component)
+                    result = cb(machine=component)
                 else:
                     result = cb()
                 results[cb_name] = result
@@ -36,5 +37,5 @@ class MachineCallbackManager(CallbackManager):
                 LOGGER(f"[MACHINECallbackManager] 回调 '{cb_name}' 执行出错: {e}")
                 results[cb_name] = None
 
-        LOGGER("[MACHINECallbackManager] after_work 回调执行完成")
+        LOGGER.info("[MACHINECallbackManager] after_work 回调执行完成")
         return results

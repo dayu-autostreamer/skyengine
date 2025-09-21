@@ -22,14 +22,14 @@ class AGVCallbackManager(CallbackManager):
         """
         执行所有 'after_work' 回调
         """
-        LOGGER("[AGVCallbackManager] 开始执行所有 after_work 回调...")
+        LOGGER.info("[AGVCallbackManager] 开始执行所有 after_work 回调...")
         results = {}
 
         for cb in self._callbacks.get("after_work", []):
             cb_name = cb.__class__.__name__
             try:
                 if component is not None:
-                    result = cb(component)
+                    result = cb(agv=component)
                 else:
                     result = cb()
                 results[cb_name] = result
@@ -37,5 +37,5 @@ class AGVCallbackManager(CallbackManager):
                 LOGGER(f"[AGVCallbackManager] 回调 '{cb_name}' 执行出错: {e}")
                 results[cb_name] = None
 
-        LOGGER("[AGVCallbackManager] after_work 回调执行完成")
+        LOGGER.info("[AGVCallbackManager] after_work 回调执行完成")
         return results

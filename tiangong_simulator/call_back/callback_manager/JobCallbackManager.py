@@ -22,14 +22,16 @@ class JobCallbackManager(CallbackManager):
         """
         执行所有 'after_work' 回调
         """
-        LOGGER("[JOBCallbackManager] 开始执行所有 after_work 回调...")
+        print(component)
+        LOGGER.info("[JOBCallbackManager] 开始执行所有 after_work 回调...")
         results = {}
-
         for cb in self._callbacks.get("after_work", []):
             cb_name = cb.__class__.__name__
+            print(cb_name)
+
             try:
                 if component is not None:
-                    result = cb(component)
+                    result = cb(job=component)
                 else:
                     result = cb()
                 results[cb_name] = result
@@ -37,5 +39,5 @@ class JobCallbackManager(CallbackManager):
                 LOGGER(f"[JOBCallbackManager] 回调 '{cb_name}' 执行出错: {e}")
                 results[cb_name] = None
 
-        LOGGER("[JOBCallbackManager] after_work 回调执行完成")
+        LOGGER.info("[JOBCallbackManager] after_work 回调执行完成")
         return results

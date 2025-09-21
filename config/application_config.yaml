@@ -19,7 +19,7 @@ config:
     callback:
       map_callback:
         graph_loader:
-          name: backend_callback.MapLoader
+          name: base_callback.NewMapLoader
           args: [ ]
         visualizer:
           name: backend_callback.Visualizer
@@ -38,15 +38,15 @@ config:
 
       agv_callback:
         after_work:
-          name: [ agv_callback.BaseCount ]
+          name: [ agv_callback.BaseCount,agv_callback.TransportCount ]
           args: [ ]
 
       machine_callback:
         after_work:
-          name: [ machine_callback.BaseCount ]
+          name: [ machine_callback.BaseCount,machine_callback.ProcessCount ]
           args: [ ]
 
       job_callback:
         after_work:
-          name: [ job_callback.BaseCount ]
+          name: [ job_callback.BaseCount ,job_callback.DelayCount ]
           args: [ ]

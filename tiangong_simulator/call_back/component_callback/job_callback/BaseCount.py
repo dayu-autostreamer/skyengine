@@ -9,20 +9,21 @@ from tiangong_simulator.call_back.EnvCallback import EnvCallback
 from tiangong_simulator.registry import register_component
 from tiangong_logs.logger import MACHINE_LOGGER as LOGGER
 from tiangong_logs.dc_helper import DiskCacheHelper
+from tiangong_simulator.call_back.component_callback.BaseComponentCall import BaseComponentCall
 
 
 @register_component("job_callback.BaseCount")
-class BaseCount(EnvCallback):
+class BaseCount(BaseComponentCall):
     def __init__(self):
         super().__init__()
-        self.dc_helper = DiskCacheHelper()
+
     def __call__(self, *args, **kwargs):
         """使类的实例可以像函数一样被调用"""
         job_component = kwargs.get('job', None)  # 取关键字参数 'a'，默认值 0
         if job_component is None:
-            print("传入job_component为none")
+            LOGGER.info("传入job_component为none")
         else:
-            print("传入了实际的job_component")
+            LOGGER.info("传入了实际的job_component")
 
         LOGGER.info("测试Job的回调")
         return {

@@ -7,7 +7,7 @@
 '''
 # 该回调计算单个AGV的运输次数
 
-from tiangong_simulator.call_back.component_callback.agv_callback import BaseCount
+from tiangong_simulator.call_back.component_callback.agv_callback.BaseCount import BaseCount
 from tiangong_simulator.registry import register_component
 from tiangong_logs.logger import AGV_LOGGER as LOGGER
 
@@ -38,5 +38,5 @@ class TransportCount(BaseCount):
         }
         # 返回指标数据，将被记录到cache中
         self.dc_helper.append_to_list(
-            f'AGV_{agv_component.id}', data, agv_component.timer
+            f'AGV_{agv_component.id:02d}', data, agv_component.timer
         )

@@ -96,7 +96,7 @@ class PacketFactoryEnv(ParallelEnv):
         else:
             cnt = 0
             for job in self.jobs:
-                if job.is_finished():
+                if job.is_finished(self.env_timeline):
                     cnt += 1
             res = False
             if cnt == len(self.jobs):

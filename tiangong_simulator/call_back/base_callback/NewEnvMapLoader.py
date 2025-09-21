@@ -44,6 +44,7 @@ class FactoryMapLoader(EnvCallback):
         # 创建job相关的callback
         after_work_configs = self.config.get("callback").get("job_callback").get("after_work").get("name")
         for callback_name in after_work_configs:
+            print(callback_name)
             job_callback_manager.add_callback_to_group('after_work', create_component_by_id(callback_name))
 
         job_file = self.job_config_file_path
@@ -66,7 +67,7 @@ class FactoryMapLoader(EnvCallback):
         job = Job(job_data['id'], operations)
         job.set_callback_manager(job_callback_manager)
 
-        jobs.append(Job(job_data['id'], operations))
+        jobs.append(job)
 
         return jobs
 
@@ -93,6 +94,7 @@ class FactoryMapLoader(EnvCallback):
         # 创建machine相关的callback
         after_work_configs = self.config.get("callback").get("machine_callback").get("after_work").get("name")
         for callback_name in after_work_configs:
+            print(callback_name)
             machine_callback_manager.add_callback_to_group('after_work', create_component_by_id(callback_name))
 
         for machine in self.map_config.get('machines', []):
@@ -113,6 +115,7 @@ class FactoryMapLoader(EnvCallback):
         # 创建agv相关的callback
         after_work_configs = self.config.get("callback").get("agv_callback").get("after_work").get("name")
         for callback_name in after_work_configs:
+            print(callback_name)
             agv_callback_manager.add_callback_to_group('after_work', create_component_by_id(callback_name))
 
         for agv in self.map_config.get('agvs', []):

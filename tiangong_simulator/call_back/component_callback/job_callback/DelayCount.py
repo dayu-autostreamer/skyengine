@@ -24,8 +24,6 @@ class DelayCount(BaseCount):
     def __call__(self, *args, **kwargs):
         """计算job的各个时延"""
         job_component = kwargs.get('job', None)
-        # current_step = kwargs.get('step', None)
-        # event_time = kwargs.get('time', time.time())
 
         if job_component is None:
             LOGGER.warning("传入job_component为none")
@@ -47,7 +45,9 @@ class DelayCount(BaseCount):
             'total_delay': total_delay,
             'indicator_type': 'job_delay'
         }
+        print(f'JOB_{job_component.id:02d}的数据为:{data}')
+
         # 返回指标数据，将被记录到cache中
         self.dc_helper.append_to_list(
-            f'JOB_{job_component.id}', data,job_component.timer
+            f'JOB_{job_component.id:02d}', data, job_component.timer
         )

@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 
 from tiangong_simulator.registry import register_component
 
+
 # todo 当前没尝试
 @register_component("packet_factory.BaseAgent")
 class BaseAgent(ABC):
@@ -23,7 +24,6 @@ class BaseAgent(ABC):
         self.alive = True  # 是否在线
         self.turns = 0  # 存活轮次
 
-
     def is_alive(self):
         return self.alive
 
@@ -33,7 +33,7 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def is_finish(self):
+    def is_finish(self, *args, **kwargs):
         """判断任务是否完成"""
         pass
 

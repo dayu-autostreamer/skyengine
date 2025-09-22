@@ -10,7 +10,7 @@
 from tiangong_simulator.call_back.component_callback.agv_callback.BaseCount import BaseCount
 from tiangong_simulator.registry import register_component
 from tiangong_logs.logger import AGV_LOGGER as LOGGER
-
+from config.all_field_const import CacheInfo
 
 @register_component("agv_callback.TransportCount")
 class TransportCount(BaseCount):
@@ -38,5 +38,5 @@ class TransportCount(BaseCount):
         }
         # 返回指标数据，将被记录到cache中
         self.dc_helper.append_to_list(
-            f'AGV_{agv_component.id:02d}', data, agv_component.timer
+            f'{CacheInfo.MONITOR_AGV.value}_{agv_component.id:02d}', data, agv_component.timer
         )

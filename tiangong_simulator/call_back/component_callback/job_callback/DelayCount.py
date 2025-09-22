@@ -11,7 +11,7 @@ from tiangong_simulator.call_back.component_callback.job_callback.BaseCount impo
 from tiangong_simulator.registry import register_component
 from tiangong_logs.logger import JOB_LOGGER as LOGGER
 from tiangong_logs.dc_helper import DiskCacheHelper
-
+from config.all_field_const import CacheInfo
 
 @register_component("job_callback.DelayCount")
 class DelayCount(BaseCount):
@@ -49,5 +49,5 @@ class DelayCount(BaseCount):
 
         # 返回指标数据，将被记录到cache中
         self.dc_helper.append_to_list(
-            f'JOB_{job_component.id:02d}', data, job_component.timer
+            f'{CacheInfo.MONITOR_JOB.value}_{job_component.id:02d}', data, job_component.timer
         )

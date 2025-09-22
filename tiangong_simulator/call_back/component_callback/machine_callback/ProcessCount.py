@@ -10,6 +10,7 @@
 from tiangong_simulator.call_back.component_callback.machine_callback.BaseCount import BaseCount
 from tiangong_simulator.registry import register_component
 from tiangong_logs.logger import MACHINE_LOGGER as LOGGER
+from config.all_field_const import CacheInfo
 
 
 @register_component("machine_callback.ProcessCount")
@@ -47,5 +48,5 @@ class ProcessCount(BaseCount):
         }
         # 返回指标数据，将被记录到cache中
         self.dc_helper.append_to_list(
-            f"MACHINE_{machine_component.id:02d}", data, machine_component.timer
+            f"{CacheInfo.MONITOR_MACHINE.value}_{machine_component.id:02d}", data, machine_component.timer
         )

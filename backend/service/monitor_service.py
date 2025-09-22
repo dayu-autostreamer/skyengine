@@ -5,31 +5,75 @@
 @Author  ：Skyrim
 @Date    ：2025/9/20 22:52
 """
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 import asyncio
 import json
 import time
 from tiangong_logs.dc_helper import DiskCacheHelper
 import config
+from config.all_field_const import CacheInfo
 
 # 初始化一个全局缓存对象
 dc = DiskCacheHelper(config.CACHE_DIR, expire=600)
 
 
-def get_agv_indicator(default: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    return dc.get("agv_indicator", default or {})
+async def get_agv_indicator(default: Optional[List[Dict[str, Any]]] = None):
+    while True:
+        current_keys = dc.keys()
+        agv_data = []
+        for key in current_keys:
+            if key.startswith(CacheInfo.MONITOR_AGV.value):
+                agv_data.append(dc.get(key, default or {}))
+        payload = {
+            "data": agv_data
+        }
+        yield f"data: {json.dumps(payload)}\n\n"
+        await asyncio.sleep(2)  # 每2秒推送一次
 
 
-def get_machine_indicator(default: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    return dc.get("machine_indicator", default or {})
+async def get_machine_indicator(default: Optional[List[Dict[str, Any]]] = None):
+    while True:
+        current_keys = dc.keys()
+        machine_data = []
+        for key in current_keys:
+            if key.startswith(CacheInfo.MONITOR_MACHINE.value):
+                machine_data.append(dc.get(key, default or {}))
+        payload = {
+            "data": machine_data
+        }
+        yield f"data: {json.dumps(payload)}\n\n"
+        await asyncio.sleep(2)  # 每2秒推送一次
 
 
-def get_job_indicator(default: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    return dc.get("job_indicator", default or {})
+async def get_job_indicator(default: Optional[List[Dict[str, Any]]] = None):
+    while True:
+        current_keys = dc.keys()
+        job_data = []
+        for key in current_keys:
+            if key.startswith(CacheInfo.MONITOR_JOB.value):
+                job_data.append(dc.get(key, default or {}))
+        payload = {
+            "data": job_data
+        }
+        yield f"data: {json.dumps(payload)}\n\n"
+        await asyncio.sleep(2)  # 每2秒推送一次
 
 
-def get_system_indicator(default: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    return dc.get("system_indicator", default or {})
+async def get_system_indicator():
+    while True:
+        online = True
+        activeAGVs = dc.get(CacheInfo.KEY_AGV_NUM.value)
+        activeMACHINES = dc.get(CacheInfo.KEY_MACHINE_NUM.value)
+        totalJOBS = dc.get(CacheInfo.KEY_MACHINE_NUM.value)
+        payload = {
+            "systemStatus": online,
+            "activeAGVs": activeAGVs,
+            "activeMachines": activeMACHINES,
+            "totalJobs": totalJOBS,
+            "throughput": online,
+        }
+        yield f"data: {json.dumps(payload)}\n\n"
+        await asyncio.sleep(2)  # 每2秒推送一次
 
 
 async def event_generator():

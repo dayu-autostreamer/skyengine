@@ -23,6 +23,8 @@ from tiangong_simulator.packet_factory.packet_factory_env.Job.Job import Job
 from tiangong_simulator.packet_factory.packet_factory_env.Graph.Graph import Point, Link, Graph
 import yaml
 from tiangong_logs.logger import LOGGER
+from tiangong_logs.dc_helper import DiskCacheHelper
+from config.all_field_const import CacheInfo
 
 
 @register_component("base_callback.NewMapLoader")
@@ -33,6 +35,7 @@ class FactoryMapLoader(EnvCallback):
         self.config = component_registry.get('config').get(self.env_type)
         self.job_config_file_path = self.config.get("task_config").get('file')  # 对应 job_config.yaml
         self.map_config_file_path = self.config.get("factory_config").get('file')  # 对应 map_config.yaml
+        self.dc_helper = DiskCacheHelper(expire=600)
 
         map_file = self.map_config_file_path
         map_yaml = yaml.safe_load(open(map_file, 'rb'))
@@ -68,6 +71,7 @@ class FactoryMapLoader(EnvCallback):
         job.set_callback_manager(job_callback_manager)
 
         jobs.append(job)
+        self.dc_helper.set(CacheInfo.KEY_JOB_NUM.value, len(jobs))
 
         return jobs
 
@@ -106,6 +110,8 @@ class FactoryMapLoader(EnvCallback):
             machine = Machine(m['id'], point.x, point.y, m['point_id'])
             machine.set_callback_manager(machine_callback_manager)
             machines.append(machine)
+        self.dc_helper.set(CacheInfo.KEY_MACHINE_NUM.value, len(machines))
+
         return machines
 
     def create_agvs(self, graph: Graph):
@@ -127,6 +133,7 @@ class FactoryMapLoader(EnvCallback):
             agv = AGV(a['id'], point.x, point.y, a['point_id'], a['velocity'], graph)
             agv.set_callback_manager(agv_callback_manager)
             agvs.append(agv)
+        self.dc_helper.set(CacheInfo.KEY_AGV_NUM.value, len(agvs))
         return agvs
 
     def __call__(self):

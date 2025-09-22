@@ -18,6 +18,7 @@ from service import agent_service
 from service import monitor_service
 
 from tiangong_logs.logger import BACKEND_LOGGER as LOGGER
+from tiangong_logs.dc_helper import DiskCacheHelper
 
 
 class BackendServer:
@@ -30,6 +31,10 @@ class BackendServer:
             LOGGER.info("[Startup] 后端服务已启动成功 ✅")
             yield
             LOGGER.info("[Closedown] 后端服务已成功关闭 ✅")
+
+        # 每次开始运行时,刷新缓存区
+        self.dc_helper = DiskCacheHelper(expire=600)
+        self.dc_helper.clear()
 
         self.routes = [
             # 工厂控制
@@ -169,19 +174,19 @@ class BackendServer:
         self.monitor_routes = [
             APIRoute(NetworkAPIPath.AGV_MONITOR,
                      handler.get_agv_indicator,
-                     response_class=JSONResponse,
+                     response_class=StreamingResponse,
                      methods=[NetworkAPIMethod.AGV_MONITOR]),
             APIRoute(NetworkAPIPath.MACHINE_MONITOR,
                      handler.get_machine_indicator,
-                     response_class=JSONResponse,
+                     response_class=StreamingResponse,
                      methods=[NetworkAPIMethod.MACHINE_MONITOR]),
             APIRoute(NetworkAPIPath.JOB_MONITOR,
                      handler.get_job_indicator,
-                     response_class=JSONResponse,
+                     response_class=StreamingResponse,
                      methods=[NetworkAPIMethod.JOB_MONITOR]),
             APIRoute(NetworkAPIPath.SYSTEM_MONITOR,
                      handler.get_system_indicator,
-                     response_class=JSONResponse,
+                     response_class=StreamingResponse,
                      methods=[NetworkAPIMethod.SYSTEM_MONITOR]),
             APIRoute(NetworkAPIPath.TOTAL_MONITOR,
                      handler.get_total_indicator,
@@ -190,6 +195,7 @@ class BackendServer:
         ]
         self.routes.extend(self.map_routes)
         self.routes.extend(self.agent_routes)
+        self.routes.extend(self.monitor_routes)
 
         self.app = FastAPI(routes=self.routes, log_level='trace', timeout=6000, lifespan=lifespan)
 
@@ -377,27 +383,18 @@ class APIHandler:
     # todo
     async def get_agv_indicator(self):
         """
-        Monitor类的函数,只会获取回调获得的指标.
+        Monitor类的函数,只会获取回调获得的指标.SSE 推流接口
         """
-        return JSONResponse({
-            "success": True,
-        })
+        return StreamingResponse(monitor_service.get_agv_indicator(), media_type="text/event-stream")
 
     async def get_machine_indicator(self):
-        return JSONResponse({
-            "success": True,
-        })
+        return StreamingResponse(monitor_service.get_machine_indicator(), media_type="text/event-stream")
 
     async def get_job_indicator(self):
-        return JSONResponse({
-            "success": True,
-        })
+        return StreamingResponse(monitor_service.get_job_indicator(), media_type="text/event-stream")
 
     async def get_system_indicator(self):
-        return JSONResponse({
-            "success": True,
-        })
+        return StreamingResponse(monitor_service.get_system_indicator(), media_type="text/event-stream")
 
     async def get_total_indicator(self):
-        """SSE 推流接口"""
         return StreamingResponse(monitor_service.event_generator(), media_type="text/event-stream")

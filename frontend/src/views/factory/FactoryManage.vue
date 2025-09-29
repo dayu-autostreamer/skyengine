@@ -373,7 +373,7 @@ export default {
 
 
     // ---------- 智能体相关流程 ----------
-    const selectedAgent = ref("") //系统开始时会返回当前init agent
+    const selectedAgent = ref("") //系统开始时会返回当前init Agent
     const agentList = ref([
       {value: "agent1", label: "智能Agent 1"},
       {value: "agent2", label: "智能Agent 2"},

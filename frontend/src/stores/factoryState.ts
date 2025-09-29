@@ -2,7 +2,8 @@ import {defineStore} from 'pinia'
 
 export const useFactoryState = defineStore('factory_state', {
     state: () => ({
-        factoryList: [2333]
+        factoryList: [{'id':"占位"}],
+        jobList: [{'id':"占位"}]
     }),
     actions: {
         install() {

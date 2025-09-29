@@ -6,9 +6,9 @@
 @Date    ：2025/9/21 0:41 
 '''
 import config
-from tiangong_simulator.call_back.callback_manager.JobCallbackManager import JobCallbackManager
-from tiangong_simulator.lifecycle.bootstrap import bootstrap
-from tiangong_simulator.registry import component_registry, create_component_by_id
+from sky_executor.utils.call_back import JobCallbackManager
+from sky_executor.packet_factory.lifecycle import bootstrap
+from sky_executor.utils.registry import component_registry, create_component_by_id
 
 if __name__ == '__main__':
     # 为了测试config，执行bootstrap就会自动创建config

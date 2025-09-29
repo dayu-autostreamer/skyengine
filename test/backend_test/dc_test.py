@@ -5,9 +5,9 @@
 @Author  ：Skyrim
 @Date    ：2025/9/20 23:16 
 '''
-from tiangong_logs.dc_helper import DiskCacheHelper
+from sky_logs.dc_helper import DiskCacheHelper
 import config
-
+from config.all_field_const import CacheInfo
 
 def delete_all():
     dc = DiskCacheHelper(config.CACHE_DIR, expire=600)
@@ -37,9 +37,15 @@ def test_load_all():
         print(f"{key}当前的值为{temp}")
 
 
+def sky_test_svg():
+    dh = DiskCacheHelper(config.CACHE_DIR, expire=600)
+    print(dh.get(CacheInfo.SVG_IMAGE.value))
+    print(f"✓ 环境重置成功")
+
 if __name__ == "__main__":
     # delete_all()
-    test_load_all()
+    # test_load_all()
+    sky_test_svg()
     # test_logs()
     # dc = DiskCacheHelper(config.CACHE_DIR, expire=60)
     #

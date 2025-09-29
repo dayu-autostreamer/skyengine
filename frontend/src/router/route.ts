@@ -50,18 +50,36 @@ export const dynamicRoutes: Array<RouteRecordRaw> = [
             {
                 path: '/factory',
                 name: 'factory',
-                component: () => import('/@/views/factory/index.vue'),
+                component: () => import('/@/views/factory/index.vue'), // 父页面
                 meta: {
                     title: 'message.router.factory',
-                    isLink: '',
-                    isHide: false,
-                    isKeepAlive: true,
-                    isAffix: false,
-                    isIframe: false,
                     roles: ['tiangong', 'common'],
                     icon: 'iconfont icon-zidingyibuju',
+                    isKeepAlive: true
                 },
+                children: [
+                    // {
+                    //     path: 'packet_factory', // 子工厂1
+                    //     name: 'packet-factory-manage',
+                    //     component: () => import('/@/views/factory/FactoryManage.vue'),
+                    //     meta: {
+                    //         title: '翼辉电池装配无人产线',
+                    //         roles: ['tiangong', 'packet'],
+                    //     },
+                    // },
+                    // {
+                    //     path: 'factory', // 子工厂2
+                    //     name: 'grid-factory-manage',
+                    //     component: () => import('/@/views/factory/GridFactoryManage.vue'),
+                    //     meta: {
+                    //         title: '翼辉原料分拣货仓',
+                    //         roles: ['tiangong', 'grid'],
+                    //     },
+                    // },
+                ],
             },
+
+
             {
                 path: '/cases',
                 name: 'cases',
@@ -92,22 +110,6 @@ export const dynamicRoutes: Array<RouteRecordRaw> = [
                     icon: 'iconfont icon-zidingyibuju',
                 },
             },
-            {
-                path: '/train',
-                name: 'train',
-                component: () => import('/@/views/train/index.vue'),
-                meta: {
-                    title: 'message.router.train',
-                    isLink: '',
-                    isHide: false,
-                    isKeepAlive: true,
-                    isAffix: false,
-                    isIframe: false,
-                    roles: ['tiangong', 'common'],
-                    icon: 'iconfont icon-zidingyibuju',
-                },
-            },
-
         ],
     },
 ];

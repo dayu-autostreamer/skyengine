@@ -1,5 +1,5 @@
-from tiangong_simulator.lifecycle.bootstrap import bootstrap
-from tiangong_logs.logger import LOGGER
+from sky_executor.packet_factory.lifecycle import bootstrap
+from sky_logs.logger import LOGGER
 import argparse
 
 if __name__ == '__main__':
@@ -8,13 +8,13 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, help='YAML 配置文件路径')
     
     args = parser.parse_args()
-    config_path = args.config
-    # config_path = '../../config/application_config.yaml'
+    # config_path = args.config
+    config_path = '../../config/application_config.yaml'
 
     # 创建环境与智能体
     env, agent = bootstrap(config_path)
-    import tiangong_simulator.packet_factory.packet_factory_env.packet_factory_env as packet_factory_env
-    env:packet_factory_env
+    import sky_executor.packet_factory.packet_factory.packet_factory_env.packet_factory_env as packet_factory_env
+    env: packet_factory_env
 
     # 重置环境
     observations = env.reset()

@@ -1,6 +1,4 @@
 <template>
-  <!-- <SvcInstall/>
-  <SvcQuery/>  -->
   <div class="home-container layout-pd">
     <el-row :gutter="15" class="home-card-two mb15">
       <el-col :xs="24">
@@ -8,7 +6,7 @@
           <div style="height: 100%">
             <div class="flex-margin flex w100">
               <div class="flex-auto">
-                <FactoryManage/>
+                <FactoryRouter/>
               </div>
             </div>
           </div>
@@ -20,16 +18,15 @@
 </template>
 
 <script>
-import FactoryManage from "/@/views/factory/FactoryManage.vue";
+import FactoryRouter from "/@/views/factory/FactoryRouter.vue";
 
 
 export default {
   components: {
-    FactoryManage,
+    FactoryRouter
   },
   data() {
-    return {
-    }
+    return {}
   },
 }
 
@@ -137,7 +134,6 @@ $homeNavLengh: 8;
     }
 
   }
-
 
 
   .dag-manage {

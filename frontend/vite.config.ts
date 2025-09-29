@@ -1,7 +1,6 @@
 import vue from "@vitejs/plugin-vue";
 import {resolve} from "path";
 import {defineConfig, loadEnv, ConfigEnv} from "vite";
-// import vueSetupExtend from "vite-plugin-vue-setup-extend-plus";
 import viteCompression from "vite-plugin-compression";
 import {buildConfig} from "./src/utils/build";
 import EnvironmentPlugin from "vite-plugin-environment";

@@ -5,7 +5,7 @@
 @Author  ：Skyrim
 @Date    ：2025/9/21 0:01 
 '''
-from tiangong_simulator.call_back.callback_manager.AGVCallbackManager import AGVCallbackManager
+from sky_executor.utils.call_back import AGVCallbackManager
 
 
 def test_agv():

@@ -14,7 +14,7 @@ from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
 from sky_logs.logger import LOGGER
 
-from sky_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
+from sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
 from sky_simulator.environment.packet_factory.Agent.BaseAgent import BaseAgent
 
 

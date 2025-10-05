@@ -8,7 +8,6 @@
 
 import time
 from typing import Dict, Any
-import numpy as np
 from sky_logs.logger import LOGGER
 
 from .BaseTrainer import BaseTrainer
@@ -30,7 +29,8 @@ class SimpleTrainer(BaseTrainer):
                  eval_interval: int = 20,
                  max_episode_steps: int = 1000,
                  learning_rate: float = 0.001,
-                 gamma: float = 0.99):
+                 gamma: float = 0.99
+                 ):
         """
         初始化简单训练器
         

@@ -5,10 +5,10 @@
 @Author  ：Skyrim
 @Date    ：2025/5/31 0:18 
 '''
-# bootstrap.py
-from sky_simulator.registry import scan_and_register_components, load_config
+from sky_simulator.registry import scan_and_register_components, load_config, selective_scan_and_register_components
 from .context_creator import create_context
 from sky_logs.logger import LOGGER
+
 
 def bootstrap(config):
     # ---------- 读取配置 ----------
@@ -17,7 +17,12 @@ def bootstrap(config):
 
     # ---------- 扫描组件 ----------
     LOGGER.info("[Bootstrap] Scanning and registering components...")
-    scan_and_register_components()
+    selective_scan_and_register_components(scan_all=True,
+                                           exclude_dirs=["environment.grid_factory",
+                                                         "call_back.grid_factory_callback",
+                                                         "event.event.grid_factory_event",
+                                                         "environment.packet_factory.Trainer"
+                                                         ])
 
     # ---------- 创建环境 ----------
     LOGGER.info("[Bootstrap] Creating context...")

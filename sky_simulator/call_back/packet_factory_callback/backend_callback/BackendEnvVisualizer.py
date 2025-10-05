@@ -12,13 +12,13 @@ os.environ["SDL_VIDEODRIVER"] = "dummy"  # 必须放在 pygame.init() 前面
 
 
 # 仿真环境创建前的初始化
-@register_component("backend_callback.GridVisualizer")
+@register_component("backend_callback.Visualizer")
 class BackendEnvVisualizer(EnvVisualizer):
     def __init__(self, _fps=3) -> None:
         super().__init__(_fps)
 
         pygame.font.init()
-        self.env = None
+        self.env=None
         self.pic = None
 
     def visualize_env(self, env=None):
@@ -83,7 +83,7 @@ class BackendEnvVisualizer(EnvVisualizer):
         # cv2.imshow("Map", img_cv)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-
+        
         self.clock.tick(self.fps)
 
     def get_map(self):

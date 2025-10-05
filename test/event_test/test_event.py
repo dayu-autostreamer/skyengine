@@ -10,7 +10,7 @@ if __name__ == '__main__':
     # event_test()
     # event_test_recover()
     # print(EventTest.event_type)
-    from sky_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
+    from sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
     print(type(PacketFactoryEnv))
 
 

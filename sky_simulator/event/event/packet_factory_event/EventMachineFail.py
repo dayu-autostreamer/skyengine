@@ -1,6 +1,6 @@
 from sky_simulator.event.event.BaseEvent import BaseEvent
-from sky_simulator.event.EventType import EventType
-from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine
+from sky_simulator.event.event.packet_factory_event.EventType import EventType
+from sky_simulator.environment.packet_factory.packet_factory_env.Machine.Machine import Machine
 from sky_simulator.registry.registry import register_event
 
 
@@ -20,7 +20,7 @@ class EventMachineFail(BaseEvent):
         """
         触发该事件 触发时调用machine的record。
         """
-        from sky_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
+        from sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
         self.judge_env(PacketFactoryEnv)
         self.env: PacketFactoryEnv
 
@@ -35,7 +35,7 @@ class EventMachineFail(BaseEvent):
         """
         恢复该事件的现场
         """
-        from sky_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
+        from sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
         self.judge_env(PacketFactoryEnv)
         self.env: PacketFactoryEnv
 

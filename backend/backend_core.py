@@ -6,11 +6,11 @@ from typing import Callable
 import yaml
 
 from sky_simulator.lifecycle.bootstrap import bootstrap
-from sky_simulator.packet_factory.Agent import BaseAgent
-from sky_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
-from sky_simulator.packet_factory.packet_factory_env.Job.Job import Job
-from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine
-from sky_simulator.packet_factory.packet_factory_env.Agv.AGV import AGV
+from sky_simulator.environment.packet_factory.Agent import BaseAgent
+from sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
+from sky_simulator.environment.packet_factory.packet_factory_env.Job.Job import Job
+from sky_simulator.environment.packet_factory.packet_factory_env.Machine.Machine import Machine
+from sky_simulator.environment.packet_factory.packet_factory_env.Agv.AGV import AGV
 import config
 
 from backend.service import file_service
@@ -68,7 +68,7 @@ class BackendCore:
         self.agent = agent
 
         # 重置环境
-        observations = env.reset()
+        env.reset()
 
         # 运行一个 episode（直到结束）
         while not self.env.env_is_finished() and not stop_event.is_set():

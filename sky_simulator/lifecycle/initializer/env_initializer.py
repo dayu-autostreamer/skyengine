@@ -1,4 +1,4 @@
-from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
+from sky_simulator.call_back.packet_factory_callback.callback_manager.CallbackManager import CallbackManager
 from sky_simulator.lifecycle.initializer.event_initializer import initialize_event_manager
 from sky_simulator.registry.factory import create_component_by_id,get_component_class_by_id
 

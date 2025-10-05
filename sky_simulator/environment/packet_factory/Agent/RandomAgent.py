@@ -1,7 +1,7 @@
 from .BaseAgent import BaseAgent
-from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
+from sky_simulator.environment.packet_factory.packet_factory_env.Job.Operation import Operation
 from sky_logs.logger import LOGGER
-from sky_simulator.packet_factory.packet_factory_env.Utils.util import OperationStatus
+from sky_simulator.environment.packet_factory.packet_factory_env.Utils.util import OperationStatus
 
 import time
 import random
@@ -27,6 +27,12 @@ class RandomAgent(BaseAgent):
     def reward(self, *args, **kwargs):
         """Agent 计算自身的reward"""
         pass
+
+    def before_train(self, *args, **kwargs):
+        return 0
+
+    def after_train(self, *args, **kwargs):
+        return 0
 
     def train(self, *args, **kwargs):
         """GreedyAgent 不需训练"""

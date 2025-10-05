@@ -10,13 +10,13 @@ import copy
 
 from pettingzoo import ParallelEnv
 
-from sky_simulator.packet_factory.Agent import BaseAgent
-from sky_simulator.packet_factory.packet_factory_env.Job.Job import Job
-from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine
-from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
-from sky_simulator.packet_factory.packet_factory_env.Agv.AGV import AGV
-from sky_simulator.packet_factory.packet_factory_env.Graph.Graph import Graph
-from sky_simulator.packet_factory.packet_factory_env.Utils.util import EnvStatus
+from sky_simulator.environment.packet_factory.Agent import BaseAgent
+from sky_simulator.environment.packet_factory.packet_factory_env.Job.Job import Job
+from sky_simulator.environment.packet_factory.packet_factory_env.Machine.Machine import Machine
+from sky_simulator.environment.packet_factory.packet_factory_env.Job.Operation import Operation
+from sky_simulator.environment.packet_factory.packet_factory_env.Agv.AGV import AGV
+from sky_simulator.environment.packet_factory.packet_factory_env.Graph.Graph import Graph
+from sky_simulator.environment.packet_factory.packet_factory_env.Utils.util import EnvStatus
 from sky_logs.logger import LOGGER
 from sky_simulator.registry import register_component
 from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager

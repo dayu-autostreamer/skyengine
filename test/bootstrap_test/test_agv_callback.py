@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # 创建环境与智能体
     env, agent = bootstrap(config_path)
-    import sky_simulator.packet_factory.packet_factory_env.packet_factory_env as packet_factory_env
+    import sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env as packet_factory_env
 
     env: packet_factory_env
 

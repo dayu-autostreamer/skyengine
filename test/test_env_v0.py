@@ -1,4 +1,4 @@
-from sky_simulator.packet_factory import packet_factory_v0
+from sky_simulator.environment.packet_factory import packet_factory_v0
 from sky_logs.logger import LOGGER
 
 # 创建环境与智能体

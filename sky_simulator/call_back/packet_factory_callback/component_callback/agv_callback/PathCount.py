@@ -8,20 +8,19 @@
 # 该回调计算单个AGV自己经过的路径
 
 from sky_simulator.call_back.EnvCallback import EnvCallback
-from sky_simulator.call_back.component_callback.agv_callback.BaseCount import BaseCount
+from sky_simulator.call_back.packet_factory_callback.component_callback.agv_callback.BaseCount import BaseCount
 from sky_simulator.registry import register_component
 from sky_logs.logger import AGV_LOGGER as LOGGER
+
 
 @register_component("agv_callback.PathCount")
 class PathCount(BaseCount):
     def __init__(self):
         super().__init__()
 
-    def __call__(self,component):
+    def __call__(self, component):
         """使类的实例可以像函数一样被调用"""
         LOGGER.info("测试AGV的回调")
         return {
-            'success':"agv_callback.BaseCount success"
+            'success': "agv_callback.BaseCount success"
         }
-
-

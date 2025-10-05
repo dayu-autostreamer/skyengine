@@ -7,7 +7,7 @@
 '''
 # 该回调计算单个AGV的运输次数
 
-from sky_simulator.call_back.component_callback.agv_callback.BaseCount import BaseCount
+from sky_simulator.call_back.packet_factory_callback.component_callback.agv_callback.BaseCount import BaseCount
 from sky_simulator.registry import register_component
 from sky_logs.logger import AGV_LOGGER as LOGGER
 from config.all_field_const import CacheInfo

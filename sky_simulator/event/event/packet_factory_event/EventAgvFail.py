@@ -1,6 +1,6 @@
 from sky_simulator.event.event.BaseEvent import BaseEvent
-from sky_simulator.event.EventType import EventType
-from sky_simulator.packet_factory.packet_factory_env.Agv.AGV import AGV
+from sky_simulator.event.event.packet_factory_event.EventType import EventType
+from sky_simulator.environment.packet_factory.packet_factory_env.Agv.AGV import AGV
 from sky_simulator.registry.registry import register_event
 
 
@@ -21,7 +21,7 @@ class EventAgvFail(BaseEvent):
         """
         print('EventAGV.trigger()')
 
-        from sky_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
+        from sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
         self.judge_env(PacketFactoryEnv)
         self.env: PacketFactoryEnv
 
@@ -37,7 +37,7 @@ class EventAgvFail(BaseEvent):
         恢复该事件的现场
         """
         print('EventAGV.recover()')
-        from sky_simulator.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
+        from sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
         self.judge_env(PacketFactoryEnv)
         self.env: PacketFactoryEnv
 

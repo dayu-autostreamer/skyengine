@@ -5,8 +5,8 @@
 @Author  ：Skyrim
 @Date    ：2025/9/17 20:22 
 '''
-from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
-from sky_simulator.call_back.component_callback.machine_callback.BaseCount import BaseCount
+from sky_simulator.call_back.packet_factory_callback.callback_manager.CallbackManager import CallbackManager
+from sky_simulator.call_back.packet_factory_callback.component_callback.machine_callback.BaseCount import BaseCount
 from sky_logs.logger import MACHINE_LOGGER as LOGGER
 
 

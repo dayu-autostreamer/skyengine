@@ -7,7 +7,7 @@
 '''
 # 该回调计算machine完成操作的工件数量
 
-from sky_simulator.call_back.component_callback.machine_callback.BaseCount import BaseCount
+from sky_simulator.call_back.packet_factory_callback.component_callback.machine_callback.BaseCount import BaseCount
 from sky_simulator.registry import register_component
 from sky_logs.logger import MACHINE_LOGGER as LOGGER
 from config.all_field_const import CacheInfo

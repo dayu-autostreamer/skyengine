@@ -8,7 +8,7 @@
 训练器使用示例
 '''
 
-from sky_simulator.packet_factory.Trainer import (
+from sky_simulator.environment.packet_factory.Trainer import (
     BaseTrainer, SimpleTrainer, DQNTrainer, PPOTrainer, 
     TrainerFactory, create_trainer
 )

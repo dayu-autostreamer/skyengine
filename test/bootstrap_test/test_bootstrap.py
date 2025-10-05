@@ -8,12 +8,12 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, help='YAML 配置文件路径')
     
     args = parser.parse_args()
-    config_path = args.config
-    # config_path = '../../config/application_config.yaml'
+    # config_path = args.config
+    config_path = '../../config/application_config.yaml'
 
     # 创建环境与智能体
     env, agent = bootstrap(config_path)
-    import sky_simulator.packet_factory.packet_factory_env.packet_factory_env as packet_factory_env
+    import sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env as packet_factory_env
     env:packet_factory_env
 
     # 重置环境

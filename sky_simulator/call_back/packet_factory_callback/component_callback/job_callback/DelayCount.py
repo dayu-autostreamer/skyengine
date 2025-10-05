@@ -7,7 +7,7 @@
 '''
 # 该回调计算job完成的各个时延
 
-from sky_simulator.call_back.component_callback.job_callback.BaseCount import BaseCount
+from sky_simulator.call_back.packet_factory_callback.component_callback.job_callback.BaseCount import BaseCount
 from sky_simulator.registry import register_component
 from sky_logs.logger import JOB_LOGGER as LOGGER
 from sky_logs.dc_helper import DiskCacheHelper

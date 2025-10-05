@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple
 from sky_logs.logger import LOGGER
-from sky_simulator.packet_factory.packet_factory_env.Utils.util import OperationStatus
+from sky_simulator.environment.packet_factory.packet_factory_env.Utils.util import OperationStatus
 from sky_simulator.registry import register_component
 
 @register_component("packet_factory.Operation")

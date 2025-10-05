@@ -45,7 +45,7 @@ class EventQueue(EnvCallback):
         while self.queue and self.queue[0][0] <= current_time:
             _, _, event = heapq.heappop(self.queue)
 
-            event:BaseEvent
+            event: BaseEvent
             event.set_env(self.env)
 
             ready.append(event)
@@ -60,3 +60,7 @@ class EventQueue(EnvCallback):
     def list_all_events(self):
         """调试用：列出当前所有事件"""
         return self.queue
+
+    def deal_event(self, ready_event,env):
+        for event in ready_event:
+            self.event_manager.deal_event(event, env)

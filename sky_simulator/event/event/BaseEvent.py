@@ -2,7 +2,7 @@
 # 具体的事件处理函数在回调中体现。
 from pettingzoo import ParallelEnv
 
-from sky_simulator.event.EventType import EventType
+from sky_simulator.event.event.packet_factory_event.EventType import EventType
 
 from sky_logs.logger import LOGGER
 

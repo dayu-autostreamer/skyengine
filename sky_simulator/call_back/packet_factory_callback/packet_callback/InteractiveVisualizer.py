@@ -7,9 +7,9 @@ from pygame_gui.elements import UIButton, UIDropDownMenu, UILabel, UITextBox, UI
 from sky_simulator.call_back.base_callback.EnvVisualizer import EnvVisualizer
 from sky_logs.logger import LOGGER
 from sky_simulator.registry import register_component
-from sky_simulator.packet_factory.packet_factory_env.Job.Job import Job
-from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine
-from sky_simulator.packet_factory.packet_factory_env.Agv.AGV import AGV
+from sky_simulator.environment.packet_factory.packet_factory_env.Job.Job import Job
+from sky_simulator.environment.packet_factory.packet_factory_env.Machine.Machine import Machine
+from sky_simulator.environment.packet_factory.packet_factory_env.Agv.AGV import AGV
 
 
 # 仿真环境创建前的初始化

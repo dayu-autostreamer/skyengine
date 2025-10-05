@@ -3,16 +3,16 @@ import copy
 
 from pettingzoo import ParallelEnv
 
-from sky_simulator.packet_factory.Agent import BaseAgent
-from sky_simulator.packet_factory.packet_factory_env.Job.Job import Job
-from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine
-from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
-from sky_simulator.packet_factory.packet_factory_env.Agv.AGV import AGV
-from sky_simulator.packet_factory.packet_factory_env.Graph.Graph import Graph
-from sky_simulator.packet_factory.packet_factory_env.Utils.util import EnvStatus
+from sky_simulator.environment.packet_factory.Agent import BaseAgent
+from sky_simulator.environment.packet_factory.packet_factory_env.Job.Job import Job
+from sky_simulator.environment.packet_factory.packet_factory_env.Machine.Machine import Machine
+from sky_simulator.environment.packet_factory.packet_factory_env.Job.Operation import Operation
+from sky_simulator.environment.packet_factory.packet_factory_env.Agv.AGV import AGV
+from sky_simulator.environment.packet_factory.packet_factory_env.Graph.Graph import Graph
+from sky_simulator.environment.packet_factory.packet_factory_env.Utils.util import EnvStatus
 from sky_logs.logger import LOGGER
 from sky_simulator.registry import register_component
-from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
+from sky_simulator.call_back.packet_factory_callback.callback_manager.CallbackManager import CallbackManager
 
 
 @register_component("packet_factory")
@@ -137,8 +137,7 @@ class PacketFactoryEnv(ParallelEnv):
 
         # ---------- 执行事件 ----------
         ready_event = self.event_queue.pop_ready_events(self.env_timeline)
-        for event in ready_event:
-            self.event_queue.event_manager.deal_event(event, self)
+        self.event_queue.deal_event(ready_event, self)
 
         if len(ready_event) == 0:
             return False
@@ -184,9 +183,6 @@ class PacketFactoryEnv(ParallelEnv):
             for agv in self.agvs:
                 agv.work(final_time)
                 agv.set_timer(final_time)
-
-            # ---------- 查看状态 ----------
-            self.render_observation()
 
             # ---------- 更新可视化 ----------
             self.env_visualizer.visualize_env()
@@ -245,14 +241,6 @@ class PacketFactoryEnv(ParallelEnv):
         # ---------- 清理重建阶段 ----------
         self.set_env_timeline(0)
         self.refresh_status()
-
-    # ---------- 渲染函数 ----------
-    def render_observation(self):
-        # 展示作业、机器和AGV数量
-        # LOGGER.info(f"\n📊 系统资源状态:")
-        LOGGER.info(f"  - 作业: {self.jobs}")
-        LOGGER.info(f"  - 机器: {self.machines}")
-        LOGGER.info(f"  - AGV: {self.agvs}")
 
     def render(self):
         """可视化系统当前状态 功能拆分到不同函数中"""

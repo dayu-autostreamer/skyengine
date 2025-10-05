@@ -7,7 +7,6 @@ import pyarrow as pa
 import torch
 
 from loguru import logger
-from torch.utils.data import Dataset
 
 
 class MapfArrowDataset(torch.utils.data.Dataset):

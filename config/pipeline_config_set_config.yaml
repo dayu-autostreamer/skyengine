@@ -44,8 +44,8 @@ config:
           name: backend_callback.Visualizer
     env_name: packet_factory
     event_config:
-      file: E:\Project\PythonPro\tiangong\backend\config_set\pipeline_config_set\event_config.yaml
+      file: D:\Project\finalPro\SkyEngine\backend\config_set\pipeline_config_set\event_config.yaml
     factory_config:
-      file: E:\Project\PythonPro\tiangong\backend\config_set\pipeline_config_set\map_config.yaml
+      file: D:\Project\finalPro\SkyEngine\backend\config_set\pipeline_config_set\map_config.yaml
     task_config:
-      file: E:\Project\PythonPro\tiangong\backend\config_set\pipeline_config_set\job_config.yaml
+      file: D:\Project\finalPro\SkyEngine\backend\config_set\pipeline_config_set\job_config.yaml

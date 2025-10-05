@@ -1,8 +1,8 @@
 from .BaseAgent import BaseAgent
 from typing import List, Optional
-from sky_simulator.packet_factory.packet_factory_env.Machine.Machine import Machine
-from sky_simulator.packet_factory.packet_factory_env.Job.Operation import Operation
-from sky_simulator.packet_factory.packet_factory_env.Agv.AGV import AGV
+from sky_simulator.environment.packet_factory.packet_factory_env.Machine.Machine import Machine
+from sky_simulator.environment.packet_factory.packet_factory_env.Job.Operation import Operation
+from sky_simulator.environment.packet_factory.packet_factory_env.Agv.AGV import AGV
 import time
 
 from sky_simulator.registry import register_component

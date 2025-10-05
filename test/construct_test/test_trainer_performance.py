@@ -19,7 +19,7 @@ import numpy as np
 # 添加项目路径
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from sky_simulator.packet_factory.Trainer import (
+from sky_simulator.environment.packet_factory.Trainer import (
     SimpleTrainer, DQNTrainer, PPOTrainer, create_trainer
 )
 

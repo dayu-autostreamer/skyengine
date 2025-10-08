@@ -23,6 +23,7 @@ class EventManager:
         self.init_event = []  # 记录数据集初始化时的Event
         self.history = []  # 已执行事件的历史记录
         self.env = None
+        self.event_generation_configs = {}
 
     def add_event(self, event_name):
         # 确保当前事件还没被记录
@@ -54,16 +55,27 @@ class EventManager:
 
         event_config = raw_config["config"]
 
-        event_type_list =  event_config.get("event_type", None)
+        event_type_list = event_config.get("event_type", None)
 
         if event_type_list is not None and len(event_type_list) > 0:
-            for event_name in event_type_list:
-                self.add_event(event_name)
+            for event_item in event_type_list:
+                if isinstance(event_item, str):
+                    # 简单的事件类型名称
+                    self.add_event(event_item)
+                elif isinstance(event_item, dict):
+                    # 带配置的事件类型
+                    for event_name, event_config_data in event_item.items():
+                        self.add_event(event_name)
+                        self.event_generation_configs[event_name] = event_config_data
 
         event_timeline = event_config.get("event_timeline", None)
         if event_timeline is not None and len(event_timeline) > 0:
             for event in event_timeline:
                 self.init_event.append(event['event'])
+
+    def get_event_generation_configs(self):
+        """获取事件生成配置"""
+        return self.event_generation_configs
 
     def deal_event(self, event: BaseEvent, env: ParallelEnv):
         """

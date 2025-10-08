@@ -15,7 +15,7 @@ def initialize_env(config, agent):
     # todo 后续根据real还是sim更换创建流程
     env_name = config.get(env_type).get("env_name")
     env = create_component_by_id(env_name, agent)
-    env: get_component_class_by_id(env_name)
+    # env: get_component_class_by_id(env_name)
 
     callback_config = config.get(env_type).get('callback').get('map_callback')
 

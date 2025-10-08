@@ -1,5 +1,6 @@
 config:
   env_type: simulation
+  default_timestep: 0.1 # todo 为系统添加默认时间步
 
   simulation:
     env_name: packet_factory

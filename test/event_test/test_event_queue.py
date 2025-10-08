@@ -1,7 +1,7 @@
 from threading import Event
 
 from sky_simulator.call_back.base_callback.EventQueue import EventQueue
-from sky_simulator.call_back.callback_manager.CallbackManager import CallbackManager
+from sky_simulator.call_back.packet_factory_callback.callback_manager.CallbackManager import CallbackManager
 from sky_simulator.registry import component_registry, scan_and_register_components, create_component_by_id
 from sky_simulator.registry.scanner import load_config
 from sky_simulator.event.event_manager.EventManager import EventManager

@@ -2,25 +2,48 @@
 
 config:
   event_type: # 交给manager管理
-    - packet_factory.JUST_TEST
+    - packet_factory.JUST_TEST:
+        probability: 0.1          # 生成概率 5%
+        strategy: "uniform"        # 均匀分布
+        min_interval: 2.0          # 最小间隔 2秒
+        max_interval: 10.0         # 最大间隔 10秒
+        burst_probability: 0.02    # 突发事件概率 2%
+        burst_multiplier: 3        # 突发事件倍数
 
     - packet_factory.ENV_PAUSED
     - packet_factory.ENV_RECOVER
     - packet_factory.ENV_RESTART
 
-    - packet_factory.AGV_FAIL
+    - packet_factory.AGV_FAIL:
+        probability: 0.05          # 生成概率 5%
+        strategy: "uniform"        # 均匀分布
+        min_interval: 2.0          # 最小间隔 2秒
+        max_interval: 10.0         # 最大间隔 10秒
+        burst_probability: 0.02    # 突发事件概率 2%
+        burst_multiplier: 3        # 突发事件倍数
 
-    - packet_factory.MACHINE_FAIL
+    - packet_factory.MACHINE_FAIL:
+        probability: 0.03          # 生成概率 3%
+        strategy: "poisson"        # 泊松分布
+        min_interval: 5.0          # 最小间隔 5秒
+        max_interval: 20.0         # 最大间隔 20秒
+        burst_probability: 0.01    # 突发事件概率 1%
+        burst_multiplier: 2        # 突发事件倍数
 
-    - packet_factory.JOB_ADD
+    - packet_factory.JOB_ADD:
+        probability: 0.1            # 生成概率 10%
+        strategy: "geometric"       # 几何分布
+        min_interval: 1.0           # 最小间隔 1秒
+        max_interval: 5.0          # 最大间隔 5秒
+        burst_probability: 0.05    # 突发事件概率 5%
+        burst_multiplier: 5        # 突发事件倍数
 
   event_timeline: # 交给queue管理
     - event:
         timestamp: 1
         type: packet_factory.JUST_TEST
-        args: ['trigger',{'data':233}]
+        args: [ 'trigger',{ 'data': 233 } ]
     - event:
         timestamp: 3
         type: packet_factory.JUST_TEST
-        args: ['recover',{'data':'agv failed.'}]
-
+        args: [ 'recover',{ 'data': 'agv failed.' } ]

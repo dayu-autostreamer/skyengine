@@ -109,6 +109,8 @@ class PacketFactoryEnv(ParallelEnv):
         """
         调用event_queue取出队列中current_time之前的事件并调用.
         """
+        # ---------- 生成随机事件 ----------
+        self.event_queue.generate_events(self.env_timeline,self.hash_index)
         # ---------- 检测事件 ----------
         try:
             command_list = self.env_visualizer.getBuffered()

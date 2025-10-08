@@ -1,7 +1,12 @@
 import sys
 from ast import literal_eval
+from pathlib import Path
 
 for arg in sys.argv[1:]:
+    # 忽略 pytest 自动传入的测试路径，如 test_xxx.py::test_xxx
+    if '::' in arg or (arg.endswith('.py') and Path(arg).exists()):
+        continue
+
     if '=' not in arg:
         # assume it's the name of a config file
         assert not arg.startswith('--')

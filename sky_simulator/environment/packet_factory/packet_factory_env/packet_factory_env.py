@@ -36,6 +36,8 @@ class PacketFactoryEnv(ParallelEnv):
 
         # 环境本身的状态,事件队列,智能体相关的状态等
         self.env_timeline: float = 0
+        self.time_quant: float = 0.1  # 最短时间片
+
         self.env_visualizer = None
         self.event_queue = None
         self.agent = agent
@@ -110,32 +112,15 @@ class PacketFactoryEnv(ParallelEnv):
         调用event_queue取出队列中current_time之前的事件并调用.
         """
         # ---------- 生成随机事件 ----------
-        self.event_queue.generate_events(self.env_timeline,self.hash_index)
-        # ---------- 检测事件 ----------
+        self.event_queue.generate_events(self.env_timeline, self.hash_index)
+
+        # ---------- 获取用户事件 ----------
         try:
-            command_list = self.env_visualizer.getBuffered()
+            # 获取可视化器中的缓存,存入当前的环境中
+            self.event_queue.get_user_events(self.env_visualizer.getBuffered(), self.env_timeline)
         except TypeError as e:
             LOGGER.warning("Current Visualizer Don't support Event.")
-            return
-
-        # ---------- 翻译创建事件 ----------
-        for command in command_list:
-            payload = {}
-            if command['type'] == 'AGV':
-                current_agv: AGV = command['data']
-                payload = current_agv.pack()
-            elif command['type'] == 'MACHINE':
-                current_machine: Machine = command['data']
-                payload = current_machine.pack()
-            elif command['type'] == 'JOB':
-                current_job: Job = command['data']
-                payload['job'] = current_job
-            else:
-                pass
-
-            current_event = self.event_queue.event_manager.create_event(command['event_type'],
-                                                                        *[command['event_method'], payload])
-            self.event_queue.add_event(self.env_timeline, event=current_event)
+            return False
 
         # ---------- 执行事件 ----------
         ready_event = self.event_queue.pop_ready_events(self.env_timeline)
@@ -203,7 +188,7 @@ class PacketFactoryEnv(ParallelEnv):
         # === 0. Agent 决策动作 ===
         decisions = actions['decisions']
 
-        step_time = 1
+        step_time = self.time_quant
 
         LOGGER.info(f"step_time: {step_time},decisions: {decisions}")
 
@@ -233,7 +218,7 @@ class PacketFactoryEnv(ParallelEnv):
         self.env_visualizer.visualize_env()
 
         #  === 4. 触发事件队列相关机制 ===
-        event_happen = self.deal_event()
+        self.deal_event()
 
         LOGGER.info(f"--------- 结束当前循环步 ---------")
 
@@ -258,6 +243,9 @@ class PacketFactoryEnv(ParallelEnv):
             self.hash_index['jobs'][job.id] = job
         for machine in self.machines:
             self.hash_index['machines'][machine.id] = machine
+
+    def set_time_quant(self, time_quant: float):
+        self.time_quant = time_quant
 
     def getJobs(self) -> List[Job]:
         return self.jobs

@@ -1,6 +1,5 @@
 from pettingzoo import ParallelEnv
-import time
-from typing import Optional, List, Dict, Any
+from typing import Dict, Any
 
 from sky_simulator.event.event.BaseEvent import BaseEvent
 import heapq
@@ -54,6 +53,26 @@ class EventQueue(EnvCallback):
         """添加事件到队列"""
         heapq.heappush(self.queue, (timestamp, self.counter, event))
         self.counter += 1
+
+    def get_user_events(self, command_list, time_stamp):
+        # ---------- 翻译创建事件 ----------
+        for command in command_list:
+            payload = {}
+            if command['type'] == 'AGV':
+                current_agv = command['data']
+                payload = current_agv.pack()
+            elif command['type'] == 'MACHINE':
+                current_machine = command['data']
+                payload = current_machine.pack()
+            elif command['type'] == 'JOB':
+                current_job = command['data']
+                payload['job'] = current_job
+            else:
+                pass
+
+            current_event = self.event_manager.create_event(command['event_type'],
+                                                            *[command['event_method'], payload])
+            self.add_event( time_stamp, event=current_event)
 
     def generate_events(self, timestamp, env_info):
         try:

@@ -1,12 +1,16 @@
 from sky_simulator.call_back.packet_factory_callback.callback_manager.CallbackManager import CallbackManager
 from sky_simulator.lifecycle.initializer.event_initializer import initialize_event_manager
-from sky_simulator.registry.factory import create_component_by_id,get_component_class_by_id
+from sky_simulator.registry.factory import create_component_by_id, get_component_class_by_id
 
 
 def initialize_env(config, agent):
     """
     寻找环境中预留的各个回调,并根据config进行插入替换、
     """
+
+    default_time_quant = config.get("default_time_quant")
+    if not default_time_quant:
+        raise ValueError("[Context] 配置中未指定 'default_time_quant'，其默认被设置为0.1")
 
     env_type = config.get("env_type")
     if not env_type:
@@ -15,6 +19,7 @@ def initialize_env(config, agent):
     # todo 后续根据real还是sim更换创建流程
     env_name = config.get(env_type).get("env_name")
     env = create_component_by_id(env_name, agent)
+    env.set_time_quant(default_time_quant)
     # env: get_component_class_by_id(env_name)
 
     callback_config = config.get(env_type).get('callback').get('map_callback')

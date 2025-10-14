@@ -8,6 +8,10 @@
 from pogema import GridConfig
 from sky_simulator.environment.grid_factory.grid_factory_env.grid_factory_env import GridFactoryEnv
 from sky_simulator.environment.grid_factory.Agent.DeterministicPolicy import DeterministicPolicy
+from sky_logs.dc_helper import DiskCacheHelper
+from config.all_field_const import CacheInfo
+
+dh = DiskCacheHelper(expire=600)
 
 
 def sky_test_grid_factory_env():
@@ -23,7 +27,6 @@ def sky_test_grid_factory_env():
         max_episode_steps=100,  # 最大步数
         obs_radius=3,  # 观察半径
         collision_system='priority',  # 碰撞系统
-        observation_type='POMAPF',  # 观察类型
         on_target='restart'  # 到达目标后重启
     )
 
@@ -38,19 +41,19 @@ def sky_test_grid_factory_env():
 
     # 测试环境重置
     obs, info = env.reset(seed=42)
-    print(f"✓ 环境重置成功:"
-          f""
-          f"这里是obs{obs}"
-          f"这里是info{info}")
+    print(obs)
+    print(info)
+    print(f"✓ 环境重置成功")
 
     dp = DeterministicPolicy()
     # 测试环境步进
-    agent_actions = dp.act(obs)
+    print(obs['agent_observation'])
+    agent_actions = dp.act(obs['agent_observation'])
     machine_actions = []
-    print(agent_actions)
-    print(machine_actions)
+    print(f"请看这里：{agent_actions}")
     obs, rewards, terminations, truncations, infos = env.step({'agent_actions': agent_actions,
                                                                'machine_actions': machine_actions})
+
     print("✓ 环境步进成功")
 
     # 获取环境信息
@@ -60,16 +63,17 @@ def sky_test_grid_factory_env():
 
     # 测试多次步进
     for i in range(5):
-        actions = [0, 1, 2, 3]  # 简单的动作
-        obs, rewards, terminations, truncations, infos = env.step({'decisions': [], 'step_time': 1.0})
+        agent_actions = dp.act(obs['agent_observation'])
+        machine_actions = []
+        obs, rewards, terminations, truncations, infos = env.step({'agent_actions': agent_actions,
+                                                                   'machine_actions': machine_actions})
+        print(dh.get(CacheInfo.SVG_IMAGE.value))
         print(f"步进 {i + 1}: 位置 {env.get_agent_positions()}")
 
     print("✓ 多次步进测试成功")
 
     # 测试环境状态
-    print(f"环境状态: {env.status}")
     print(f"环境时间: {env.get_env_timeline()}")
-    print(f"是否完成: {env.env_is_finished()}")
 
     print("\n=== 测试完成 ===")
     return True

@@ -1,3 +1,134 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Endpoint:
+    path: str
+    method: str
+
+
+class GridAPI:
+        """重构后的接口统一管理类，所有接口通过Endpoint封装路径与请求方法"""
+
+        # ------------------------------ 1. 工厂控制接口 ------------------------------
+        FACTORY_ALIVE = Endpoint(
+            path="/factory/alive",
+            method="GET"
+        )
+        FACTORY_START = Endpoint(
+            path="/factory/start",
+            method="POST"
+        )
+        FACTORY_PAUSE = Endpoint(
+            path="/factory/pause",
+            method="POST"
+        )
+        FACTORY_RESET = Endpoint(
+            path="/factory/reset",
+            method="POST"
+        )
+        FACTORY_SPEED = Endpoint(
+            path="/factory/speed",
+            method="POST"
+        )
+        FACTORY_LIST = Endpoint(
+            path="/factory/list",
+            method="GET"
+        )
+
+        # ------------------------------ 2. AGV控制接口 ------------------------------
+        AGVS = Endpoint(
+            path="/agvs",
+            method="GET"
+        )
+        AGV_MONITOR = Endpoint(
+            path="/monitor/agv",
+            method="GET"
+        )
+
+        # ------------------------------ 3. 机器控制接口 ------------------------------
+        MACHINES = Endpoint(
+            path="/machines",
+            method="GET"
+        )
+        MACHINE_MONITOR = Endpoint(
+            path="/monitor/machine",
+            method="GET"
+        )
+
+        # ------------------------------ 4. Job控制接口 ------------------------------
+        JOB_TEMPLATES = Endpoint(
+            path="/jobs",
+            method="GET"
+        )
+        JOB_ADD = Endpoint(
+            path="/job/add/{jobId}",  # 路径参数：jobId（指定作业ID）
+            method="POST"
+        )
+        JOBS_PROGRESS = Endpoint(
+            path="/jobs/progress",
+            method="GET"
+        )
+        JOB_MONITOR = Endpoint(
+            path="/monitor/job",
+            method="GET"
+        )
+
+        # ------------------------------ 5. 地图相关接口 ------------------------------
+        MAP_UPDATE = Endpoint(
+            path="/map/update",
+            method="GET"
+        )
+        MAP_RENDER = Endpoint(
+            path="/map/render",
+            method="POST"
+        )
+
+        # ------------------------------ 6. 文件上传/下载接口 ------------------------------
+        YAML_UPLOAD = Endpoint(
+            path="/{config_name}/yaml/upload",  # 路径参数：config_name（配置名称）
+            method="POST"
+        )
+        STANDARD_GET = Endpoint(
+            path="/standard/get",
+            method="GET"
+        )
+        LOG_DOWNLOAD = Endpoint(
+            path="/log/download",
+            method="POST"
+        )
+
+        # ------------------------------ 7. 案例相关接口 ------------------------------
+        CASES_IMAGE = Endpoint(
+            path="/cases/image",
+            method="GET"
+        )
+        CASES_CONFIG = Endpoint(
+            path="/cases/config",
+            method="GET"
+        )
+
+        # ------------------------------ 8. Agent管理接口 ------------------------------
+        AGENT_LIST = Endpoint(
+            path="/Agent/list",
+            method="GET"
+        )
+        SET_AGENT = Endpoint(
+            path="/Agent/set",
+            method="POST"
+        )
+
+        # ------------------------------ 9. 系统监控接口 ------------------------------
+        SYSTEM_MONITOR = Endpoint(
+            path="/monitor/system",
+            method="GET"
+        )
+        TOTAL_MONITOR = Endpoint(
+            path="/monitor/total",
+            method="GET"
+        )
+
+
 class NetworkAPIPath:
     # 接口：工厂控制
     FACTORY_ALIVE = '/factory/alive'
@@ -50,6 +181,7 @@ class NetworkAPIPath:
     JOB_MONITOR = '/monitor/job'
     SYSTEM_MONITOR = '/monitor/system'
     TOTAL_MONITOR = '/monitor/total'
+
 
 class NetworkAPIMethod:
     # 接口：工厂控制

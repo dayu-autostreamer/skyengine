@@ -13,7 +13,7 @@ import os
 from pettingzoo import ParallelEnv
 from pogema import GridConfig, pogema_v0, AnimationMonitor
 
-from sky_simulator.environment.grid_factory.Agent.BaseAgent import BaseAgent
+from sky_simulator.environment.grid_factory.Agent.BaseAgent import GridBaseAgent
 from sky_simulator.environment.grid_factory.grid_factory_env.Utils.single_step_svg import SingleStepAnimationMonitor
 # from pogema.wrappers.metrics import AgentsDensityWrapper, RuntimeMetricWrapper
 # from pogema_toolbox.create_env import MultiMapWrapper
@@ -39,7 +39,7 @@ class GridFactoryEnv(ParallelEnv):
 
     def __init__(self,
                  grid_config: Optional[GridConfig] = None,
-                 agent: Optional[BaseAgent] = None):
+                 agent: Optional[GridBaseAgent] = None):
         """
         初始化网格工厂环境
         Args:
@@ -75,6 +75,8 @@ class GridFactoryEnv(ParallelEnv):
         self.agent_positions = []
         self.agent_targets = []
 
+        # 动画保存路径
+        self.svg_pic = None
         self._initialize_pogema_env()
 
     def _create_default_grid_config(self) -> GridConfig:
@@ -86,8 +88,8 @@ class GridFactoryEnv(ParallelEnv):
             seed=42,
             max_episode_steps=256,
             obs_radius=5,
-            collision_system='priority',
-            observation_type='POMAPF',
+            # collision_system='priority',
+            # observation_type='POMAPF',
             on_target='restart'
         )
 
@@ -146,7 +148,7 @@ class GridFactoryEnv(ParallelEnv):
         """获取环境时间线"""
         return self.env_timeline
 
-    def action_space(self, agent: BaseAgent):
+    def action_space(self, agent: GridBaseAgent):
         """智能体动作空间"""
         if self.pogema_env:
             # 使用Pogema的动作空间
@@ -195,7 +197,7 @@ class GridFactoryEnv(ParallelEnv):
         # 合并输出
         observations, rewards, terminations, truncated, info = self.pack_output(machine_info, agent_info)
 
-        return observations, rewards, terminations, {}, {}
+        return observations, rewards, terminations, truncated, info
 
     def reset(self, seed=None, options=None):
         """重置环境"""
@@ -231,9 +233,6 @@ class GridFactoryEnv(ParallelEnv):
 
     def render(self):
         """渲染环境"""
-        if not self.use_pogema:
-            LOGGER.info("[GridFactoryEnv] 非Pogema模式，暂不支持SVG渲染")
-            return
         self.pogema_env.render()
 
     # ---------- 获取器方法 ----------

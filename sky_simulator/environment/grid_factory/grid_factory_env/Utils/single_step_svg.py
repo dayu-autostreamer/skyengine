@@ -2,6 +2,9 @@ import os
 from pogema import GridConfig, pogema_v0, AnimationMonitor, AnimationConfig, BatchAStarAgent
 from pogema.wrappers.persistence import AgentState
 from pogema.svg_animation.animation_drawer import SvgSettings, GridHolder, AnimationDrawer
+import config
+from config.all_field_const import CacheInfo
+from sky_logs.dc_helper import DiskCacheHelper
 
 
 class SingleStepAnimationMonitor(AnimationMonitor):
@@ -11,10 +14,11 @@ class SingleStepAnimationMonitor(AnimationMonitor):
     - 在 save_step_svg() 中为每个 agent 只取当前时刻的最后一个状态（构造成长度为1的历史）
     """
 
-    def __init__(self, env, animation_config=AnimationConfig(), save_dir="renders/steps/"):
+    def __init__(self, env, animation_config=AnimationConfig(), save_dir=config.STEPS_DIR):
         super().__init__(env, animation_config)
         self.save_dir = save_dir
         self.current_step = 0
+        self.dh = DiskCacheHelper(expire=CacheInfo.CACHE_EXPIRE.value)
 
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir, exist_ok=True)
@@ -99,5 +103,5 @@ class SingleStepAnimationMonitor(AnimationMonitor):
         animation = AnimationDrawer().create_animation(grid_holder)
         with open(path, "w") as f:
             f.write(animation.render())
-
+        self.dh.set(CacheInfo.SVG_IMAGE.value, animation.render())
         print(f"已保存步骤 {step_idx} 的SVG图像到: {path}")

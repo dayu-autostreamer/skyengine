@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+             width="512" height="512" viewBox="0 -1800 1800 1800">
+<defs>
+
+        <rect id="obstacle" width="70" height="70" fill="#84A1AE" rx="15"/>
+        <style>
+        .line {stroke: #84A1AE; stroke-width: 10;}
+        .agent {r: 35;}
+        .target {fill: none; stroke-width: 10; r: 35;}
+        </style>
+        
+</defs>
+
+<line class="line" x1="-50.0" x2="-50.0" y1="0" y2="-1800" />
+<line class="line" x1="50.0" x2="50.0" y1="0" y2="-1800" />
+<line class="line" x1="150.0" x2="150.0" y1="0" y2="-1800" />
+<line class="line" x1="250.0" x2="250.0" y1="0" y2="-1800" />
+<line class="line" x1="350.0" x2="350.0" y1="0" y2="-1800" />
+<line class="line" x1="450.0" x2="450.0" y1="0" y2="-1800" />
+<line class="line" x1="550.0" x2="550.0" y1="0" y2="-1800" />
+<line class="line" x1="650.0" x2="650.0" y1="0" y2="-1800" />
+<line class="line" x1="750.0" x2="750.0" y1="0" y2="-1800" />
+<line class="line" x1="850.0" x2="850.0" y1="0" y2="-1800" />
+<line class="line" x1="950.0" x2="950.0" y1="0" y2="-1800" />
+<line class="line" x1="1050.0" x2="1050.0" y1="0" y2="-1800" />
+<line class="line" x1="1150.0" x2="1150.0" y1="0" y2="-1800" />
+<line class="line" x1="1250.0" x2="1250.0" y1="0" y2="-1800" />
+<line class="line" x1="1350.0" x2="1350.0" y1="0" y2="-1800" />
+<line class="line" x1="1450.0" x2="1450.0" y1="0" y2="-1800" />
+<line class="line" x1="1550.0" x2="1550.0" y1="0" y2="-1800" />
+<line class="line" x1="1650.0" x2="1650.0" y1="0" y2="-1800" />
+<line class="line" x1="1750.0" x2="1750.0" y1="0" y2="-1800" />
+<line class="line" x1="0" x2="1800" y1="50.0" y2="50.0" />
+<line class="line" x1="0" x2="1800" y1="-50.0" y2="-50.0" />
+<line class="line" x1="0" x2="1800" y1="-150.0" y2="-150.0" />
+<line class="line" x1="0" x2="1800" y1="-250.0" y2="-250.0" />
+<line class="line" x1="0" x2="1800" y1="-350.0" y2="-350.0" />
+<line class="line" x1="0" x2="1800" y1="-450.0" y2="-450.0" />
+<line class="line" x1="0" x2="1800" y1="-550.0" y2="-550.0" />
+<line class="line" x1="0" x2="1800" y1="-650.0" y2="-650.0" />
+<line class="line" x1="0" x2="1800" y1="-750.0" y2="-750.0" />
+<line class="line" x1="0" x2="1800" y1="-850.0" y2="-850.0" />
+<line class="line" x1="0" x2="1800" y1="-950.0" y2="-950.0" />
+<line class="line" x1="0" x2="1800" y1="-1050.0" y2="-1050.0" />
+<line class="line" x1="0" x2="1800" y1="-1150.0" y2="-1150.0" />
+<line class="line" x1="0" x2="1800" y1="-1250.0" y2="-1250.0" />
+<line class="line" x1="0" x2="1800" y1="-1350.0" y2="-1350.0" />
+<line class="line" x1="0" x2="1800" y1="-1450.0" y2="-1450.0" />
+<line class="line" x1="0" x2="1800" y1="-1550.0" y2="-1550.0" />
+<line class="line" x1="0" x2="1800" y1="-1650.0" y2="-1650.0" />
+<line class="line" x1="0" x2="1800" y1="-1750.0" y2="-1750.0" />
+<use href="#obstacle" x="65" y="-135" />
+<use href="#obstacle" x="65" y="-235" />
+<use href="#obstacle" x="65" y="-335" />
+<use href="#obstacle" x="65" y="-435" />
+<use href="#obstacle" x="65" y="-535" />
+<use href="#obstacle" x="65" y="-635" />
+<use href="#obstacle" x="65" y="-735" />
+<use href="#obstacle" x="65" y="-835" />
+<use href="#obstacle" x="65" y="-935" />
+<use href="#obstacle" x="65" y="-1035" />
+<use href="#obstacle" x="65" y="-1135" />
+<use href="#obstacle" x="65" y="-1235" />
+<use href="#obstacle" x="65" y="-1335" />
+<use href="#obstacle" x="65" y="-1435" />
+<use href="#obstacle" x="65" y="-1535" />
+<use href="#obstacle" x="65" y="-1635" />
+<use href="#obstacle" x="65" y="-1735" />
+<use href="#obstacle" x="165" y="-135" />
+<use href="#obstacle" x="165" y="-435" />
+<use href="#obstacle" x="165" y="-635" />
+<use href="#obstacle" x="165" y="-935" />
+<use href="#obstacle" x="165" y="-1335" />
+<use href="#obstacle" x="165" y="-1435" />
+<use href="#obstacle" x="165" y="-1635" />
+<use href="#obstacle" x="165" y="-1735" />
+<use href="#obstacle" x="265" y="-135" />
+<use href="#obstacle" x="265" y="-435" />
+<use href="#obstacle" x="265" y="-535" />
+<use href="#obstacle" x="265" y="-635" />
+<use href="#obstacle" x="265" y="-735" />
+<use href="#obstacle" x="265" y="-1435" />
+<use href="#obstacle" x="265" y="-1735" />
+<use href="#obstacle" x="365" y="-135" />
+<use href="#obstacle" x="365" y="-335" />
+<use href="#obstacle" x="365" y="-535" />
+<use href="#obstacle" x="365" y="-1635" />
+<use href="#obstacle" x="365" y="-1735" />
+<use href="#obstacle" x="465" y="-135" />
+<use href="#obstacle" x="465" y="-235" />
+<use href="#obstacle" x="465" y="-735" />
+<use href="#obstacle" x="465" y="-1235" />
+<use href="#obstacle" x="465" y="-1535" />
+<use href="#obstacle" x="465" y="-1735" />
+<use href="#obstacle" x="565" y="-135" />
+<use href="#obstacle" x="565" y="-235" />
+<use href="#obstacle" x="565" y="-435" />
+<use href="#obstacle" x="565" y="-535" />
+<use href="#obstacle" x="565" y="-935" />
+<use href="#obstacle" x="565" y="-1135" />
+<use href="#obstacle" x="565" y="-1735" />
+<use href="#obstacle" x="665" y="-135" />
+<use href="#obstacle" x="665" y="-235" />
+<use href="#obstacle" x="665" y="-335" />
+<use href="#obstacle" x="665" y="-1535" />
+<use href="#obstacle" x="665" y="-1635" />
+<use href="#obstacle" x="665" y="-1735" />
+<use href="#obstacle" x="765" y="-135" />
+<use href="#obstacle" x="765" y="-335" />
+<use href="#obstacle" x="765" y="-1635" />
+<use href="#obstacle" x="765" y="-1735" />
+<use href="#obstacle" x="865" y="-135" />
+<use href="#obstacle" x="865" y="-735" />
+<use href="#obstacle" x="865" y="-1135" />
+<use href="#obstacle" x="865" y="-1335" />
+<use href="#obstacle" x="865" y="-1535" />
+<use href="#obstacle" x="865" y="-1635" />
+<use href="#obstacle" x="865" y="-1735" />
+<use href="#obstacle" x="965" y="-135" />
+<use href="#obstacle" x="965" y="-235" />
+<use href="#obstacle" x="965" y="-435" />
+<use href="#obstacle" x="965" y="-535" />
+<use href="#obstacle" x="965" y="-635" />
+<use href="#obstacle" x="965" y="-1535" />
+<use href="#obstacle" x="965" y="-1735" />
+<use href="#obstacle" x="1065" y="-135" />
+<use href="#obstacle" x="1065" y="-635" />
+<use href="#obstacle" x="1065" y="-1035" />
+<use href="#obstacle" x="1065" y="-1335" />
+<use href="#obstacle" x="1065" y="-1535" />
+<use href="#obstacle" x="1065" y="-1735" />
+<use href="#obstacle" x="1165" y="-135" />
+<use href="#obstacle" x="1165" y="-435" />
+<use href="#obstacle" x="1165" y="-935" />
+<use href="#obstacle" x="1165" y="-1035" />
+<use href="#obstacle" x="1165" y="-1335" />
+<use href="#obstacle" x="1165" y="-1735" />
+<use href="#obstacle" x="1265" y="-135" />
+<use href="#obstacle" x="1265" y="-635" />
+<use href="#obstacle" x="1265" y="-835" />
+<use href="#obstacle" x="1265" y="-935" />
+<use href="#obstacle" x="1265" y="-1135" />
+<use href="#obstacle" x="1265" y="-1435" />
+<use href="#obstacle" x="1265" y="-1635" />
+<use href="#obstacle" x="1265" y="-1735" />
+<use href="#obstacle" x="1365" y="-135" />
+<use href="#obstacle" x="1365" y="-535" />
+<use href="#obstacle" x="1365" y="-935" />
+<use href="#obstacle" x="1365" y="-1235" />
+<use href="#obstacle" x="1365" y="-1435" />
+<use href="#obstacle" x="1365" y="-1735" />
+<use href="#obstacle" x="1465" y="-135" />
+<use href="#obstacle" x="1465" y="-235" />
+<use href="#obstacle" x="1465" y="-435" />
+<use href="#obstacle" x="1465" y="-535" />
+<use href="#obstacle" x="1465" y="-1035" />
+<use href="#obstacle" x="1465" y="-1635" />
+<use href="#obstacle" x="1465" y="-1735" />
+<use href="#obstacle" x="1565" y="-135" />
+<use href="#obstacle" x="1565" y="-535" />
+<use href="#obstacle" x="1565" y="-1035" />
+<use href="#obstacle" x="1565" y="-1435" />
+<use href="#obstacle" x="1565" y="-1735" />
+<use href="#obstacle" x="1665" y="-135" />
+<use href="#obstacle" x="1665" y="-235" />
+<use href="#obstacle" x="1665" y="-335" />
+<use href="#obstacle" x="1665" y="-435" />
+<use href="#obstacle" x="1665" y="-535" />
+<use href="#obstacle" x="1665" y="-635" />
+<use href="#obstacle" x="1665" y="-735" />
+<use href="#obstacle" x="1665" y="-835" />
+<use href="#obstacle" x="1665" y="-935" />
+<use href="#obstacle" x="1665" y="-1035" />
+<use href="#obstacle" x="1665" y="-1135" />
+<use href="#obstacle" x="1665" y="-1235" />
+<use href="#obstacle" x="1665" y="-1335" />
+<use href="#obstacle" x="1665" y="-1435" />
+<use href="#obstacle" x="1665" y="-1535" />
+<use href="#obstacle" x="1665" y="-1635" />
+<use href="#obstacle" x="1665" y="-1735" />
+<circle class="agent" cx="900" cy="-1400" fill="#c1433c" r="35" />
+<circle class="agent" cx="600" cy="-600" fill="#2e6f9e" r="35" />
+<circle class="agent" cx="900" cy="-300" fill="#6e81af" r="35" />
+<circle class="agent" cx="1300" cy="-700" fill="#00b9c8" r="35" />
+<circle class="target" cx="500" cy="-400" r="35" stroke="#c1433c" />
+<circle class="target" cx="1500" cy="-1300" r="35" stroke="#2e6f9e" />
+<circle class="target" cx="400" cy="-1000" r="35" stroke="#6e81af" />
+<circle class="target" cx="1000" cy="-1200" r="35" stroke="#00b9c8" />
+</svg>

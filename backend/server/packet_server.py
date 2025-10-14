@@ -8,14 +8,12 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 import config
-from core.lib.network import NetworkAPIMethod, NetworkAPIPath
+from backend.core.lib.network.api import NetworkAPIMethod, NetworkAPIPath
 
-from backend_core import BackendCore
+from backend.environment.packet_core import BackendCore
 
 # service引入
-from service import file_service
-from service import agent_service
-from service import monitor_service
+from backend.service.packet import monitor_service, agent_service, file_service
 
 from sky_logs.logger import BACKEND_LOGGER as LOGGER
 from sky_logs.dc_helper import DiskCacheHelper

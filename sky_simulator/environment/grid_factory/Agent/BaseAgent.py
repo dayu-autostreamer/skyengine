@@ -1,15 +1,29 @@
 import time
 from abc import ABC, abstractmethod
+from sky_simulator.environment.grid_factory.grid_factory_env.Utils.env_const import ObsType,ActionType
+
 # Agent:
-# input: 状态
-# output: [(Operation, AGV, Machine), ...] （job可以混合）
+# input: 智能体自己观察的状态
+# output: 智能体自己的动作中的一个
 
 
 from sky_simulator.registry import register_component
 
 
-@register_component("grid_factory.BaseAgent")
-class BaseAgent(ABC):
+@register_component("grid_factory.GridBaseAgent")
+class GridBaseAgent(ABC):
+    """
+    网格工厂AGV智能体基类
+
+    功能特性:
+    1. 支持上下左右移动动作
+    2. 支持多种移动策略
+    3. 支持路径规划和目标导航
+    4. 支持避障和碰撞检测
+    """
+    # 不同观察的智能体处理方案不同
+    AGENT_TYPE:ObsType = ObsType.DEFAULT.value
+
     def __init__(self, name=None, agent_id=None, parameter: dict = None):
         """
         通用智能体基类

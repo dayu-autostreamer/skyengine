@@ -20,6 +20,9 @@ SYSTEM_LOG_DIR = os.path.join(LOG_DIR, 'system_logs')
 TEST_LOG_DIR = os.path.join(LOG_DIR, 'test_logs')
 
 CACHE_DIR = os.path.join(LOG_DIR, 'cache')
+SVG_DIR = os.path.join(LOG_DIR, 'renders')
+ANIMATE_DIR = os.path.join(SVG_DIR, '')
+STEPS_DIR = os.path.join(SVG_DIR, 'steps')
 
 
 

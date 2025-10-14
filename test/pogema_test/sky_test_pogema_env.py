@@ -41,8 +41,7 @@ def sky_test_grid_factory_env():
 
     # 测试环境重置
     obs, info = env.reset(seed=42)
-    print(obs)
-    print(info)
+    print(dh.get(CacheInfo.SVG_IMAGE.value))
     print(f"✓ 环境重置成功")
 
     dp = DeterministicPolicy()
@@ -67,7 +66,7 @@ def sky_test_grid_factory_env():
         machine_actions = []
         obs, rewards, terminations, truncations, infos = env.step({'agent_actions': agent_actions,
                                                                    'machine_actions': machine_actions})
-        print(dh.get(CacheInfo.SVG_IMAGE.value))
+        # print(dh.get(CacheInfo.SVG_IMAGE.value))
         print(f"步进 {i + 1}: 位置 {env.get_agent_positions()}")
 
     print("✓ 多次步进测试成功")

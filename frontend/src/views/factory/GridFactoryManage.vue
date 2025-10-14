@@ -145,17 +145,20 @@
               </el-form-item>
               <el-form-item label="操作">
                 <el-row :gutter="8">
-                  <el-col :span="6">
-                    <el-button type="primary" @click="handleFactoryRender" style="width: 100%">Render</el-button>
+                  <el-col :span="5">
+                    <el-button type="primary" @click="factoryRender" style="width: 100%">Render</el-button>
                   </el-col>
-                  <el-col :span="6">
-                    <el-button type="success" @click="handleFactoryStart" style="width: 100%">Start</el-button>
+                  <el-col :span="5">
+                    <el-button type="success" @click="factoryStart" style="width: 100%">Start</el-button>
                   </el-col>
-                  <el-col :span="6">
-                    <el-button type="warning" @click="handleFactoryPause" style="width: 100%">Pause</el-button>
+                  <el-col :span="5">
+                    <el-button type="warning" @click="factoryPause" style="width: 100%">Pause</el-button>
                   </el-col>
-                  <el-col :span="6">
-                    <el-button type="danger" @click="handleFactoryReset" style="width: 100%">Reset</el-button>
+                  <el-col :span="5">
+                    <el-button type="warning" @click="factoryResume" style="width: 100%">Resume</el-button>
+                  </el-col>
+                  <el-col :span="4">
+                    <el-button type="danger" @click="factoryReset" style="width: 100%">Reset</el-button>
                   </el-col>
 
                 </el-row>
@@ -270,7 +273,9 @@
               </div>
             </div>
             <div class="map-container">
-              <el-image :src="map_src" style="width: 100%; height: 100%;" fit="cover"/>
+              <div v-html="svgPic" class="map-container"></div>
+
+              <!--              <el-image :src="map_src" style="width: 100%; height: 100%;" fit="cover"/>-->
             </div>
           </el-card>
         </el-col>
@@ -286,215 +291,77 @@ import {
 
 import {ref, onMounted, onUnmounted} from "vue";
 import {UploadFilled} from '@element-plus/icons-vue'
-import axios from "axios";
 import {useFactoryState} from "/@/stores/factoryState.ts"
 
-const uploadRef = ref();
-const config_name = ref('');
-const fileList = ref([]);
-const target_url = ref('');
-const map_src = ref("");
-const selectedFactory = ref('');
-let agvIntervalId = null;
-let machineIntervalId = null;
-let jobIntervalId = null;
-let intervalId = null;
 const stores = useFactoryState()
-const speedLevel = ref(1);
-
-// ---------- 智能体相关流程 ----------
-const selectedAgent = ref("") //系统开始时会返回当前init Agent
-const agentList = ref([
-  {value: "agent1", label: "A*算法 Agent"},
-  {value: "agent2", label: "智能Agent 2"},
-  {value: "agent3", label: "智能Agent 3"},
-])
-
-const updateAgent = () => {
-  const data = {
-    'agent': selectedAgent.value
-  }
-  fetch("/api/agent/update", {
-    method: "POST",
-    body: JSON.stringify(data),
-  }).then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      }
-  )
-      .then((data) => {
-        console.log(data)
-      })
-      .catch((error) => {
-      });
-}
-
-const jobList = ref([]);
-
-let checkAliveInterval = null; // 用于持续检查 factory/alive 的定时器
-
-function updateMapSrcBuffered() {
-  const preloadImg = new Image();
-  const newSrc = `/api/map/update?_t=${Date.now()}`;
-
-  preloadImg.onload = () => {
-    map_src.value = newSrc; // 图片加载完后再替换
-  };
-  preloadImg.src = newSrc;
-}
-
-onMounted(() => {
-  updateCurrentFactoryMapList()
-});
-onUnmounted(() => {
-  clearInterval(agvIntervalId);
-  clearInterval(machineIntervalId);
-  clearInterval(jobIntervalId);
-  clearInterval(intervalId);
-  clearInterval(checkAliveInterval);
-});
-
-const handleChange = (uploadFile, uploadFiles) => {
-  fileList.value.push(uploadFile)
-  updateCurrentFactoryMapList()
-}
-const getStandardConfig = () => {
-  fetch(`/api/standard/get?t=${Date.now()}`, {
-    method: "GET"
-  })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
-        }
-
-        // 从响应头获取 filename
-        const disposition = response.headers.get('Content-Disposition');
-        let filename = 'template_config_set.zip';  // 默认
-
-        if (disposition && disposition.includes('filename=')) {
-          filename = disposition.split('filename=')[1].replace(/"/g, '');
-        }
-
-        return response.blob().then(blob => ({blob, filename}));
-      })
-      .then(({blob, filename}) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;  // 动态指定 filename
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-      })
-      .catch(error => {
-        ElMessage.error("Download failed");
-        console.error(error);
-      });
-}
-
-const uploadConfigSet = () => {
-  target_url.value = '/api/' + config_name.value + `/yaml/upload?t=${Date.now()}`
-  uploadRef.value.submit()
-  fileList.value = []
-  ElMessage.success("Upload success!");
-}
-
-const updateCurrentFactoryMapList = () => {
-  fetch("/api/factory/list", {
-    method: "GET",
-  }).then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      }
-  )
-      .then((data) => {
-        stores.factoryList = data.factory_list;
-      })
-      .catch((error) => {
-      });
-}
-
-
-const handleFactoryRender = () => {
-  fetch("/api/map/render", {
-    method: "POST",
-    body: JSON.stringify({target_factory: selectedFactory.value}),
-  })
-      .then((response) => {
-        agvIntervalId = setInterval(loadAgvs(), 1000);
-        machineIntervalId = setInterval(loadMachines(), 1000);
-        jobIntervalId = setInterval(loadJobs(), 1000);
-        console.log(response);
-      })
-      .catch((error) => {
-      });
-}
-
-// 测试factory是否alive，若alive则更新下拉菜单和图片
-const checkFactoryAlive = async () => {
-  fetch("/api/factory/alive", {
-    method: "GET",
-  })
-      .then((response) => {
-        console.log(response)
-        return response.json();
-      })
-      .then((data) => {
-        console.log(data);
-        if (data.is_alive) {
-          agvIntervalId = setInterval(loadAgvs(), 1000);
-          machineIntervalId = setInterval(loadMachines(), 1000);
-          jobIntervalId = setInterval(loadJobs(), 1000);
-
-          // 启动成功,则每隔 0.2 秒更新一次图片
-          intervalId = setInterval(updateMapSrcBuffered, 250);
-
-          clearInterval(checkAliveInterval);
-        }
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-};
+const svgPic = ref('')
+let timer = null
 
 const factoryStart = async () => {
-  console.log("FactoryStart")
-  try {
-    const response = await axios.post('/api/factory/start');
-    console.log('Response: ', response.data);
-  } catch (error) {
-    console.error('API request failed:', error.response ? error.response.data : error.message);
-    throw error;
-  }
+  const res = await fetch('/api/factory/start', {method: 'POST'})
+  const data = await res.json()
+  ElMessage.success(data.message)
+  // 启动自动轮询刷新
+  startPolling()
 }
 
 const factoryPause = async () => {
-  console.log("FactoryPause")
-  try {
-    const response = await axios.post('/api/factory/pause');
-    console.log('Response: ', response.data);
-  } catch (error) {
-    console.error('API request failed:', error.response ? error.response.data : error.message);
-    throw error;
-  }
+  const res = await fetch('/api/factory/pause', {method: 'POST'})
+  const data = await res.json()
+  ElMessage.info(data.message)
+}
+
+const factoryResume = async () => {
+  const res = await fetch('/api/factory/resume', {method: 'POST'})
+  const data = await res.json()
+  ElMessage.success(data.message)
 }
 
 const factoryReset = async () => {
-  console.log("FactoryReset")
+  const res = await fetch('/api/factory/reset', {method: 'POST'})
+  const data = await res.json()
+  ElMessage.warning(data.message)
+}
+// 渲染工厂地图
+const factoryRender = async () => {
   try {
-    const response = await axios.post('/api/factory/reset');
-    console.log('Response: ', response.data);
+    const res = await fetch('/api/map/render', {method: 'POST'})
+    const data = await res.json()
+    console.log(data)
+    if (data.svg_pic) {
+      svgPic.value = data.svg_pic
+      ElMessage.success(data.message)
+    }
   } catch (error) {
-    console.error('API request failed:', error.response ? error.response.data : error.message);
-    throw error;
+    console.error(error)
+    ElMessage.error("渲染失败 ❌")
   }
 }
 
+// 开启轮询（每隔3秒刷新一次）
+function startPolling() {
+  clearPolling()
+  timer = setInterval(async () => {
+    try {
+      const res = await fetch('/api/map/render', {method: 'POST'})
+      const data = await res.json()
+      svgPic.value = data.svg_pic
+    } catch (e) {
+      console.warn('刷新图像失败', e)
+    }
+  }, 1000)
+}
+
+function clearPolling() {
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+}
+
+onUnmounted(() => {
+  clearPolling()
+})
 </script>
 
 <style scoped>

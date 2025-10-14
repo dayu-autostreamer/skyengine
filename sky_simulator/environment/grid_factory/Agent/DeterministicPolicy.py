@@ -128,4 +128,15 @@ class DeterministicPolicy:
                 actions[idx] = self._rnd.randint(1, 4)
         return actions
 
+class SystemDeterministicPolicy:
+    def __init__(self, random_seed=42, random_rate=0.2):
+        self.agents = None
+        self.actions = {tuple(GridConfig().MOVES[i]): i for i in
+                        range(len(GridConfig().MOVES))}  # make a dictionary to translate coordinates of action into id
+        self.obs_radius = GridConfig().obs_radius
+        self._rnd = np.random.RandomState(random_seed)
+        self._random_rate = random_rate
 
+    def act(self, obs) -> list:
+        actions = []
+        return actions

@@ -111,7 +111,7 @@ class GridFactoryEnv(ParallelEnv):
             # 添加图像记录包装器,包括单步的和多步的
             self.pogema_env = SingleStepAnimationMonitor(self.pogema_env)
             self.pogema_env = AnimationMonitor(self.pogema_env)
-
+            print(f"请看这里：{self.pogema_env.get_obstacles().astype(int).tolist()}")
             LOGGER.info(f"[GridFactoryEnv] Pogema环境初始化成功，智能体数量: {self.grid_config.num_agents}")
 
         except Exception as e:

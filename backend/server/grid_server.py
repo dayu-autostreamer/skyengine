@@ -147,6 +147,15 @@ class APIHandler:
         )
         async def factory_reset():
             self.core.reset()
-            return {"message": "仿真环境已重置 🔄"}
+            return ({"message": "仿真环境已重置 🔄"})
+
+        @component_router.api_route(
+            path=GridAPI.MAP_RENDER.path,  # 从GridAPI获取接口路径
+            methods=[GridAPI.MAP_RENDER.method],  # 从GridAPI获取HTTP请求方法
+            response_class=JSONResponse,
+        )
+        async def map_render():
+            svg_pic = self.core.render_map()
+            return {"message": "渲染成功 ✅", "svg_pic": svg_pic}
 
         # ========== 智能体组件相关代码 ==========

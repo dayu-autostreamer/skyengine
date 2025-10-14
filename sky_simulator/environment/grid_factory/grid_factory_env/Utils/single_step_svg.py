@@ -104,4 +104,4 @@ class SingleStepAnimationMonitor(AnimationMonitor):
         with open(path, "w") as f:
             f.write(animation.render())
         self.dh.set(CacheInfo.SVG_IMAGE.value, animation.render())
-        print(f"已保存步骤 {step_idx} 的SVG图像到: {path}")
+        # print(f"已保存步骤 {step_idx} 的SVG图像到: {path}")

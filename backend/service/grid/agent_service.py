@@ -31,4 +31,6 @@ def create_system_policy(agent_config):
     创建智能体,这些智能体包括宏观job的决策与微观上AGV的决策
     """
     agent_name = agent_config['agent_name']
-    return None
+    if agent_name == 'deterministic_policy':
+        from sky_simulator.environment.grid_factory.Agent.DeterministicPolicy import SystemDeterministicPolicy
+        return SystemDeterministicPolicy()

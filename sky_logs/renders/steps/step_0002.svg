@@ -180,7 +180,7 @@
 <use href="#obstacle" x="1665" y="-1635" />
 <use href="#obstacle" x="1665" y="-1735" />
 <circle class="agent" cx="800" cy="-1400" fill="#c1433c" r="35" />
-<circle class="agent" cx="500" cy="-600" fill="#2e6f9e" r="35" />
+<circle class="agent" cx="700" cy="-600" fill="#2e6f9e" r="35" />
 <circle class="agent" cx="900" cy="-300" fill="#6e81af" r="35" />
 <circle class="agent" cx="1200" cy="-700" fill="#00b9c8" r="35" />
 <circle class="target" cx="500" cy="-400" r="35" stroke="#c1433c" />

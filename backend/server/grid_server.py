@@ -76,7 +76,7 @@ class APIHandler:
             动态返回工厂布局图片
             """
             # 假设图片存放在 public/images/factory 下
-            img_dir = config.BACKEND_ENV_DIR + "/environment_preview"
+            img_dir = config.BACKEND_ENV_DIR
             img_name = f"{factory_id}"
             img_path = os.path.join(img_dir, img_name)
 

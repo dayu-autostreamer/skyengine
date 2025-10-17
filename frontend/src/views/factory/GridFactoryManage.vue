@@ -269,13 +269,15 @@
           <el-card class="map-card" shadow="hover">
             <div class="map-header">
               <span>Current Factory Map</span>
-              <div class="map-controls">
-              </div>
             </div>
-            <div class="map-container">
-              <div v-html="svgPic" class="map-container"></div>
-
-              <!--              <el-image :src="map_src" style="width: 100%; height: 100%;" fit="cover"/>-->
+            <div class="map-container-wrapper">
+              <svg
+                  v-if="svgPic"
+                  v-html="svgPic"
+                  class="map-svg"
+                  preserveAspectRatio="xMidYMid meet"
+              ></svg>
+              <div v-else class="map-placeholder">No Map Rendered Yet</div>
             </div>
           </el-card>
         </el-col>
@@ -296,6 +298,8 @@ import {useFactoryState} from "/@/stores/factoryState.ts"
 const stores = useFactoryState()
 const svgPic = ref('')
 let timer = null
+const selectedFactory = ref('')
+const selectedJob = ref('')
 
 const factoryStart = async () => {
   const res = await fetch('/api/factory/start', {method: 'POST'})
@@ -325,7 +329,14 @@ const factoryReset = async () => {
 // 渲染工厂地图
 const factoryRender = async () => {
   try {
-    const res = await fetch('/api/map/render', {method: 'POST'})
+    console.log(selectedFactory.value)
+    const res = await fetch('/api/map/render', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({factory_name: selectedFactory.value})  // 发送选中的工厂
+    })
     const data = await res.json()
     console.log(data)
     if (data.svg_pic) {
@@ -338,7 +349,7 @@ const factoryRender = async () => {
   }
 }
 
-// 开启轮询（每隔3秒刷新一次）
+// 开启轮询
 function startPolling() {
   clearPolling()
   timer = setInterval(async () => {
@@ -359,6 +370,39 @@ function clearPolling() {
   }
 }
 
+
+const factoryList = ref([])
+const jobList = ref([])
+
+// 获取工厂列表
+async function fetchFactoryList() {
+  try {
+    const res = await fetch("/api/factory/list", {method: 'GET'}); // 对应 GridAPI.FACTORY_LIST.path
+    const data = await res.json();
+    factoryList.value = data.factory_list || [];
+    stores.factoryList = factoryList.value
+  } catch (err) {
+    console.error("获取工厂列表失败:", err);
+  }
+}
+
+// 获取任务列表
+async function fetchJobList() {
+  try {
+    const res = await fetch("/api/job/list", {method: 'GET'}); // 对应 GridAPI.JOB_LIST.path
+    const data = await res.json();
+    jobList.value = data.job_list || [];
+    stores.jobList = jobList.value
+  } catch (err) {
+    console.error("获取任务列表失败:", err);
+  }
+}
+
+// 页面挂载时自动请求
+onMounted(() => {
+  fetchFactoryList();
+  fetchJobList();
+});
 onUnmounted(() => {
   clearPolling()
 })
@@ -433,32 +477,32 @@ body {
   font-weight: bold;
 }
 
+.factory-container {
+  padding: 20px;
+  height: calc(100vh - 40px); /* 让整个工厂展示区撑满屏幕 */
+}
+
 .map-card {
   height: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 500px; /* 可选 */
 }
 
-.map-header {
+.map-container-wrapper {
+  flex: 1;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 12px;
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.map-controls {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.map-container {
-  width: 100%;
-  height: 600px;
-  background: #fafafa;
-  border-radius: 12px;
   overflow: hidden;
+  background-color: #ffffff;
+  border-radius: 12px;
 }
+
+.map-svg {
+  width: 700px;
+  height: 700px;
+  display: block;
+}
+
 </style>

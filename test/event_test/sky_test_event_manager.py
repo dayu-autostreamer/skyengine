@@ -1,9 +1,7 @@
 # 测试事件动态启动 管理等功能
-from sky_simulator.lifecycle import context_creator
-from sky_simulator.registry import component_registry, selective_scan_and_register_components, create_component_by_id
-from sky_simulator.registry.scanner import load_config
-from sky_simulator.event.event_manager.EventManager import EventManager
-from pathlib import Path
+from sky_executor.utils.registry import component_registry, selective_scan_and_register_components
+from sky_executor.utils.registry.scanner import load_config
+from sky_executor.utils.event.event_manager.EventManager import EventManager
 import config
 
 config_path = config.CONFIG_DIR + "/application_config.yaml"

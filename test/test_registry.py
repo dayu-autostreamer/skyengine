@@ -6,7 +6,8 @@
 @Date    ：2025/5/31 0:43 
 '''
 # bootstrap.py
-from sky_simulator.registry import scan_and_register_components, get_component_class_by_id,component_registry,create_component_by_id
+from sky_executor.utils.registry import scan_and_register_components, get_component_class_by_id,component_registry
+
 
 def test_scan():
     print("[Bootstrap] Scanning and registering components...")

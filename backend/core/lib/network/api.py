@@ -39,7 +39,6 @@ class GridAPI:
         path="/factory/list",
         method="GET"
     )
-
     # ------------------------------ 2. AGV控制接口 ------------------------------
     AGVS = Endpoint(
         path="/agvs",
@@ -62,7 +61,7 @@ class GridAPI:
 
     # ------------------------------ 4. Job控制接口 ------------------------------
     JOB_TEMPLATES = Endpoint(
-        path="/jobs",
+        path="/job",
         method="GET"
     )
     JOB_ADD = Endpoint(
@@ -70,14 +69,17 @@ class GridAPI:
         method="POST"
     )
     JOBS_PROGRESS = Endpoint(
-        path="/jobs/progress",
+        path="/job/progress",
         method="GET"
     )
     JOB_MONITOR = Endpoint(
         path="/monitor/job",
         method="GET"
     )
-
+    JOB_LIST = Endpoint(
+        path="/job/list",
+        method="GET"
+    )
     # ------------------------------ 5. 地图相关接口 ------------------------------
     MAP_UPDATE = Endpoint(
         path="/map/update",
@@ -111,7 +113,7 @@ class GridAPI:
         path="/cases/config",
         method="GET"
     )
-    CASES_PREVIEW= Endpoint(
+    CASES_PREVIEW = Endpoint(
         path="/cases/preview/",
         method="GET"
     )

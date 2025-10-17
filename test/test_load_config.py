@@ -5,7 +5,7 @@
 @Author  ：Skyrim
 @Date    ：2025/5/31 1:30 
 '''
-from sky_simulator.registry.scanner import load_config
+from sky_executor.utils.registry.scanner import load_config
 from config import PF_DIR
 config = load_config(f"{PF_DIR}/template.yaml")
 

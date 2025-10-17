@@ -9,18 +9,18 @@ import os
 
 from fastapi import FastAPI
 from fastapi.routing import APIRouter
-from starlette.responses import JSONResponse, FileResponse, StreamingResponse, Response
+from starlette.responses import JSONResponse, StreamingResponse
 from contextlib import asynccontextmanager
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Request
 
 import config
 from backend.core.lib.network.api import GridAPI
 
-from backend.environment.grid_core import GridCore
+from sky_executor.grid_factory.grid_factory_core.grid_core import GridCore
 
 # service引入
-from backend.service.grid import agent_service, file_service
 
 from sky_logs.logger import BACKEND_LOGGER as LOGGER
 from sky_logs.dc_helper import DiskCacheHelper
@@ -150,12 +150,42 @@ class APIHandler:
             return ({"message": "仿真环境已重置 🔄"})
 
         @component_router.api_route(
-            path=GridAPI.MAP_RENDER.path,  # 从GridAPI获取接口路径
-            methods=[GridAPI.MAP_RENDER.method],  # 从GridAPI获取HTTP请求方法
+            path=GridAPI.MAP_RENDER.path,
+            methods=[GridAPI.MAP_RENDER.method],
             response_class=JSONResponse,
         )
-        async def map_render():
+        async def map_render(request: Request):
+            data = await request.json()
+            factory_name = data.get("factory_name")
+            if factory_name:
+                print(factory_name)
+                self.core.set_factory(factory_name)
             svg_pic = self.core.render_map()
             return {"message": "渲染成功 ✅", "svg_pic": svg_pic}
 
+        @component_router.api_route(
+            path=GridAPI.FACTORY_LIST.path,  # 从GridAPI获取接口路径
+            methods=[GridAPI.FACTORY_LIST.method],  # 从GridAPI获取HTTP请求方法
+            response_class=JSONResponse,
+        )
+        async def get_factory_list():
+            factory_list = self.core.get_factory_list()
+            factory_dict_list = []
+            for factory in factory_list:
+                temp_dict = {"id": factory}
+                factory_dict_list.append(temp_dict)
+            return {"message": "获取工厂列表成功 ✅", "factory_list": factory_dict_list}
+
+        @component_router.api_route(
+            path=GridAPI.JOB_LIST.path,  # 从GridAPI获取接口路径
+            methods=[GridAPI.JOB_LIST.method],  # 从GridAPI获取HTTP请求方法
+            response_class=JSONResponse,
+        )
+        async def get_job_list():
+            job_list = self.core.get_job_list()
+            job_dict_list = []
+            for factory in job_list:
+                temp_dict = {"id": factory}
+                job_dict_list.append(temp_dict)
+            return {"message": "获取任务列表成功 ✅", "job_list": job_dict_list}
         # ========== 智能体组件相关代码 ==========

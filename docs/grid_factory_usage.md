@@ -33,19 +33,19 @@
 
 ```python
 from pogema import GridConfig
-from sky_simulator.environment.grid_factory.grid_factory_env.grid_factory_env import GridFactoryEnv
+from sky_executor.grid_factory.grid_factory.grid_factory_env.grid_factory_env import GridFactoryEnv
 
 # 创建网格配置
 grid_config = GridConfig(
-    num_agents=4,           # 智能体数量
-    size=20,                 # 网格大小 (20x20)
-    density=0.3,            # 障碍物密度
-    seed=42,                # 随机种子
-    max_episode_steps=256,   # 最大步数
-    obs_radius=5,           # 观察半径
+    num_agents=4,  # 智能体数量
+    size=20,  # 网格大小 (20x20)
+    density=0.3,  # 障碍物密度
+    seed=42,  # 随机种子
+    max_episode_steps=256,  # 最大步数
+    obs_radius=5,  # 观察半径
     collision_system='priority',  # 碰撞系统
-    observation_type='POMAPF',     # 观察类型
-    on_target='restart'     # 到达目标后的行为
+    observation_type='POMAPF',  # 观察类型
+    on_target='restart'  # 到达目标后的行为
 )
 
 # 创建环境
@@ -90,7 +90,7 @@ is_finished = env.env_is_finished()
 ### 1. 回调管理器集成
 
 ```python
-from sky_simulator.call_back.grid_factory_callback.callback_manager.CallbackManager import CallbackManager
+from sky_executor.grid_factory.grid_factory_callback.callback_manager import CallbackManager
 
 # 创建回调管理器
 callback_manager = CallbackManager()
@@ -155,7 +155,8 @@ env_config = {
 ```python
 import numpy as np
 from pogema import GridConfig
-from sky_simulator.environment.grid_factory.grid_factory_env.grid_factory_env import GridFactoryEnv
+from sky_executor.grid_factory.grid_factory.grid_factory_env.grid_factory_env import GridFactoryEnv
+
 
 def run_simulation():
     # 创建配置
@@ -166,34 +167,35 @@ def run_simulation():
         seed=123,
         max_episode_steps=200
     )
-    
+
     # 创建环境
     env = GridFactoryEnv(grid_config=config)
-    
+
     # 重置环境
     obs, info = env.reset(seed=123)
-    
+
     # 运行仿真
     for step in range(100):
         # 生成随机动作
         actions = np.random.randint(0, 5, size=config.num_agents).tolist()
-        
+
         # 执行步进
         obs, rewards, terminations, truncations, infos = env.step({
             'decisions': [],
             'step_time': 1.0
         })
-        
+
         # 打印状态
         if step % 10 == 0:
             print(f"Step {step}: Positions {env.get_agent_positions()}")
-        
+
         # 检查终止条件
         if any(terminations.values()):
             print("Episode finished!")
             break
-    
+
     return True
+
 
 if __name__ == '__main__':
     run_simulation()

@@ -6,8 +6,8 @@
 @Date    ：2025/10/8 23:12
 '''
 from pogema import GridConfig
-from sky_simulator.environment.grid_factory.grid_factory_env.grid_factory_env import GridFactoryEnv
-from sky_simulator.environment.grid_factory.Agent.DeterministicPolicy import DeterministicPolicy
+from sky_executor.grid_factory.grid_factory.grid_factory_env.grid_factory_env import GridFactoryEnv
+from sky_executor.grid_factory.grid_factory.Agent.DeterministicPolicy import DeterministicPolicy
 from sky_logs.dc_helper import DiskCacheHelper
 from config.all_field_const import CacheInfo
 
@@ -78,10 +78,42 @@ def sky_test_grid_factory_env():
     return True
 
 
+def sky_test_map_loader():
+    print("=== 测试基于Pogema的网格工厂环境 ===")
+
+    # 创建网格配置
+    grid_config = GridConfig(
+        map_name="pogema-logo",
+        num_agents=4,  # 4个智能体
+        size=15,  # 15x15网格
+        density=0.3,  # 30%障碍物密度
+        seed=42,  # 随机种子
+        max_episode_steps=100,  # 最大步数
+        obs_radius=3,  # 观察半径
+        collision_system='priority',  # 碰撞系统
+        on_target='restart'  # 到达目标后重启
+    )
+
+    print(f"网格配置: {grid_config.num_agents}个智能体, {grid_config.size}x{grid_config.size}网格")
+
+    # 创建环境
+    env = GridFactoryEnv(
+        grid_config=grid_config,
+    )
+    print(env.grid_config.seed)
+
+    # 下方说明pogema的reset只会刷新agent出现的位置
+    env.reset(env.grid_config.seed)
+    env.render()
+    env.reset(23)
+    env.render()
+
+
 if __name__ == '__main__':
     try:
         # 测试Pogema环境
-        sky_test_grid_factory_env()
+        # sky_test_grid_factory_env()
+        sky_test_map_loader()
         print("\n🎉 所有测试通过！")
 
     except Exception as e:

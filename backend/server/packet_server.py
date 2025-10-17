@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import config
 from backend.core.lib.network.api import NetworkAPIMethod, NetworkAPIPath
 
-from backend.environment.packet_core import BackendCore
+from sky_executor.packet_factory.packet_factory_core.packet_core import BackendCore
 
 # service引入
 from backend.service.packet import monitor_service, agent_service, file_service

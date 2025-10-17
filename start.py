@@ -26,7 +26,7 @@ def main():
     # 解析命令行参数
     # -------------------------------
     parser = argparse.ArgumentParser(description="启动 SkyEngine 前后端服务")
-    parser.add_argument("--server_type", type=str, default="packet",
+    parser.add_argument("--server_type", type=str, default="grid",
                         help="后端服务类型: [packet,grid]")
     parser.add_argument("--backend_port", type=int, default=8000, help="后端端口号")
     parser.add_argument("--frontend_port", type=int, default=5173, help="前端端口号")

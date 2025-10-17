@@ -6,9 +6,9 @@
 @Date    ：2025/7/30 12:39 
 '''
 
-from sky_simulator.registry import scan_and_register_components
-from sky_simulator.registry.scanner import load_config
-from sky_simulator.call_back.backend_callback.BackendMapLoader import FactoryMapLoader
+from sky_executor.utils.registry import scan_and_register_components
+from sky_executor.utils.registry.scanner import load_config
+from sky_executor.utils.call_back import FactoryMapLoader
 import config
 
 config_path = config.CONFIG_DIR+'/template_config_set_config.yaml'

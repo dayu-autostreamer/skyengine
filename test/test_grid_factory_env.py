@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from pogema import GridConfig
-from sky_simulator.environment.grid_factory.grid_factory_env.grid_factory_env import GridFactoryEnv
+from sky_executor.grid_factory.grid_factory.grid_factory_env.grid_factory_env import GridFactoryEnv
 
 def test_grid_factory_env():
     """测试网格工厂环境"""

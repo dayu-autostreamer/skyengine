@@ -12,15 +12,13 @@ import unittest
 import tempfile
 import os
 import shutil
-from unittest.mock import Mock, MagicMock, patch
 import numpy as np
 import sys
-import time
 
 # 添加项目路径
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from sky_simulator.environment.packet_factory.Trainer import (
+from sky_executor.packet_factory.packet_factory.Trainer import (
     BaseTrainer, SimpleTrainer, DQNTrainer, PPOTrainer,
     TrainerFactory, create_trainer
 )

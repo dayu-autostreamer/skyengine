@@ -1,4 +1,4 @@
-from sky_simulator.lifecycle.bootstrap import bootstrap
+from sky_executor.packet_factory.lifecycle import bootstrap
 from sky_logs.logger import LOGGER
 import argparse
 
@@ -13,8 +13,8 @@ if __name__ == '__main__':
 
     # 创建环境与智能体
     env, agent = bootstrap(config_path)
-    import sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env as packet_factory_env
-    env:packet_factory_env
+    import sky_executor.packet_factory.packet_factory.packet_factory_env.packet_factory_env as packet_factory_env
+    env: packet_factory_env
 
     # 重置环境
     observations = env.reset()

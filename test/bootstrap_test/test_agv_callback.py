@@ -6,7 +6,7 @@
 @Date    ：2025/9/18 15:11 
 '''
 import argparse
-from sky_simulator.lifecycle.bootstrap import bootstrap
+from sky_executor.packet_factory.lifecycle import bootstrap
 
 # 测试agv的回调
 if __name__ == '__main__':
@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # 创建环境与智能体
     env, agent = bootstrap(config_path)
-    import sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env as packet_factory_env
+    import sky_executor.packet_factory.packet_factory.packet_factory_env.packet_factory_env as packet_factory_env
 
     env: packet_factory_env
 

@@ -6,7 +6,9 @@
     <!-- 上方选择/预览/控制栏，只有在不是子路由时显示 -->
     <!-- 工厂选择展示部分 -->
     <el-card class="preview-card" shadow="hover">
-      <el-image :src="getImage()" class="factory-image" fit="contain"/>
+      <div class="image-wrapper">
+        <el-image :src="getImage()" class="factory-image" fit="contain"/>
+      </div>
     </el-card>
     <el-card class="info-card" shadow="never">
       <h2>{{ selectedFactory?.name }}</h2>
@@ -125,24 +127,24 @@ const getImage = () => {
 .preview-card {
   width: 80%;
   max-width: 900px;
-  height: 500px;
+  height: 600px;
   border-radius: 16px;
   overflow: hidden;
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中 */
 }
 
-.preview-container {
+.image-wrapper {
+  max-width: 100%;
+  max-height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #fafafa;
-  height: 500px;
 }
 
 .factory-image {
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
-  border-radius: 12px;
 }
 
 /* 文字说明 */

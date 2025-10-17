@@ -1,6 +1,6 @@
 
 
-from sky_simulator.event import BaseEvent,EventTest,EventAgvFail
+from sky_executor.utils.event import EventTest,EventAgvFail
 
 if __name__ == '__main__':
     # event=BaseEvent()
@@ -10,7 +10,7 @@ if __name__ == '__main__':
     # event_test()
     # event_test_recover()
     # print(EventTest.event_type)
-    from sky_simulator.environment.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
+    from sky_executor.packet_factory.packet_factory.packet_factory_env.packet_factory_env import PacketFactoryEnv
     print(type(PacketFactoryEnv))
 
 

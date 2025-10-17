@@ -13,16 +13,16 @@ def create_agv_agent(agent_config):
     """
     agent_name = agent_config['agent_name']
     if agent_name == 'random':
-        from sky_simulator.environment.grid_factory.Agent.RandomAgent import RandomAgent
+        from sky_executor.grid_factory.grid_factory.Agent import RandomAgent
         return RandomAgent()
     elif agent_name == 'greedy':
-        from sky_simulator.environment.grid_factory.Agent.GreedyAgent import GreedyAgent
+        from sky_executor.grid_factory.grid_factory.Agent.GreedyAgent import GreedyAgent
         return GreedyAgent()
     elif agent_name == 'path_planning':
-        from sky_simulator.environment.grid_factory.Agent.PathPlanningAgent import PathPlanningAgent
+        from sky_executor.grid_factory.grid_factory.Agent import PathPlanningAgent
         return PathPlanningAgent()
     elif agent_name == 'deterministic_policy':
-        from sky_simulator.environment.grid_factory.Agent.DeterministicPolicy import DeterministicPolicy
+        from sky_executor.grid_factory.grid_factory.Agent.DeterministicPolicy import DeterministicPolicy
         return DeterministicPolicy()
 
 
@@ -32,5 +32,5 @@ def create_system_policy(agent_config):
     """
     agent_name = agent_config['agent_name']
     if agent_name == 'deterministic_policy':
-        from sky_simulator.environment.grid_factory.Agent.DeterministicPolicy import SystemDeterministicPolicy
+        from sky_executor.grid_factory.grid_factory.Agent.DeterministicPolicy import SystemDeterministicPolicy
         return SystemDeterministicPolicy()

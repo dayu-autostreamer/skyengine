@@ -6,11 +6,9 @@
 @Date    ：2025/5/31 23:01 
 '''
 
-
-from sky_simulator.lifecycle import context_creator
-from sky_simulator.registry import component_registry,scan_and_register_components
-from sky_simulator.registry.scanner import load_config
-from sky_simulator.call_back.backend_callback import BackendMapLoader
+from sky_executor.utils.registry import scan_and_register_components
+from sky_executor.utils.registry.scanner import load_config
+from sky_executor.utils.call_back import BackendMapLoader
 
 config_path = '../../config/application_config.yaml'
 

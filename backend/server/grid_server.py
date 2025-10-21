@@ -18,7 +18,7 @@ from fastapi import Request
 import config
 from backend.core.lib.network.api import GridAPI
 
-from sky_executor.grid_factory.core.core import GridCore
+from sky_executor.grid_factory.core.core import Core
 
 # service引入
 
@@ -63,7 +63,7 @@ class BackendServer:
 
 class APIHandler:
     def __init__(self):
-        self.core = GridCore()
+        self.core = Core()
 
         # ========== 预览代码 ==========
         @config_router.api_route(
@@ -76,7 +76,7 @@ class APIHandler:
             动态返回工厂布局图片
             """
             # 假设图片存放在 public/images/factory 下
-            img_dir = config.BACKEND_ENV_DIR + "/environment_preview"
+            img_dir = config.BACKEND_ENV_DIR
             img_name = f"{factory_id}"
             img_path = os.path.join(img_dir, img_name)
 

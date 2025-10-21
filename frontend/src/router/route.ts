@@ -58,24 +58,6 @@ export const dynamicRoutes: Array<RouteRecordRaw> = [
                     isKeepAlive: true
                 },
                 children: [
-                    // {
-                    //     path: 'packet_factory', // 子工厂1
-                    //     name: 'packet-factory-manage',
-                    //     component: () => import('/@/views/factory/FactoryManage.vue'),
-                    //     meta: {
-                    //         title: '翼辉电池装配无人产线',
-                    //         roles: ['tiangong', 'packet'],
-                    //     },
-                    // },
-                    // {
-                    //     path: 'factory', // 子工厂2
-                    //     name: 'grid-factory-manage',
-                    //     component: () => import('/@/views/factory/GridFactoryManage.vue'),
-                    //     meta: {
-                    //         title: '翼辉原料分拣货仓',
-                    //         roles: ['tiangong', 'grid'],
-                    //     },
-                    // },
                 ],
             },
 

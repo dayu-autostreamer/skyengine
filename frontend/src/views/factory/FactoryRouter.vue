@@ -155,19 +155,6 @@ const getImage = () => {
   background: transparent;
 }
 
-.factory-title {
-  font-size: 22px;
-  margin: 0 0 10px;
-  font-weight: 600;
-  color: #333;
-}
-
-.factory-desc {
-  font-size: 15px;
-  color: #666;
-  line-height: 1.6;
-}
-
 /* 控制栏 */
 .control-card {
   width: 80%;

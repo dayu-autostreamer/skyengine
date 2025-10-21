@@ -3,7 +3,7 @@
 config:
   event_type: # 交给manager管理
     - packet_factory.JUST_TEST:
-        probability: 0.1          # 生成概率 5%
+        probability: 0.1          # 生成概率 10%
         strategy: "uniform"        # 均匀分布
         min_interval: 2.0          # 最小间隔 2秒
         max_interval: 10.0         # 最大间隔 10秒

@@ -26,7 +26,8 @@ def sky_test_grid_factory_env():
         seed=42,  # 随机种子
         max_episode_steps=100,  # 最大步数
         obs_radius=3,  # 观察半径
-        collision_system='priority',  # 碰撞系统
+        # collision_system='priority',  # 碰撞系统
+        # observation_type='POMAPF',  # 观察类型
         on_target='restart'  # 到达目标后重启
     )
 
@@ -41,15 +42,15 @@ def sky_test_grid_factory_env():
 
     # 测试环境重置
     obs, info = env.reset(seed=42)
-    print(dh.get(CacheInfo.SVG_IMAGE.value))
+    # print(dh.get(CacheInfo.SVG_IMAGE.value))
     print(f"✓ 环境重置成功")
 
     dp = DeterministicPolicy()
     # 测试环境步进
-    print(obs['agent_observation'])
-    agent_actions = dp.act(obs['agent_observation'])
+    agent_actions = dp.act(obs["agent_observation"])
     machine_actions = []
-    print(f"请看这里：{agent_actions}")
+    print(agent_actions)
+    print(machine_actions)
     obs, rewards, terminations, truncations, infos = env.step({'agent_actions': agent_actions,
                                                                'machine_actions': machine_actions})
 
@@ -76,7 +77,6 @@ def sky_test_grid_factory_env():
 
     print("\n=== 测试完成 ===")
     return True
-
 
 def sky_test_map_loader():
     print("=== 测试基于Pogema的网格工厂环境 ===")

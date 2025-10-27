@@ -9,7 +9,11 @@ class Endpoint:
 
 class GridAPI:
     """重构后的接口统一管理类，所有接口通过Endpoint封装路径与请求方法"""
-
+    # ------------------------------ 0. 工厂环境切换接口 ------------------------------
+    MANAGE_FACTORY = Endpoint(
+        path="/manage",
+        method="POST"
+    )
     # ------------------------------ 1. 工厂控制接口 ------------------------------
     FACTORY_ALIVE = Endpoint(
         path="/factory/alive",

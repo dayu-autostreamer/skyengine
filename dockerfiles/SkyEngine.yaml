@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: skyengine-backend
+    environment:
+      - SERVER_TYPE=grid           # grid 或 packet
+      - GUNICORN_PORT=8000
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8000:8000"
+    volumes:
+      # 可选：挂载配置与数据
+      - ./config:/app/config:ro
+      - ./backend/config_set:/app/backend/config_set:ro
+      - ./sky_logs:/app/sky_logs
+      - ./sky_executor:/app/sky_executor:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import socket; s=socket.socket(); s.connect((\"127.0.0.1\", 8000)); s.close()' || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: skyengine-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  default:
+    name: skyengine-net

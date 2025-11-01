@@ -7,7 +7,6 @@
 """
 
 from typing import List, Tuple, Dict, Any, Optional
-import random
 import yaml
 from pathlib import Path
 
@@ -52,11 +51,11 @@ class GridFactoryEnv(ParallelEnv):
     metadata = {"render_modes": ["human"], "name": "grid_factory_env"}
 
     def __init__(
-        self,
-        grid_config: Optional[GridConfig] = None,
-        machine_config: Optional[MachineConfig] = None,
-        job_config: Optional[JobConfig] = None,
-        agent: Optional[GridBaseAgent] = None,
+            self,
+            grid_config: Optional[GridConfig] = None,
+            machine_config: Optional[MachineConfig] = None,
+            job_config: Optional[JobConfig] = None,
+            agent: Optional[GridBaseAgent] = None,
     ):
         """
         初始化网格工厂环境
@@ -76,7 +75,6 @@ class GridFactoryEnv(ParallelEnv):
 
         # 机器组件 也就是路由的起始点和终止点
         self.machines = []
-        self.machine_possible_positions: List[Tuple[int, int]] = []
         self.machine_config = machine_config or self._create_default_machine_config()
 
         # 任务组件
@@ -110,22 +108,27 @@ class GridFactoryEnv(ParallelEnv):
                 maps = yaml.safe_load(f)
             ToolboxRegistry.register_maps(maps)
 
-    def get_grid_possible_positions(self):
-        """获得机器的位置"""
-        self.machine_possible_positions = [m.location for m in self.machines]
-        return self.machine_possible_positions
+    @property
+    def machine_possible_positions(self):
+        return self.grid_config.possible_targets_xy
+
+    @property
+    def current_targets(self):
+        return self.pogema_env.grid.finishes_xy
+
 
     def machine_reset(
-        self,
+            self,
     ):
         # 获得可能的位置，修改config
-        self.grid: Grid = Grid(grid_config=self.grid_config)
-        self.grid.get_obstacles()
+        grid: Grid = Grid(grid_config=self.grid_config)
+        grid.get_obstacles()
 
         self.machines = generate_machines(
-            self.grid.get_obstacles(), self.machine_config
+            grid.get_obstacles(), self.machine_config
         )
-        self.get_grid_possible_positions()
+        """获得机器的位置"""
+        self.grid_config.possible_targets_xy = [m.location for m in self.machines]
 
         LOGGER.info(
             f"[GridFactoryEnv] 创建了 {self.machine_config.num_machines} 个机器"
@@ -182,20 +185,15 @@ class GridFactoryEnv(ParallelEnv):
 
     def _initialize_pogema_env(self):
         """初始化Pogema环境"""
-        try:
-            # 创建Pogema环境
-            self.pogema_env = PogemaLifeLongWithAssign(grid_config=self.grid_config)
-            # 添加包装器
-            self.pogema_env = MultiMapWrapper(self.pogema_env)  # 支持多地图
-            self.pogema_env = AnimationMonitor(self.pogema_env)
-            print(f"请看这里：{self.pogema_env.get_obstacles().astype(int).tolist()}")
-            LOGGER.info(
-                f"[GridFactoryEnv] Pogema环境初始化成功，智能体数量: {self.grid_config.num_agents}"
-            )
+        # 创建Pogema环境
+        self.pogema_env = PogemaLifeLongWithAssign(grid_config=self.grid_config)
+        # 添加包装器
+        self.pogema_env = MultiMapWrapper(self.pogema_env)  # 支持多地图
+        self.pogema_env = AnimationMonitor(self.pogema_env)
+        LOGGER.info(
+            f"[GridFactoryEnv] Pogema环境初始化成功，智能体数量: {self.grid_config.num_agents}"
+        )
 
-        except Exception as e:
-            LOGGER.error(f"[GridFactoryEnv] Pogema环境初始化失败: {e}")
-            self.use_pogema = False
 
     def create_hash_index(self):
         """创建高效获取组件的索引结构"""
@@ -206,11 +204,11 @@ class GridFactoryEnv(ParallelEnv):
         for machine in self.machines:
             self.hash_index["machines"][machine.id] = machine
 
-    def set_env_timeline(self, env_timeline: float):
+    def set_env_timeline(self, env_timeline: int):
         """设置环境时间线"""
         self.env_timeline = env_timeline
 
-    def get_env_timeline(self) -> float:
+    def get_env_timeline(self) -> int:
         """获取环境时间线"""
         return self.env_timeline
 
@@ -364,7 +362,6 @@ class GridFactoryEnv(ParallelEnv):
 
     def reset(self, seed=None, options=None):
         LOGGER.info("[GridFactoryEnv] 重置环境")
-        self._initialize_pogema_env()
 
         self.set_env_timeline(0)
 
@@ -384,6 +381,8 @@ class GridFactoryEnv(ParallelEnv):
 
         self.pending_transfers.clear()
         self.active_transfers.clear()
+        # reset之后才能看这里
+        print(f"请看这里：{self.pogema_env.grid.get_obstacles().astype(int).tolist()}")
 
         return obs, info
 

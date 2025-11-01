@@ -1,10 +1,10 @@
-'''
-@Project ：SkyEngine 
+"""
+@Project ：SkyEngine
 @File    ：structure.py.py
 @IDE     ：PyCharm
 @Author  ：Skyrimforest
 @Date    ：2025/10/17 19:27
-'''
+"""
 
 # 此处列举了常用的结构
 
@@ -44,7 +44,6 @@ class Machine:
         return f"Machine(id={self.id}, location={self.location})"
 
 
-@dataclass
 class MachineConfig(BaseModel):
     """Machine 配置"""
     num_machines: int = 5
@@ -55,9 +54,9 @@ class MachineConfig(BaseModel):
     noise: float = 1.0
 
 
-@dataclass
 class JobConfig(BaseModel):
     """Job 配置"""
+
     num_jobs: int = 6  # 总任务数
     min_ops_per_job: int = 2  # 每个任务的最少工序数
     max_ops_per_job: int = 4  # 每个任务的最多工序数
@@ -71,7 +70,8 @@ class JobConfig(BaseModel):
 @dataclass
 class JobSolverResult:
     machine_schedule: Dict[
-        int, List[Tuple[float, float, int, int]]]  # machine_id -> [(start_time, end_time, job_id, op_id)]
+        int, List[Tuple[float, float, int, int]]
+    ]  # machine_id -> [(start_time, end_time, job_id, op_id)]
     op_meta: Dict[Tuple[int, int], Dict]  # (job_id, op_id) -> {...}
     transfer_requests: List[Dict]
     stats: Dict

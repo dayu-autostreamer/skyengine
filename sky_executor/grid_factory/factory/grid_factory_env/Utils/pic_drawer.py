@@ -1,12 +1,17 @@
-from pogema.svg_animation.animation_drawer import SvgSettings, GridHolder, AnimationDrawer, Drawing
+from pogema.svg_animation.animation_drawer import (
+    SvgSettings,
+    GridHolder,
+    AnimationDrawer,
+    Drawing,
+)
 from pogema.svg_animation.svg_objects import Circle, Rectangle
 from pogema import AnimationConfig
 import re
 
 
-def refactor_drawing_render(svg_content,
-                            possible_color="#FFD700",
-                            current_color="#FFA500"):
+def refactor_drawing_render(
+    svg_content, possible_color="#FFD700", current_color="#FFA500"
+):
     """
     输入 SVG 字符串，输出重构后的 SVG 字符串：
     - 修改 style：删除 .target 类，添加 possible_target 和 current_target
@@ -35,7 +40,7 @@ def refactor_drawing_render(svg_content,
     svg_content = style_pattern.sub(f"<style>{style_content}</style>", svg_content)
 
     # 2️⃣ 删除所有 <circle class="target" ... /> 标签
-    svg_content = re.sub(r'<circle\s+class="target"[^>]*\/>', '', svg_content)
+    svg_content = re.sub(r'<circle\s+class="target"[^>]*\/>', "", svg_content)
 
     return svg_content
 
@@ -79,18 +84,19 @@ def draw_svg(env, timeline):
         on_target=env.grid_config.on_target,
         colors=agents_colors,
         config=AnimationConfig(static=True),
-        svg_settings=svg_settings
+        svg_settings=svg_settings,
     )
 
     drawing = AnimationDrawer().create_animation(grid_holder)
     return drawing.render()
 
 
-def draw_svg_with_machines_and_targets(env,
-                                       timeline: int = 0,
-                                       inactive_color: str = "#2C2C2C",  # 未激活：灰
-                                       active_color: str = "#FFC107",  # 激活：橙
-                                       ):
+def draw_svg_with_machines_and_targets(
+    env,
+    timeline: int = 0,
+    inactive_color: str = "#F0F0F0",  # 未激活：灰
+    active_color: str = "#FFC107",  # 激活：橙
+):
     """
     在 Pogema SVG 中叠加机器节点，并高亮当前激活目标。
 
@@ -134,7 +140,7 @@ def draw_svg_with_machines_and_targets(env,
         on_target=env.grid_config.on_target,
         colors=agents_colors,
         config=AnimationConfig(static=True),
-        svg_settings=svg_settings
+        svg_settings=svg_settings,
     )
 
     drawing = AnimationDrawer().create_animation(grid_holder)
@@ -142,30 +148,53 @@ def draw_svg_with_machines_and_targets(env,
     svg_str = drawing.render()
 
     # 2️⃣ 获取当前激活目标坐标集合
-    new_svg_str = refactor_drawing_render(svg_str, possible_color=inactive_color, current_color=active_color)
+    new_svg_str = refactor_drawing_render(
+        svg_str, possible_color=inactive_color, current_color=active_color
+    )
 
     #  利用当前激活的targets和可能的targets生成最终的 svg 字符串
     # 3️⃣ 绘制目标层
     svg_objects = []
 
-    current_settings = {"class": 'current_target'}
+    current_settings = {"class": "current_target"}
     # 当前激活目标
     for tx, ty in env.grid.finishes_xy:
-        cx = grid_holder.svg_settings.draw_start + (ty - 1) * grid_holder.svg_settings.scale_size
-        cy = grid_holder.svg_settings.draw_start + (grid_holder.width - tx) * grid_holder.svg_settings.scale_size
-        current_settings.update(cx=cx, cy=cy, r=grid_holder.svg_settings.r, stroke=active_color, fill="none", )
+        cx = (
+            grid_holder.svg_settings.draw_start
+            + (ty - 1) * grid_holder.svg_settings.scale_size
+        )
+        cy = (
+            grid_holder.svg_settings.draw_start
+            + (grid_holder.width - tx) * grid_holder.svg_settings.scale_size
+        )
+        current_settings.update(
+            cx=cx,
+            cy=cy,
+            r=grid_holder.svg_settings.r,
+            stroke=active_color,
+            fill="none",
+        )
         obj = Circle(**current_settings)
         svg_objects.append(obj)
 
-    possible_settings = {"class": 'possible_target'}
+    possible_settings = {"class": "possible_target"}
     # 可能目标
     for tx, ty in env.grid_config.possible_targets_xy:
         # 如果已经是激活目标，就跳过
         if (tx, ty) in env.grid.finishes_xy:
             continue
         cx = grid_holder.svg_settings.draw_start + (ty - 1) * svg_settings.scale_size
-        cy = grid_holder.svg_settings.draw_start + (grid_holder.width - tx) * svg_settings.scale_size
-        possible_settings.update(cx=cx, cy=cy, r=grid_holder.svg_settings.r, stroke=inactive_color, fill="none", )
+        cy = (
+            grid_holder.svg_settings.draw_start
+            + (grid_holder.width - tx) * svg_settings.scale_size
+        )
+        possible_settings.update(
+            cx=cx,
+            cy=cy,
+            r=grid_holder.svg_settings.r,
+            stroke=inactive_color,
+            fill="none",
+        )
         obj = Circle(**possible_settings)
         svg_objects.append(obj)
 

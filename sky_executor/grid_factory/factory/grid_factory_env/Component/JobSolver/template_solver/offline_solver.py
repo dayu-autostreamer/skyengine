@@ -17,9 +17,9 @@ def priority_greedy(jobs: List[Job],
                     priority_rule: str = "SPT",
                     transfer_time_estimator: Callable[[int, int], float] = lambda a, b: 0.0):
     # machine available times
-    m_avail = {m.m_id: 0.0 for m in machines}
+    m_avail = {m.id: 0.0 for m in machines}
     op_meta = {}
-    machine_schedule = {m.m_id: [] for m in machines}
+    machine_schedule = {m.id: [] for m in machines}
     transfer_requests = []
     # flatten ops with job precedence maintained: we will use a ready-list approach
     # maintain next_op_index per job
@@ -115,7 +115,7 @@ def priority_greedy(jobs: List[Job],
 # local search: simple swap on machine sequences to reduce makespan
 def local_search_improve(result: JobSolverResult, jobs: List[Job], machines: List[Machine], iters=200):
     # build sequence per machine
-    seqs = {m.m_id: sorted(result.machine_schedule[m.m_id], key=lambda x: x[0]) for m in machines}
+    seqs = {m.id: sorted(result.machine_schedule[m.id], key=lambda x: x[0]) for m in machines}
 
     def total_makespan_from_seqs(seqs):
         return max((t[1] for tasks in seqs.values() for t in tasks), default=0)

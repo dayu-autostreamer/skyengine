@@ -9,7 +9,6 @@ from pogema import GridConfig
 from sky_executor.grid_factory.factory.grid_factory_env.grid_factory_env import GridFactoryEnv
 from sky_executor.grid_factory.factory.Agent.DeterministicPolicy import DeterministicPolicy
 from sky_logs.dc_helper import DiskCacheHelper
-from config.all_field_const import CacheInfo
 
 dh = DiskCacheHelper(expire=600)
 

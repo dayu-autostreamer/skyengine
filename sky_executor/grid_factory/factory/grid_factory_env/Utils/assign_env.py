@@ -1,5 +1,6 @@
 from pogema.envs import PogemaLifeLong, GridConfig
 import random
+from typing import Optional
 
 
 class PogemaLifeLongWithAssign(PogemaLifeLong):
@@ -8,6 +9,14 @@ class PogemaLifeLongWithAssign(PogemaLifeLong):
         self.num_agents = self.grid_config.num_agents
         self.is_multiagent = True
         self.assigner = assigner
+
+    def reset(self, seed: Optional[int] = None, return_info: bool = True, options: Optional[dict] = None, ):
+        super().reset(seed, return_info, options)
+        for idx in range(self.grid_config.num_agents):
+            self.grid.finishes_xy[idx] = random.choice(self.grid_config.possible_targets_xy)
+        if return_info:
+            return self._obs(), self._get_infos()
+        return self._obs()
 
     def assign_new_target(self, agent_idx):
         """调用分配器获取新目标"""

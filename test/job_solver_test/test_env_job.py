@@ -1,5 +1,4 @@
 # 此处测试环境在job层本身的相关情况
-from pogema import GridConfig
 from sky_executor.grid_factory.factory.grid_factory_env.grid_factory_env import (
     GridFactoryEnv,
 )

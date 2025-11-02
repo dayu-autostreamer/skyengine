@@ -13,13 +13,13 @@ from pathlib import Path
 
 from pettingzoo import ParallelEnv
 from pogema.grid import Grid
-from pogema import GridConfig, AnimationMonitor
+from pogema import pogema_v0, GridConfig, AnimationMonitor
 from pogema_toolbox.registry import ToolboxRegistry
 from pogema_toolbox.create_env import MultiMapWrapper
 
 import config
 from sky_executor.grid_factory.factory.Agent.BaseAgent import GridBaseAgent
-from sky_logs.logger import LOGGER
+
 from sky_executor.utils.registry import register_component
 from sky_executor.grid_factory.factory.grid_factory_env.Utils.structure import (
     MachineConfig,
@@ -32,6 +32,7 @@ from sky_executor.grid_factory.factory.grid_factory_env.Utils.machine import (
     generate_machines,
 )
 from sky_executor.grid_factory.factory.grid_factory_env.Utils.job import generate_jobs
+from sky_logs.logger import LOGGER
 
 # 禁用 ToolboxRegistry 日志输出
 ToolboxRegistry.setup_logger(level="CRITICAL", sink=None)
@@ -115,10 +116,9 @@ class GridFactoryEnv(ParallelEnv):
         self.machine_possible_positions = [m.location for m in self.machines]
         return self.machine_possible_positions
 
-    def machine_reset(
-        self,
-    ):
+    def machine_reset(self, seed=42):
         # 获得可能的位置，修改config
+        # todo machine seed need to add.
         self.grid: Grid = Grid(grid_config=self.grid_config)
         self.grid.get_obstacles()
 
@@ -182,20 +182,21 @@ class GridFactoryEnv(ParallelEnv):
 
     def _initialize_pogema_env(self):
         """初始化Pogema环境"""
-        try:
-            # 创建Pogema环境
-            self.pogema_env = PogemaLifeLongWithAssign(grid_config=self.grid_config)
-            # 添加包装器
-            self.pogema_env = MultiMapWrapper(self.pogema_env)  # 支持多地图
-            self.pogema_env = AnimationMonitor(self.pogema_env)
-            print(f"请看这里：{self.pogema_env.get_obstacles().astype(int).tolist()}")
-            LOGGER.info(
-                f"[GridFactoryEnv] Pogema环境初始化成功，智能体数量: {self.grid_config.num_agents}"
-            )
+        # try:
+        # 创建Pogema环境
+        # self.pogema_env = PogemaLifeLongWithAssign(grid_config=self.grid_config)
+        self.pogema_env = pogema_v0(grid_config=self.grid_config)
+        # 添加包装器
+        # self.pogema_env = MultiMapWrapper(self.pogema_env)  # 支持多地图
+        self.pogema_env = AnimationMonitor(self.pogema_env)
+        print(f"请看这里：{self.pogema_env.get_obstacles().astype(int).tolist()}")
+        LOGGER.info(
+            f"[GridFactoryEnv] Pogema环境初始化成功，智能体数量: {self.grid_config.num_agents}"
+        )
 
-        except Exception as e:
-            LOGGER.error(f"[GridFactoryEnv] Pogema环境初始化失败: {e}")
-            self.use_pogema = False
+        # except Exception as e:
+        #     LOGGER.error(f"[GridFactoryEnv] Pogema环境初始化失败: {e}")
+        #     self.use_pogema = False
 
     def create_hash_index(self):
         """创建高效获取组件的索引结构"""
@@ -276,7 +277,7 @@ class GridFactoryEnv(ParallelEnv):
 
         return observations, rewards, terminations, {}, infos
 
-    def job_reset(self):
+    def job_reset(self, seed=42):
         """
         初始化 Job 层任务系统：
         1. 创建机器和 Job
@@ -362,17 +363,16 @@ class GridFactoryEnv(ParallelEnv):
         # todo 当前的obs尚未和job machine版本对齐 请将machine相关的观察结果实现
         return observations, rewards, terminations, truncated, info
 
-    def reset(self, seed=None, options=None):
+    def reset(self, seed=None):
         LOGGER.info("[GridFactoryEnv] 重置环境")
-        self._initialize_pogema_env()
 
         self.set_env_timeline(0)
 
         # --- 重置机器相关，使用可能位置 ---
-        m_observations, m_infos = self.machine_reset()
+        m_observations, m_infos = self.machine_reset(seed=seed)
 
         # --- 重置任务相关，使用任务列表 ---
-        j_observations, j_infos = self.job_reset()
+        j_observations, j_infos = self.job_reset(seed=seed)
 
         # --- 重置 Pogema 相关 ---
         a_observations, a_infos = self.pogema_env.reset(seed=seed)

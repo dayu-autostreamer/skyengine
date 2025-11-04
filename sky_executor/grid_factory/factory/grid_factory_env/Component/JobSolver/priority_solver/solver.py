@@ -25,142 +25,137 @@ from sky_executor.grid_factory.factory.grid_factory_env.Utils.structure import (
 
 # 但是我们这里是离线静态调度 (Offline Scheduling) 所以还是需要维护缓存的。
 # 不接收新的job
+
+
 class GreedyJobSolver(JobSolver):
     """
-    贪心调度器，首次执行，后续根据离线调度的结果一步步返回相关信息：
-    - 首次调用 plan() 时进行全局调度；
-    - 后续每步根据时间推进任务状态。
+    离线贪心调度器：
+    - 首次调用 plan() 时执行一次全局离线调度；
+    - 后续每个时间片，根据当前时间 t 判断：
+        - 是否有 operation 到达开始时间；
+        - 是否有 transfer_request 到达 ready_time；
+    - 只做时间推进，不再动态重新规划。
     """
 
     def __init__(self):
         super().__init__()
         self.initialized = False
+        self.fixed_plan: JobSolverResult | None = None
+        self.pending_ops = []  # 尚未执行的操作
+        self.active_ops = []  # 执行中的操作
+        self.finished_ops = []  # 已完成的操作
+        self.transfer_requests = []  # 待触发的转运请求
         self.time_stamp = 0
-        self.current_plan: JobSolverResult = None
-        self.pending_ops = []  # 未启动的操作 (waiting)
-        self.active_ops = []  # 执行中的操作 (running)
-        self.finished_ops = []  # 已完成的操作 (done)
-        self.transfer_requests = []  # 待处理的转运请求 (for RouteSolver)
 
-    def plan(self, obs):
-        """
-        在当前时刻生成决策。
-        obs = {
-            "jobs": [Job],
-            "machines": [Machine],"
-            "pending_ops": [Op],"
-            "active_ops": [Op],"
+    def load_observation(self, env) -> dict:
+        return {
+            "jobs": env.jobs,
+            "machines": env.machines,
         }
+
+    # ---------------------------------------------------------
+    # 核心接口：每个时间步调用一次
+    # ---------------------------------------------------------
+    def plan(self, obs: dict) -> dict:
         """
-        t = obs.get("time", 0.0)
+        输入:
+            obs = {
+                "jobs": [Job],
+                "machines": [Machine],
+            }
+
+        输出:
+            {
+                "machine_actions": [...],
+                "transfer_requests": [...]
+            }
+        """
+        self.time_stamp = self.time_stamp + 1
+        jobs = obs["jobs"]
+        machines = obs["machines"]
 
         # === 初始化阶段 ===
         if not self.initialized:
-            assert self.env is not None, "GreedyJobSolver需要env以获取jobs/machines"
-            self.current_plan = priority_greedy(
-                self.env.jobs,
-                self.env.machines,
-                transfer_time_estimator=self.env.transfer_time_estimator,
+            # 调用离线调度算法生成完整计划
+            self.fixed_plan = priority_greedy(
+                jobs,
+                machines,
             )
             self.initialized = True
+            # 缓存任务列表
+            self._load_plan(self.fixed_plan)
 
-            # 初始化 pending_ops（所有任务均未执行）
-            for mid, tasks in self.current_plan.machine_schedule.items():
-                for s, e, jid, oid in tasks:
-                    self.pending_ops.append(
-                        {
-                            "machine_id": mid,
-                            "job_id": jid,
-                            "op_id": oid,
-                            "start_time": s,
-                            "expected_end": e,
-                        }
-                    )
+        # === 检查是否有可启动的 转运任务 ===
+        ready_transfers = self._trigger_ready_transfers(self.time_stamp)
 
-            # 初始化转运任务缓存
-            self.transfer_requests = list(self.current_plan.transfer_requests)
-
-        # === 状态推进 ===
-        self._update_status(t)
-
-        # === 当前时刻可启动的任务 ===
-        ready_actions = []
-        for op in list(self.pending_ops):
-            if abs(op["start_time"] - t) < 1e-6:  # 刚好到启动时刻
-                ready_actions.append(op)
-                self.active_ops.append(op)
-                self.pending_ops.remove(op)
-
-        # === 输出 ===
+        # === 4. 输出 ===
         return {
-            "machine_actions": ready_actions,
-            "transfer_requests": self._collect_ready_transfers(t),
+            "transfer_requests": ready_transfers,
         }
 
     # ---------------------------------------------------------
-    # 状态更新逻辑
+    # 辅助函数
     # ---------------------------------------------------------
-    def _update_status(self, current_time: float):
-        """根据当前时间推进 active_ops 状态"""
-        finished = []
-        for op in list(self.active_ops):
-            if op["expected_end"] <= current_time + 1e-6:
-                finished.append(op)
-                self.finished_ops.append(op)
-                self.active_ops.remove(op)
+    def _load_plan(self, plan: JobSolverResult):
+        """把离线调度结果转换成 pending_ops / transfer_requests 缓存"""
+        for mid, tasks in plan.machine_schedule.items():
+            for s, e, jid, oid in tasks:
+                self.pending_ops.append(
+                    {
+                        "machine_id": mid,
+                        "job_id": jid,
+                        "op_id": oid,
+                        "start_time": s,
+                        "expected_end": e,
+                    }
+                )
+        self.transfer_requests = list(plan.transfer_requests)
 
-    def _collect_ready_transfers(self, current_time: float):
-        """筛选出到时间可触发的转运请求"""
-        ready = []
+    def _trigger_ready_transfers(self, current_time: float):
+        """根据时间触发新的 transfer 请求"""
+        ready_transfers = []
         for req in list(self.transfer_requests):
             if req["ready_time"] <= current_time + 1e-6:
-                ready.append(req)
+                ready_transfers.append(req)
                 self.transfer_requests.remove(req)
-        return ready
+        return ready_transfers
 
+    # ---------------------------------------------------------
+    # 状态同步接口：由环境在每步执行后调用
+    # ---------------------------------------------------------
     def update_after_step(self, infos: dict):
         """
-        infos 示例:
-        {
-            "finished_transfers": [ {"job_id":..., "op_id":..., "time": t_actual}, ... ],
-            "finished_ops": [ {"job_id":..., "op_id":..., "time": t_actual}, ... ],
-            "machine_updates": [ {"machine_id":..., "status":"down"/"up"}, ...]
+        由环境反馈执行结果后调用：
+        infos = {
+            "finished_ops": [...],
+            "finished_transfers": [...],
         }
         """
-        # 1) 标记 transfer 完成 -> 影响 op 的 ready 状态
-        finished_transfers = infos.get("finished_transfers", [])
-        for ft in finished_transfers:
-            # 将对应 transfer 标记为已完成（或从待转列表移除）
-            for req in list(self.transfer_requests):
-                if req["job_id"] == ft["job_id"] and req["op_id"] == ft["op_id"]:
-                    # 记录实际到达时间，方便后续调整
-                    req["actual_ready_time"] = ft.get("time", None)
-                    # keep it for record or remove if you only fire once
-                    # here we keep and mark
-                    req["done"] = True
-
-        # 2) 标记已完成的 ops（环境可能提前或推迟）
         finished_ops = infos.get("finished_ops", [])
+        finished_transfers = infos.get("finished_transfers", [])
+
+        # 更新 active_ops
         for fo in finished_ops:
-            # find active op and move to finished
             for op in list(self.active_ops):
                 if op["job_id"] == fo["job_id"] and op["op_id"] == fo["op_id"]:
                     self.active_ops.remove(op)
                     self.finished_ops.append(op)
-                    # update expected_end if actual time provided
-                    if "time" in fo:
-                        op["expected_end"] = fo["time"]
+                    break
 
-        # 3) 如果 transfer 延迟导致机器开工时间需调整，可选择：
-        #    - 将受影响 op 的 start_time 推迟到 actual_ready_time
-        #    - 或者触发 replan（更激进）
-        # 简单策略：延迟受影响的 op
-        for req in list(self.transfer_requests):
-            if req.get("done", False):
-                # find target op in pending_ops and adjust start_time
-                for op in self.pending_ops:
-                    if op["job_id"] == req["job_id"] and op["op_id"] == req["op_id"]:
-                        # 如果实际到达晚于原计划，则推迟启动
-                        ar = req.get("actual_ready_time")
-                        if ar is not None and ar > op["start_time"]:
-                            op["start_time"] = ar
+        # 更新 transfer_requests 状态
+        for ft in finished_transfers:
+            for req in list(self.transfer_requests):
+                if req["job_id"] == ft["job_id"] and req["op_id"] == ft["op_id"]:
+                    req["done"] = True
+                    req["actual_ready_time"] = ft.get("time")
+                    break
+
+    def reset(self):
+        """重置 solver 到未初始化状态"""
+        self.initialized = False
+        self.fixed_plan = None
+        self.pending_ops.clear()
+        self.active_ops.clear()
+        self.finished_ops.clear()
+        self.transfer_requests.clear()
+        self.time_stamp = 0

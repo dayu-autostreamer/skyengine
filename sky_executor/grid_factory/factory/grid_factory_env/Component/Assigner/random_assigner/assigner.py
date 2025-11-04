@@ -1,13 +1,16 @@
 # 从可行解中随机抽一个分配给当前的agent
 
 import random
+from sky_executor.grid_factory.factory.grid_factory_env.Component.Assigner.template_assigner import (
+    BaseAssigner,
+)
 
 
-class RandomAssigner:
-    def __init__(self, grid):
-        self.grid = grid
-
-    def assign(self, agent_idx, grid=None):
-        grid = grid or self.grid
-        # 随机找一个非障碍点
-        return grid.sample_free_cell()
+class RandomAssigner(BaseAssigner):
+    def assign(self, agent_idx):
+        pending = self.get_pending_transfers()
+        if not pending:
+            return None
+        task = random.choice(pending)
+        self.mark_assigned(task, agent_idx)
+        return task

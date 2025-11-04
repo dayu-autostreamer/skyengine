@@ -6,14 +6,16 @@
 @Date    ：2025/1/15 10:00
 """
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Dict, Any, Optional
 import yaml
 from pathlib import Path
 
 from pettingzoo import ParallelEnv
 from pogema.grid import Grid
-from pogema import GridConfig, AnimationMonitor
+from pogema import pogema_v0, GridConfig, AnimationMonitor
 from pogema_toolbox.registry import ToolboxRegistry
+from pogema_toolbox.create_env import MultiMapWrapper
+from pogema.envs import PogemaLifeLong, GridConfig
 
 import config
 from sky_executor.grid_factory.factory.Agent.BaseAgent import GridBaseAgent
@@ -22,9 +24,6 @@ from sky_executor.utils.registry import register_component
 from sky_executor.grid_factory.factory.grid_factory_env.Utils.structure import (
     MachineConfig,
     JobConfig,
-)
-from sky_executor.grid_factory.factory.grid_factory_env.Utils.assign_env import (
-    PogemaLifeLongWithAssign,
 )
 from sky_executor.grid_factory.factory.grid_factory_env.Utils.machine import (
     generate_machines,
@@ -38,7 +37,7 @@ ToolboxRegistry.setup_logger(level="CRITICAL", sink=None)
 
 
 @register_component("factory")
-class GridFactoryEnv(ParallelEnv):
+class GridFactoryEnv(PogemaLifeLong):
     """
     基于Pogema的网格工厂环境
 
@@ -47,8 +46,6 @@ class GridFactoryEnv(ParallelEnv):
     2. 支持多智能体路径规划
     3. 集成事件系统和回调机制
     4. 支持工厂任务调度
-
-    注意环境reset之后才能有grid相关结构
     """
 
     metadata = {"render_modes": ["human"], "name": "grid_factory_env"}
@@ -73,13 +70,14 @@ class GridFactoryEnv(ParallelEnv):
         self.env_timeline = 0  # 离散化的环境时间
 
         # Pogema环境
-        self.pogema_env = None
+        # self.pogema_env = None
         self.grid_config = grid_config or self._create_default_grid_config()
 
         # 机器组件 也就是路由的起始点和终止点
         self.machines = []
         self.machine_config = machine_config or self._create_default_machine_config()
-        
+        self.activated_machines = []
+
         # 任务组件
         self.jobs = []
         self.pending_transfers = []  # Job层给的任务
@@ -96,10 +94,6 @@ class GridFactoryEnv(ParallelEnv):
             "jobs": {},
         }
 
-        # 动画保存路径
-        self.svg_pic = None
-        self._initialize_pogema_env()
-
         self.register_maps()
 
     def register_maps(self):
@@ -115,9 +109,9 @@ class GridFactoryEnv(ParallelEnv):
 
     @property
     def current_targets(self):
-        return self.pogema_env.grid.finishes_xy
+        return self.grid.finishes_xy
 
-    def machine_reset(self):
+    def machine_reset(self, seed=42):
         # 获得可能的位置，修改config
         # todo machine seed need to add.
         grid: Grid = Grid(grid_config=self.grid_config)
@@ -182,17 +176,6 @@ class GridFactoryEnv(ParallelEnv):
             seed=42,
         )
 
-    def _initialize_pogema_env(self):
-        """初始化Pogema环境"""
-        # 创建Pogema环境
-        self.pogema_env = PogemaLifeLongWithAssign(grid_config=self.grid_config)
-        # 添加包装器
-        # self.pogema_env = MultiMapWrapper(self.pogema_env)  # 支持多地图
-        self.pogema_env = AnimationMonitor(self.pogema_env)
-        LOGGER.info(
-            f"[GridFactoryEnv] Pogema环境初始化成功，智能体数量: {self.grid_config.num_agents}"
-        )
-
     def create_hash_index(self):
         """创建高效获取组件的索引结构"""
         for agent in self.agents:
@@ -209,18 +192,6 @@ class GridFactoryEnv(ParallelEnv):
     def get_env_timeline(self) -> int:
         """获取环境时间线"""
         return self.env_timeline
-
-    def action_space(self, agent: GridBaseAgent):
-        """智能体动作空间"""
-        if self.pogema_env:
-            # 使用Pogema的动作空间
-            return self.pogema_env.action_space(agent.agent_id)
-        else:
-            # 自定义动作空间
-            decisions, step_time = agent.sample(
-                self.agents, self.machines, self.jobs, self.env_timeline
-            )
-            return {"decisions": decisions, "step_time": step_time}
 
     def job_step(self, actions=None):
         """
@@ -270,7 +241,7 @@ class GridFactoryEnv(ParallelEnv):
 
         return observations, rewards, terminations, truncations, infos
 
-    def job_reset(self):
+    def job_reset(self, seed=42):
         """
         初始化 Job 层任务系统：
         1. 创建机器和 Job
@@ -336,11 +307,7 @@ class GridFactoryEnv(ParallelEnv):
 
         self.activate_task()
 
-        (
-            job_actions,
-            task_actions,
-            agent_actions,
-        ) = self.unpack_input(actions)
+        agent_actions, job_actions = self.unpack_input(actions)
 
         j_obs, j_reward, j_terminated, j_truncated, j_info = self.job_step(job_actions)
 
@@ -348,21 +315,18 @@ class GridFactoryEnv(ParallelEnv):
             agent_actions
         )
 
-        t_obs, t_reward, t_terminated, t_truncated, t_info = self.pogema_env.task_step(
-            task_actions
-        )
-
         self.update_transfer_status(a_info)
 
         agent_info = [a_obs, a_reward, a_terminated, a_truncated, a_info]
-        task_info = [t_obs, t_reward, t_terminated, t_truncated, t_info]
         job_info = [j_obs, j_reward, j_terminated, j_truncated, j_info]
+        LOGGER.info(f"[GridFactoryEnv] 结束当前循环步")
 
         # 合并输出
         observations, rewards, terminations, truncated, info = self.pack_output(
-            job_info, task_info, agent_info
+            job_info, agent_info
         )
 
+        # todo 当前的obs尚未和job job版本对齐 请将job相关的观察结果实现
         return observations, rewards, terminations, truncated, info
 
     def reset(self, seed=None):
@@ -370,24 +334,24 @@ class GridFactoryEnv(ParallelEnv):
 
         self.set_env_timeline(0)
 
-        # --- 重置任务相关，使用可能位置 ---
-        t_observations, t_infos = self.machine_reset()
+        # --- 重置机器相关，使用可能位置 ---
+        m_observations, m_infos = self.machine_reset(seed=seed)
 
         # --- 重置任务相关，使用任务列表 ---
-        j_observations, j_infos = self.job_reset()
+        j_observations, j_infos = self.job_reset(seed=seed)
 
         # --- 重置 Pogema 相关 ---
         a_observations, a_infos = self.pogema_env.reset(seed=seed)
 
         # --- 打包输出 ---
         obs, rwd, term, trunc, info = self.pack_output(
-            [j_observations, j_infos],
-            [t_observations, t_infos],
-            [a_observations, a_infos],
+            [m_observations, m_infos], [a_observations, a_infos]
         )
 
         self.pending_transfers.clear()
         self.active_transfers.clear()
+        # reset之后才能看这里
+        # print(f"请看这里：{self.pogema_env.grid.get_obstacles().astype(int).tolist()}")
 
         return obs, info
 
@@ -407,17 +371,22 @@ class GridFactoryEnv(ParallelEnv):
         """获取机器列表"""
         return self.machines
 
+    # todo 这些agent的信息可以通过env获取 可以修改一下
     def get_agents(self) -> List:
         """获取AGV列表"""
         return self.agents
+
+    # def get_agents_info(self) -> List[Dict[str, Any]]:
+    #     """获取智能体信息"""
+    #     return self.agents_info
 
     def get_agent_positions(self) -> List[Tuple[int, int]]:
         """获取智能体位置"""
         return self.pogema_env.grid.get_agents_xy()
 
-    def get_agent_targets(self) -> List[Tuple[int, int]]:
-        """获取智能体目标"""
-        return self.pogema_env.grid.finishes_xy
+    # def get_agent_targets(self) -> List[Tuple[int, int]]:
+    #     """获取智能体目标"""
+    #     return self.agent_targets
 
     def get_pogema_env(self):
         """获取Pogema环境实例"""
@@ -436,15 +405,10 @@ class GridFactoryEnv(ParallelEnv):
         """将输入的 actions 拆分为机器与智能体两部分"""
         # 假设 self.input_actions 是外部传入的总动作字典
         job_actions = actions.get("job_actions", {})
-        task_actions = actions.get("task_actions", {})
         agent_actions = actions.get("agent_actions", {})
-        return (
-            job_actions,
-            task_actions,
-            agent_actions,
-        )
+        return agent_actions, job_actions
 
-    def pack_output(self, job_info, task_info, agent_info):
+    def pack_output(self, job_info, agent_info):
         """动态合并 job 和 agent 输出"""
 
         def unpack(info):
@@ -458,35 +422,15 @@ class GridFactoryEnv(ParallelEnv):
                 raise ValueError(f"Unexpected tuple length: {len(info)}")
             return obs, reward, term, trunc, inf
 
-        j_obs, j_reward, j_term, j_trunc, j_info = unpack(job_info)
-        t_obs, t_reward, t_term, t_trunc, t_info = unpack(task_info)
+        # 动态解包
+        m_obs, m_reward, m_term, m_trunc, m_info = unpack(job_info)
         a_obs, a_reward, a_term, a_trunc, a_info = unpack(agent_info)
 
         # 合并为标准输出结构
-        observations = {
-            "job_observation": j_obs,
-            "task_observation": t_obs,
-            "agent_observation": a_obs,
-        }
-        rewards = {
-            "job_reward": j_reward,
-            "task_reward": t_reward,
-            "agent_reward": a_reward,
-        }
-        terminations = {
-            "job_done": j_term,
-            "task_done": t_term,
-            "agent_done": a_term,
-        }
-        truncations = {
-            "job_truncated": j_trunc,
-            "task_truncated": t_trunc,
-            "agent_truncated": a_trunc,
-        }
-        infos = {
-            "job_info": j_info,
-            "task_info": t_info,
-            "agent_info": a_info,
-        }
+        observations = {"job_observation": m_obs, "agent_observation": a_obs}
+        rewards = {"job_reward": m_reward, "agent_reward": a_reward}
+        terminations = {"job_done": m_term, "agent_done": a_term}
+        truncations = {"job_truncated": m_trunc, "agent_truncated": a_trunc}
+        infos = {"job_info": m_info, "agent_info": a_info}
 
         return observations, rewards, terminations, truncations, infos

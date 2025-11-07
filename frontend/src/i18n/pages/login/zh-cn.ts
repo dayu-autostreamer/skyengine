@@ -3,6 +3,8 @@ export default {
 		one1: 'System Information',
 		two2: 'Mobile number',
 	},
+        version: 'V1.0.0',
+
 	link: {
 		one3: 'Third party login',
 		two4: 'Links',

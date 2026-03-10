@@ -1,31 +1,32 @@
-# backend/Dockerfile
-FROM python:3.11-slim AS base
+FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
-
-# 基础构建依赖（如需编译 C++/扩展）
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential cmake g++ git \
- && rm -rf /var/lib/apt/lists/*
-
+# Set working directory
 WORKDIR /app
 
-# 可选：先拷贝依赖声明，提高缓存命中
-# 如无 requirements.txt，可创建；或直接 pip install 主要依赖
-COPY requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# 代码
-COPY . /app
+# Copy the virtual environment directly (assuming .venv exists in project root)
+COPY .venv /app/.venv
 
-# 暴露后端端口（与 GUNICORN_PORT 一致）
+# Enable the virtual environment
+ENV PATH="/app/.venv/bin:$PATH"
+ENV VIRTUAL_ENV="/app/.venv"
+
+# Copy the application code
+COPY application /app/application
+COPY pyproject.toml /app/
+
+# Copy other necessary directories
+COPY config /app/config
+COPY dataset /app/dataset
+COPY sky_executor /app/sky_executor
+
+# Expose the backend port
 EXPOSE 8000
 
-# 缺省环境变量（可在 docker-compose 覆盖）
-ENV SERVER_TYPE=grid \
-    GUNICORN_PORT=8000
-
-# 使用 Uvicorn 启动（main.py 内已经 uvicorn.run，可直接 python 运行）
-CMD ["python", "backend/main.py"]
+# Run the FastAPI server with uvicorn
+CMD ["uvicorn", "application.backend.server:app", "--host", "0.0.0.0", "--port", "8000"]

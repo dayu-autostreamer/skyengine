@@ -1,0 +1,148 @@
+.factory-manage-container {
+  display: flex;
+  height: 100vh;
+  background: #f5f7fa;
+  gap: 12px;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* 左侧：控制面板 */
+.left-panel {
+  width: 280px;
+  flex-shrink: 0;
+  height: 100%;
+  /* 关键：防止左侧面板本身产生滚动条，而是让内部的 ControlPanel 处理滚动 */
+  overflow: hidden; 
+}
+
+/* 中间：工厂可视化 */
+.middle-panel {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  overflow: hidden;
+  position: relative; /* 确保 absolute 子元素相对于此定位 */
+}
+
+/* 浮动工具栏容器 */
+.floating-toolbar-wrapper {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 100; /* 确保在 Canvas 之上 */
+  pointer-events: none; /* 让点击穿透，不挡住下方 Canvas 的拖拽 */
+}
+
+/* 浮动工具栏本体 */
+.floating-toolbar {
+  pointer-events: auto; /* 恢复工具栏内部按钮的点击 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-title {
+  font-weight: 800;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.divider {
+  color: #ccc;
+  font-size: 14px;
+}
+
+.toolbar-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 玻璃拟态按钮 */
+.glass-btn {
+  padding: 8px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #555;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.glass-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.glass-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.glass-btn.primary:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+}
+
+.glass-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #ccc;
+  box-shadow: none;
+  transform: none;
+}
+
+/* 方案选择下拉框 */
+.plan-select {
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #333;
+  font-size: 13px;
+  transition: all 0.2s;
+  min-width: 200px;
+}
+
+.plan-select:hover:not(:disabled) {
+  border-color: rgba(102, 126, 234, 0.5);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.plan-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.plan-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f5f5;
+}

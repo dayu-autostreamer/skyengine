@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: dockerfiles/backend.dockerfile
+    container_name: skyengine-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - skyengine-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: dockerfiles/frontend.dockerfile
+    container_name: skyengine-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - skyengine-network
+    restart: unless-stopped
+
+networks:
+  skyengine-network:
+    driver: bridge

@@ -1,0 +1,234 @@
+.control-panel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
+  border-right: 2px solid #e0e0e0;
+  overflow-y: auto;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+}
+
+.panel-header {
+  padding: 12px 15px;
+  border-bottom: 2px solid #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.control-section {
+  padding: 12px 13px;
+  border-bottom: 1px solid #e8e8e8;
+  flex-shrink: 0;
+}
+
+.control-section h3 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* 按钮样式 */
+.play-btn,
+.reset-btn {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.play-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.play-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.play-btn.playing {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3);
+}
+
+.reset-btn {
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #d0d0d0;
+  font-size: 12px;
+}
+
+.reset-btn:hover {
+  background: #e0e0e0;
+  border-color: #b0b0b0;
+}
+
+/* 时间轴 */
+.timeline-info-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.timeline-info-top .label {
+  color: #666;
+  font-weight: 500;
+}
+
+.timeline-info-top .value {
+  color: #667eea;
+  font-weight: bold;
+}
+
+.slider-container {
+  margin-bottom: 6px;
+}
+
+.timeline-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #ddd, #ccc);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.timeline-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+}
+
+.timeline-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+}
+
+.timeline-progress {
+  text-align: right;
+  font-size: 11px;
+  color: #999;
+}
+
+/* 信息项 */
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 11px;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item .label {
+  color: #666;
+  font-weight: 500;
+}
+
+.info-item .value {
+  font-weight: bold;
+  color: #333;
+  background: #f5f5f5;
+  padding: 3px 8px;
+  border-radius: 3px;
+  min-width: 40px;
+  text-align: right;
+}
+
+.info-item .value.highlight {
+  color: #667eea;
+  background: #f0f4ff;
+}
+
+.info-item .value.working {
+  color: #2196F3;
+  background: #e3f2fd;
+}
+
+.info-item .value.broken {
+  background: #ffebee;
+}
+
+.info-item .value.transfer {
+  color: #FF6B6B;
+  background: #ffe8e8;
+}
+
+/* 页脚 */
+.panel-footer {
+  padding: 4px;
+  /* margin-top: auto; */
+  text-align: center;
+  border-top: 1px solid #e8e8e8;
+  background: #f9f9f9;
+  flex-shrink: 0;
+}
+
+.panel-footer p {
+  margin: 4px 0;
+  font-size: 11px;
+  color: #999;
+}
+
+.panel-footer .version {
+  font-size: 10px;
+}
+
+/* 滚动条美化 */
+.control-panel-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.control-panel-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.control-panel-container::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 3px;
+}
+
+.control-panel-container::-webkit-scrollbar-thumb:hover {
+  background: #b0b0b0;
+}
+
+@media (max-width: 1024px) {
+  .control-panel-container {
+    border-right: none;
+    border-bottom: 2px solid #e0e0e0;
+  }
+}

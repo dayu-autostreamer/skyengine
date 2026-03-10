@@ -737,3 +737,7 @@ model
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,python,vs,macos,windows,linux,vue,vuejs
 *.svg
+*.png
+experiment/data/*
+sky_logs/metrics/*
+sky_logs/renders/*

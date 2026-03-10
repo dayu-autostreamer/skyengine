@@ -1,0 +1,368 @@
+/* 全局容器 */
+.factory-container {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-family:
+    'Inter',
+    -apple-system,
+    sans-serif;
+
+  /* 背景：与主页一致的深蓝科技背景 */
+  background-image: url('https://images.unsplash.com/photo-1647427060118-4911c9821b82?q=80&w=2070&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+}
+
+/* 背景遮罩，确保文字可读 */
+.bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(15, 23, 42, 0.7) 0%,
+    rgba(2, 6, 23, 0.95) 100%
+  );
+  z-index: 0;
+}
+
+/* ------------------- 1. 选择器界面样式 ------------------- */
+.factory-selector {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .nav-bar {
+    padding: 20px 30px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 返回主页按钮 */
+  .btn-home {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 8px 16px;
+    border-radius: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    backdrop-filter: blur(4px);
+
+    .icon {
+      font-size: 16px;
+      transition: transform 0.3s;
+    }
+    .text {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    &:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
+      .icon {
+        transform: translateX(-3px);
+      }
+    }
+  }
+
+  .selector-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden; /* 防止溢出 */
+  }
+
+  .selector-header {
+    text-align: center;
+    margin-bottom: 30px;
+    animation: slideDown 0.6s ease-out;
+
+    h1 {
+      font-size: 32px;
+      color: white;
+      margin: 0 0 6px 0;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    p {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 0;
+    }
+
+    .deco-line {
+      width: 40px;
+      height: 2px;
+      background: #38bdf8;
+      margin: 15px auto 0;
+      box-shadow: 0 0 8px #38bdf8;
+    }
+  }
+
+  /* 滚动盒子 - 深色玻璃拟态 */
+  .scroll-box-container {
+    width: 90%;
+    max-width: 1200px;
+    flex: 1;
+    margin-bottom: 40px;
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 30px;
+    overflow-y: auto;
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  .factory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+  }
+}
+
+/* ------------------- 卡片样式 ------------------- */
+.factory-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:hover {
+    transform: translateY(-5px);
+    border-color: rgba(56, 189, 248, 0.3);
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(56, 189, 248, 0.1);
+
+    .card-image img {
+      transform: scale(1.05);
+    }
+    .hover-overlay {
+      opacity: 1;
+    }
+  }
+
+  .card-image {
+    height: 150px;
+    position: relative;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .hover-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+
+      .enter-btn {
+        color: #38bdf8;
+        border: 1px solid #38bdf8;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        background: rgba(56, 189, 248, 0.1);
+      }
+    }
+  }
+
+  .card-content {
+    padding: 20px;
+
+    .content-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+
+      h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        background: #4ade80;
+        border-radius: 50%;
+        box-shadow: 0 0 8px #4ade80;
+      }
+    }
+
+    .id-tag {
+      font-size: 12px;
+      color: rgba(56, 189, 248, 0.8);
+      font-family: monospace;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .desc {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.5;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+}
+
+/* ------------------- 2. 工厂内部样式 ------------------- */
+.factory-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc; /* 内部保持亮色以便于阅读图表，或者改为 #0f172a 做纯黑模式 */
+
+  .content-header {
+    background: #1e293b; /* 深色头部 */
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: white;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-back-internal {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+    }
+
+    .divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .header-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .header-badge {
+        background: #0ea5e9;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 700;
+      }
+    }
+  }
+
+  .component-wrapper {
+    flex: 1;
+    overflow: hidden; /* 组件内部自己处理滚动 */
+  }
+}
+
+/* 动画 */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: scale(0.98);
+}

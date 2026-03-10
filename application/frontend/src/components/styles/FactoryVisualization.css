@@ -1,0 +1,33 @@
+.factory-visualization {
+  width: 100%;
+  height: 100%;
+  background: #ECEFF1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* --- 新增：悬浮头部样式 --- */
+.hud-header {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  height: 60px;
+  z-index: 100;
+  /* 确保在 Canvas 之上 */
+  pointer-events: none;
+  /* 让鼠标事件穿透空白区域直达 Canvas */
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+/* 让插槽里的内容恢复鼠标交互 */
+.hud-header :deep(*) {
+  pointer-events: auto;
+}
+
+.canvas-wrapper {
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs find:*)",
+      "Bash(find:*)",
+      "Bash(dir:*)",
+      "Bash(python:*)",
+      "Bash(conda activate:*)",
+      "Bash(conda run:*)",
+      "mcp__web-search-prime__webSearchPrime",
+      "Bash(findstr:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)"
+    ]
+  }
+}

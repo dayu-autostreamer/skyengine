@@ -1,0 +1,225 @@
+.metrics-grid {
+    display: grid;
+    /* 强制两列，且宽度相等 */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px;
+    /* 让所有格子的高度自动对齐到最高的那一个 */
+    align-items: stretch;
+}
+
+.metric-card {
+    /* 关键点：让卡片占满格子的全部高度 */
+    height: 100%;
+    /* 关键点：设置一个最小高度，保证视觉统一 */
+    min-height: 80px;
+
+    /* 加上 box-sizing 防止 padding 撑大 */
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+    /* 垂直居中图标和文字 */
+    gap: 12px;
+    padding: 14px;
+    border-radius: 10px;
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+}
+
+.metric-content {
+    flex: 1;
+    /* 关键点：防止长文字撑破布局 */
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* 内容垂直居中 */
+}
+
+.metric-label {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 4px;
+    /* 单行省略号 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.metric-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    line-height: 1.2;
+}
+
+.metric-detail {
+    font-size: 10px;
+    color: #999;
+    margin-top: 2px;
+    /* 如果有的卡片没 detail，会导致高度不一，这里可以固定高度占位，或者允许高度自适应但卡片整体对齐 */
+    min-height: 14px;
+}
+
+/* 样式保持不变，直接复用你之前的 CSS */
+.metrics-panel {
+    flex-shrink: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 16px;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+
+.metric-card.primary {
+    border-left-color: #667eea;
+    grid-column: 1 / -1;
+}
+
+.metric-card.success {
+    border-left-color: #4CAF50;
+}
+
+.metric-card.warning {
+    border-left-color: #FF9800;
+}
+
+.metric-card.danger {
+    border-left-color: #F44336;
+}
+
+.metric-card.info {
+    border-left-color: #2196F3;
+}
+
+.metric-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.metric-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.metric-label {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.metric-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.metric-detail {
+    font-size: 10px;
+    color: #999;
+}
+
+.chart-section {
+    padding: 0 16px 16px 16px;
+    border-top: 1px solid #e8e8e8;
+}
+
+.chart-section h4 {
+    margin: 12px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.chart-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chart-item {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.chart-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+}
+
+.chart-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.chart-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+}
+
+.chart-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: #f0f2ff;
+    color: #667eea;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.chart-tag.success {
+    background: #f0f9eb;
+    color: #67c23a;
+}
+
+.chart-tag.warning {
+    background: #fdf6ec;
+    color: #e6a23c;
+}
+
+.mini-chart-wrapper {
+    height: 60px;
+    width: 100%;
+    pointer-events: none;
+}
+
+.chart-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.big-chart-container {
+    height: 400px;
+    width: 100%;
+}
+
+.big-chart {
+    width: 100%;
+    height: 100%;
+}

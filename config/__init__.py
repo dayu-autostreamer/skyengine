@@ -1,3 +1,10 @@
+'''
+@Project ：SkyEngine 
+@File    ：__init__.py.py
+@IDE     ：PyCharm
+@Author  ：Skyrimforest
+@Date    ：2025/11/25 9:32
+'''
 # 提供全局根路径,提供各个文件夹相对根路径的相对寻址,跨平台
 
 import os
@@ -26,6 +33,8 @@ CACHE_DIR = os.path.join(LOG_DIR, 'cache')
 SVG_DIR = os.path.join(LOG_DIR, 'renders')
 ANIMATE_DIR = os.path.join(SVG_DIR, '')
 STEPS_DIR = os.path.join(SVG_DIR, 'steps')
+
+METRICS_DIR=os.path.join(LOG_DIR, 'metrics')
 
 if __name__ == '__main__':
     print(CONFIG_DIR)

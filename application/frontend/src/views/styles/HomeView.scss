@@ -1,0 +1,328 @@
+/* 全局容器与背景 */
+.home {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* 背景图：深邃的科技/工业背景 */
+  background-image: url('https://images.unsplash.com/photo-1647427060118-4911c9821b82?q=80&w=2070&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* 背景暗色遮罩 */
+.bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 深蓝到黑色的渐变，营造科技感 */
+  /* 使用深蓝偏黑的渐变，透明度调高到 0.85 左右 */
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.75) 0%, rgba(2, 6, 23, 0.9) 100%);
+  backdrop-filter: blur(3px);
+  /* 稍微加一点模糊，让机械细节不要太抢眼 */
+  z-index: 1;
+}
+
+
+.home-container {
+  position: relative;
+  z-index: 2;
+  /* 确保内容在遮罩之上 */
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 头部样式 */
+.home-header {
+  text-align: center;
+  margin-bottom: 70px;
+  animation: slideDown 0.8s ease-out;
+
+  .logo-area {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: 64px;
+    margin: 0;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -2px;
+    line-height: 1;
+    /* 简单的文字发光效果 */
+    text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+  }
+
+  .version-badge {
+    background: rgba(56, 189, 248, 0.2);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-top: 10px;
+  }
+
+  .subtitle {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 300;
+    margin: 0;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .deco-line {
+    width: 60px;
+    height: 3px;
+    background: #38bdf8;
+    margin: 20px auto 0;
+    border-radius: 2px;
+    box-shadow: 0 0 10px #38bdf8;
+  }
+}
+
+/* 卡片容器 */
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 40px;
+  width: 100%;
+  perspective: 1000px;
+}
+
+/* 卡片通用样式 - 磨砂玻璃 */
+.card {
+  position: relative;
+  background: rgba(30, 41, 59, 0.6);
+  /* 深蓝半透明 */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 2px;
+  /* 给渐变边框留位置 */
+  overflow: hidden;
+  transition: all 0.4s ease;
+  animation: slideUp 0.8s ease-out 0.2s both;
+
+  /* 内部内容容器 */
+  .card-content {
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 22px;
+    padding: 40px 32px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-sizing: border-box;
+  }
+
+  &:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* 图标样式 */
+  .icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    font-size: 28px;
+    box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
+
+    &.secondary {
+      background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+      box-shadow: 0 10px 20px rgba(71, 85, 105, 0.3);
+    }
+  }
+
+  h2 {
+    color: #fff;
+    font-size: 28px;
+    margin: 0 0 4px 0;
+    font-weight: 700;
+  }
+
+  .en-text {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    text-transform: uppercase;
+    margin: 0 0 20px 0;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  .desc {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 30px;
+    flex: 1;
+  }
+}
+
+/* 主卡片特殊样式 */
+.main-card {
+  cursor: pointer;
+
+  /* 悬停时的光晕效果 */
+  .card-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.2), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+  }
+
+  &:hover .card-glow {
+    opacity: 1;
+  }
+
+  &:hover .icon-wrapper {
+    transform: scale(1.1) rotate(5deg);
+    transition: transform 0.3s;
+  }
+}
+
+/* 按钮样式 */
+.btn-entry {
+  background: transparent;
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s;
+  width: 100%;
+  justify-content: center;
+
+  .arrow {
+    transition: transform 0.3s;
+  }
+
+  &:hover {
+    background: #38bdf8;
+    color: #0f172a;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+
+    .arrow {
+      transform: translateX(4px);
+    }
+  }
+}
+
+/* 信息卡片列表 */
+.status-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+  }
+
+  .value {
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 600;
+
+    &.success {
+      color: #4ade80;
+    }
+
+    &.warning {
+      color: #fbbf24;
+    }
+  }
+}
+
+.footer {
+  margin-top: 60px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+  animation: fadeIn 1s ease-out 0.5s both;
+}
+
+/* 动画关键帧 */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

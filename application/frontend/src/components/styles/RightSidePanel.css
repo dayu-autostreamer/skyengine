@@ -1,0 +1,33 @@
+.right-side-panel {
+  width: 340px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  /* 移除 overflow-y: auto，由内部 panel-content 负责滚动 */
+  overflow: hidden; 
+}
+
+.panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0; 
+  padding: 12px 12px 20px 8px; /* 留出阴影空间 */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 滚动条美化 */
+.panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+.panel-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.panel-content::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}

@@ -1,0 +1,212 @@
+{
+  "id": "packet_factory",
+  "name": "翼辉电池装配无人产线",
+  "version": "1.1.0",
+  "createdAt": "2025-12-27",
+  "description": "地处华东核心制造区，配备智能 AGV 运输与全自动机器人电池装配流水线。",
+  "topology": {
+    "gridWidth": 20,
+    "gridHeight": 14,
+    "zones": [
+      {
+        "id": "zone_pickup",
+        "name": "⚠ 取货区",
+        "area": {
+          "x": 1,
+          "y": 2,
+          "w": 3,
+          "h": 10
+        },
+        "type": "restricted",
+        "color": "rgba(255, 235, 59, 0.15)"
+      },
+      {
+        "id": "workbench_1",
+        "name": "作业台 1",
+        "area": {
+          "x": 9,
+          "y": 5,
+          "w": 3,
+          "h": 6
+        },
+        "type": "workbench",
+        "color": "rgba(0, 20, 150, 0.5)"
+      },
+      {
+        "id": "workbench_2",
+        "name": "作业台 2",
+        "area": {
+          "x": 15,
+          "y": 5,
+          "w": 3,
+          "h": 6
+        },
+        "type": "workbench",
+        "color": "rgba(0, 20, 150, 0.5)"
+      },
+      {
+        "id": "obstacle_1",
+        "name": "墙",
+        "area": {
+          "x": 6,
+          "y": 1,
+          "w": 1,
+          "h": 7
+        },
+        "type": "obstacle",
+        "color": "rgba(0, 20, 150, 0.5)"
+      }
+    ],
+    "machines": {
+      "MACHINE_1_1": {
+        "id": "TABLE_1_MACHINE_1",
+        "name": "PLC 1-2",
+        "location": [10, 6],
+        "size": [1, 1],
+        "status": "IDLE"
+      },
+      "MACHINE_1_2": {
+        "id": "TABLE_1_MACHINE_2",
+        "name": "PLC 1-1",
+        "location": [10, 9],
+        "size": [1, 1],
+        "status": "IDLE"
+      },
+      "MACHINE_2_1": {
+        "id": "TABLE_2_MACHINE_1",
+        "name": "PLC 2-2",
+        "location": [16, 6],
+        "size": [1, 1],
+        "status": "IDLE"
+      },
+      "MACHINE_2_2": {
+        "id": "TABLE_2_MACHINE_2",
+        "name": "PLC 2-1",
+        "location": [16, 9],
+        "size": [1, 1],
+        "status": "IDLE"
+      }
+    },
+    "waypoints": {
+      "AGV_LOAD": {
+        "id": "AGV_LOAD",
+        "location": [5, 2],
+        "type": "dock",
+        "name": "上货"
+      },
+      "T1_HEAD": {
+        "id": "T1_HEAD",
+        "location": [10, 4],
+        "type": "dock",
+        "name": "T1顶"
+      },
+      "T1_SIDE_U": {
+        "id": "T1_SIDE_U",
+        "location": [8, 6],
+        "type": "dock",
+        "name": "T1侧上"
+      },
+      "T1_SIDE_L": {
+        "id": "T1_SIDE_L",
+        "location": [8, 9],
+        "type": "dock",
+        "name": "T1侧下"
+      },
+      "T2_HEAD": {
+        "id": "T2_HEAD",
+        "location": [16, 4],
+        "type": "dock",
+        "name": "T2顶"
+      },
+      "T2_SIDE_U": {
+        "id": "T2_SIDE_U",
+        "location": [14, 6],
+        "type": "dock",
+        "name": "T2侧上"
+      },
+      "T2_SIDE_L": {
+        "id": "T2_SIDE_L",
+        "location": [14, 9],
+        "type": "dock",
+        "name": "T2侧下"
+      },
+      "R_T6": {
+        "id": "R_T6",
+        "location": [5, 11],
+        "type": "route",
+        "name": "R6"
+      },
+      "R_T7": {
+        "id": "R_T7",
+        "location": [8, 11],
+        "type": "route",
+        "name": "R7"
+      },
+      "R_T8": {
+        "id": "R_T8",
+        "location": [8, 4],
+        "type": "route",
+        "name": "R8"
+      },
+      "R_T9": {
+        "id": "R_T9",
+        "location": [14, 4],
+        "type": "route",
+        "name": "R9"
+      },
+      "R_T10": {
+        "id": "R_T10",
+        "location": [14, 11],
+        "type": "route",
+        "name": "R10"
+      }
+    }
+  },
+  "agvs": [
+    {
+      "id": 0,
+      "name": "AGV-01",
+      "initialLocation": [5, 2],
+      "velocity": 1.0,
+      "capacity": 100,
+      "status": "IDLE"
+    }
+  ],
+  "renderConfig": {
+    "baseGridSize": 40,
+    "gridWidth": 20,
+    "gridHeight": 14,
+    "colors": {
+      "background": "#ECEFF1",
+      "grid": "#CFD8DC",
+      "dock": "#1565C0",
+      "dock_inner": "#42A5F5",
+      "dock_text": "#FFF",
+      "route": "#4CAF50",
+      "route_text": "#FFF",
+      "agv": "#FF5722",
+      "agv_stroke": "#FFF",
+      "machine_working": "#FFD700",
+      "machine_idle": "#90EE90",
+      "machine_broken": "#F44336",
+      "machine_maintenance": "#FF9800",
+      "machine_stroke": "#333",
+      "zone_restricted": "rgba(255, 235, 59, 0.15)",
+      "zone_restricted_line": "rgba(255, 152, 0, 1)",
+      "zone_workbench": "rgba(0, 20, 150, 0.5)",
+      "zone_workbench_line": "rgba(33, 150, 243, 1)",
+      "zone_obstacle": "rgba(0, 20, 150, 0.5)",
+      "zone_obstacle_line": "rgba(33, 150, 243, 0.5)",
+      "zone_workarea": "rgba(76, 175, 80, 0.3)",
+      "zone_workarea_line": "rgba(76, 175, 80, 1)",
+      "boundary": "rgba(100, 100, 100, 0.3)"
+    }
+  },
+  "metadata": {
+    "gridUnit": "米（假设每个网格 = 1m）",
+    "agvCapacity": 100,
+    "machineCount": 4,
+    "waypointCount": 12,
+    "notes": "这是一个示例配置文件。按照 TOPOLOGY_CONFIG_SPECIFICATION.md 规范修改 zones、machines、waypoints 来创建新的工厂布局。"
+  }
+}

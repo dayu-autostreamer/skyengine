@@ -366,6 +366,12 @@ const uploadConfigSet = () => {
   target_url.value = '/api/' + config_name.value + `/yaml/upload?t=${Date.now()}`;
   uploadRef.value.submit();
   fileList.value = [];
+
+  // ✅ 添加延迟，等待上传完成后刷新列表
+  setTimeout(() => {
+    updateCurrentFactoryMapList()
+  }, 1000)
+      
   ElMessage.success("Upload success!");
 };
 

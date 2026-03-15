@@ -1,0 +1,38 @@
+config:
+  env_type: simulation
+
+  simulation:
+    env_name: packet_factory
+
+    factory_config:
+      file: ./config_set/map_config.yaml
+
+    task_config:
+      file: ./config_set/job_config.yaml
+
+    event_config:
+      file: ./config_set/event_config.yaml
+
+    agent:
+      agent_name: packet_factory.RandomAgent
+      name: 1
+      id: 1
+
+    callback:
+      map_callback:
+        graph_loader:
+          name: backend_callback.MapLoader
+          args: [ ]
+        visualizer:
+          name: backend_callback.Visualizer
+          args: [ 3 ]    #  fps
+        event_queue:
+          name: base_callback.EventQueue
+          args: [ ]
+      agent_callback:
+        before_decision:
+          name: base_callback.BeforeDecision
+          args: [ ]
+        after_decision:
+          name: base_callback.AfterDecision
+          args: [ ]

@@ -1,0 +1,427 @@
+config:
+  jobs:
+  - job:
+      id: 0
+      operations:
+      - operation:
+          id: 0
+          machines:
+          - id: 0
+            time: 5
+          - id: 2
+            time: 4
+      - operation:
+          id: 1
+          machines:
+          - id: 4
+            time: 3
+          - id: 2
+            time: 5
+          - id: 1
+            time: 1
+      - operation:
+          id: 2
+          machines:
+          - id: 2
+            time: 4
+          - id: 5
+            time: 2
+      - operation:
+          id: 3
+          machines:
+          - id: 5
+            time: 5
+          - id: 1
+            time: 6
+          - id: 0
+            time: 1
+      - operation:
+          id: 4
+          machines:
+          - id: 2
+            time: 1
+      - operation:
+          id: 5
+          machines:
+          - id: 5
+            time: 6
+          - id: 2
+            time: 6
+          - id: 3
+            time: 3
+  - job:
+      id: 1
+      operations:
+      - operation:
+          id: 0
+          machines:
+          - id: 1
+            time: 6
+      - operation:
+          id: 1
+          machines:
+          - id: 2
+            time: 1
+      - operation:
+          id: 2
+          machines:
+          - id: 0
+            time: 2
+      - operation:
+          id: 3
+          machines:
+          - id: 1
+            time: 6
+          - id: 3
+            time: 6
+      - operation:
+          id: 4
+          machines:
+          - id: 5
+            time: 5
+          - id: 1
+            time: 6
+          - id: 0
+            time: 1
+  - job:
+      id: 2
+      operations:
+      - operation:
+          id: 0
+          machines:
+          - id: 1
+            time: 6
+      - operation:
+          id: 1
+          machines:
+          - id: 2
+            time: 4
+          - id: 5
+            time: 2
+      - operation:
+          id: 2
+          machines:
+          - id: 5
+            time: 5
+          - id: 1
+            time: 6
+          - id: 0
+            time: 1
+      - operation:
+          id: 3
+          machines:
+          - id: 2
+            time: 4
+          - id: 1
+            time: 6
+          - id: 5
+            time: 6
+      - operation:
+          id: 4
+          machines:
+          - id: 0
+            time: 1
+          - id: 4
+            time: 5
+  - job:
+      id: 3
+      operations:
+      - operation:
+          id: 0
+          machines:
+          - id: 5
+            time: 5
+          - id: 1
+            time: 6
+          - id: 0
+            time: 1
+      - operation:
+          id: 1
+          machines:
+          - id: 1
+            time: 6
+      - operation:
+          id: 2
+          machines:
+          - id: 2
+            time: 1
+      - operation:
+          id: 3
+          machines:
+          - id: 4
+            time: 3
+          - id: 2
+            time: 5
+          - id: 1
+            time: 1
+      - operation:
+          id: 4
+          machines:
+          - id: 2
+            time: 4
+          - id: 5
+            time: 2
+  - job:
+      id: 4
+      operations:
+      - operation:
+          id: 0
+          machines:
+          - id: 4
+            time: 3
+          - id: 2
+            time: 5
+          - id: 1
+            time: 1
+      - operation:
+          id: 1
+          machines:
+          - id: 5
+            time: 5
+          - id: 1
+            time: 6
+          - id: 0
+            time: 1
+      - operation:
+          id: 2
+          machines:
+          - id: 1
+            time: 6
+      - operation:
+          id: 3
+          machines:
+          - id: 0
+            time: 5
+          - id: 2
+            time: 4
+      - operation:
+          id: 4
+          machines:
+          - id: 1
+            time: 6
+          - id: 3
+            time: 6
+      - operation:
+          id: 5
+          machines:
+          - id: 2
+            time: 4
+          - id: 1
+            time: 6
+          - id: 5
+            time: 6
+  - job:
+      id: 5
+      operations:
+      - operation:
+          id: 0
+          machines:
+          - id: 2
+            time: 4
+          - id: 5
+            time: 2
+      - operation:
+          id: 1
+          machines:
+          - id: 0
+            time: 2
+      - operation:
+          id: 2
+          machines:
+          - id: 2
+            time: 4
+          - id: 1
+            time: 6
+          - id: 5
+            time: 6
+      - operation:
+          id: 3
+          machines:
+          - id: 1
+            time: 6
+      - operation:
+          id: 4
+          machines:
+          - id: 5
+            time: 5
+          - id: 1
+            time: 6
+          - id: 0
+            time: 1
+      - operation:
+          id: 5
+          machines:
+          - id: 0
+            time: 3
+          - id: 3
+            time: 2
+  - job:
+      id: 6
+      operations:
+      - operation:
+          id: 0
+          machines:
+          - id: 5
+            time: 1
+      - operation:
+          id: 1
+          machines:
+          - id: 0
+            time: 3
+          - id: 3
+            time: 2
+      - operation:
+          id: 2
+          machines:
+          - id: 2
+            time: 4
+          - id: 1
+            time: 6
+          - id: 5
+            time: 6
+      - operation:
+          id: 3
+          machines:
+          - id: 1
+            time: 6
+          - id: 4
+            time: 1
+          - id: 0
+            time: 6
+      - operation:
+          id: 4
+          machines:
+          - id: 2
+            time: 1
+  - job:
+      id: 7
+      operations:
+      - operation:
+          id: 0
+          machines:
+          - id: 2
+            time: 4
+          - id: 5
+            time: 2
+      - operation:
+          id: 1
+          machines:
+          - id: 2
+            time: 4
+          - id: 1
+            time: 6
+          - id: 5
+            time: 6
+      - operation:
+          id: 2
+          machines:
+          - id: 5
+            time: 5
+          - id: 1
+            time: 6
+          - id: 0
+            time: 1
+      - operation:
+          id: 3
+          machines:
+          - id: 1
+            time: 6
+      - operation:
+          id: 4
+          machines:
+          - id: 1
+            time: 6
+          - id: 3
+            time: 6
+  - job:
+      id: 8
+      operations:
+      - operation:
+          id: 0
+          machines:
+          - id: 5
+            time: 1
+      - operation:
+          id: 1
+          machines:
+          - id: 0
+            time: 1
+          - id: 4
+            time: 5
+      - operation:
+          id: 2
+          machines:
+          - id: 5
+            time: 6
+          - id: 2
+            time: 6
+          - id: 3
+            time: 3
+      - operation:
+          id: 3
+          machines:
+          - id: 0
+            time: 2
+      - operation:
+          id: 4
+          machines:
+          - id: 2
+            time: 4
+          - id: 1
+            time: 6
+          - id: 5
+            time: 6
+      - operation:
+          id: 5
+          machines:
+          - id: 1
+            time: 6
+          - id: 3
+            time: 6
+  - job:
+      id: 9
+      operations:
+      - operation:
+          id: 0
+          machines:
+          - id: 2
+            time: 4
+          - id: 5
+            time: 2
+      - operation:
+          id: 1
+          machines:
+          - id: 2
+            time: 4
+          - id: 1
+            time: 6
+          - id: 5
+            time: 6
+      - operation:
+          id: 2
+          machines:
+          - id: 4
+            time: 3
+          - id: 2
+            time: 5
+          - id: 1
+            time: 1
+      - operation:
+          id: 3
+          machines:
+          - id: 5
+            time: 1
+      - operation:
+          id: 4
+          machines:
+          - id: 1
+            time: 6
+          - id: 3
+            time: 6
+      - operation:
+          id: 5
+          machines:
+          - id: 0
+            time: 3
+          - id: 3
+            time: 2

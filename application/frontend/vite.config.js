@@ -17,5 +17,12 @@ export default defineConfig({
   },
   server: {
     host: true,  // 监听所有网络接口，等同于 --host
+    proxy: {
+      "/api": {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
+    },
   },
 })

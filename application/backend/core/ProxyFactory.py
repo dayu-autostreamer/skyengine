@@ -79,8 +79,7 @@ class ProxyFactory:
 
         elif name == "packet_factory":
             try:
-                # todo 导入packetfactory的proxy类
-                from xxxx import PacketFactoryProxy
+                from application.backend.core.PacketFactoryProxy import PacketFactoryProxy
 
                 if name not in cls._registry:
                     cls.register(name, PacketFactoryProxy)

@@ -16,6 +16,7 @@ from application.backend.core.BaseFactoryProxy import (
     FactoryProxyProtocol,  # 协议接口 - 支持非继承式复用
 )
 from application.backend.core.ProxyFactory import ProxyFactory
+from application.backend.core.RouteRegistry import RouteRegistry
 
 
 app = FastAPI()
@@ -380,6 +381,15 @@ async def switch_factory_proxy(factory_id: str = Body(..., embed=True)):
         # Create factory proxy using ProxyFactory registry
         try:
             current_factory_proxy = ProxyFactory.create(factory_type)
+
+            await current_factory_proxy.initialize()
+            
+            # 注册后端路由
+            RouteRegistry.register_to_app(app)
+            print(f"✅ 已注册 {len(RouteRegistry.get_routes())} 条后端路由")
+            
+            print("✅ PacketFactoryProxy 已初始化并注册所有路由")
+            print(f"📋 可用路由列表：{list(RouteRegistry.get_routes().keys())}")
         except ValueError as e:
             return {"status": "error", "message": str(e)}
 

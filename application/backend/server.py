@@ -53,6 +53,7 @@ async def stream_state():
     """
     工厂状态流 SSE 端点
     """
+
     async def generate():
         while True:
             try:
@@ -62,9 +63,10 @@ async def stream_state():
                     await asyncio.sleep(2.0)
                     continue
                 # 只在工厂运行时发送数据
-                if current_factory_proxy.is_running():
-                    # 从工厂代理获取事件列表（支持多事件类型）
-                    events = await current_factory_proxy.get_state_events()
+
+                events = await current_factory_proxy.get_state_events()
+                print(f"State events: {events}")
+                if events:
                     for event_type, data in events:
                         yield format_sse_message(event_type, data)
                 else:
@@ -285,7 +287,6 @@ async def upload_factory_config(filename: str = None, config: dict = None):
 
         # 初始化工厂
         current_factory_proxy.set_config(config)
-        print(config)
 
         return {
             "status": "ok",
@@ -307,20 +308,23 @@ async def reset_factory_control():
     """重置工厂控制端点"""
 
     global current_factory_proxy
-    print("开始执行初始化逻辑0")
+
     if current_factory_proxy is None:
         return {"status": "error", "message": "No factory loaded"}
-    print("开始执行初始化逻辑1")
     try:
         # 如果没有初始化，先初始化
-        if (
-            current_factory_proxy.status == ExecutionStatus.IDLE
-            and current_factory_proxy.current_step == 0
-        ):
+        if not current_factory_proxy.get_initialized():
             await current_factory_proxy.initialize()
             print("[Reset] Factory initialized")
 
-        await current_factory_proxy.reset()
+        try:
+            await current_factory_proxy.reset()
+        except AttributeError as e:
+            print(f"[Reset] Factory not initialized, initializing...")
+            await current_factory_proxy.initialize()
+            await current_factory_proxy.reset()
+
+
         print(f"[Reset] Factory reset, status: {current_factory_proxy.status.value}")
         return {
             "status": "ok",
@@ -384,11 +388,11 @@ async def switch_factory_proxy(factory_id: str = Body(..., embed=True)):
 
             # todo fix 不成立，因为现在工厂代理的初始化是异步的，需要上传config之后才能init.不能在这里直接调用 initialize 方法
             # await current_factory_proxy.initialize()
-            
+
             # 注册后端路由
             RouteRegistry.register_to_app(app)
             print(f"✅ 已注册 {len(RouteRegistry.get_routes())} 条后端路由")
-            
+
             print("✅ PacketFactoryProxy 已初始化并注册所有路由")
             print(f"📋 可用路由列表：{list(RouteRegistry.get_routes().keys())}")
         except ValueError as e:
@@ -420,11 +424,16 @@ async def play_factory_control():
 
     try:
         # 如果还没初始化，先初始化
-        if current_factory_proxy._state_queue is None:
+        if not current_factory_proxy.get_initialized():
             await current_factory_proxy.initialize()
             print("[Play] Factory initialized before starting")
-
-        await current_factory_proxy.start()
+        try:
+            await current_factory_proxy.start()
+        except AttributeError as e:
+            print(f"[Play] Factory not initialized, initializing...")
+            await current_factory_proxy.initialize()
+            await current_factory_proxy.reset()
+            await current_factory_proxy.start()
         print(f"[Play] Factory started, status: {current_factory_proxy.status.value}")
         return {
             "status": "ok",

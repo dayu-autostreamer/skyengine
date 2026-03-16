@@ -1,19 +1,95 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 
-/**
- * 工厂管理和动画状态 (Unified Store)
- * 核心设计：所有动画帧都存储在 historyBuffer 中，无论是离线加载还是实时推送
- */
+// ─────────────────────────────────────────────
+// 常量
+// ─────────────────────────────────────────────
+const STORAGE_KEYS = {
+  SELECTED_FACTORY: "selectedFactoryId",
+  CURRENT_CONFIG_ID: "currentConfigId",
+  FACTORY_CONFIGS: "factoryConfigs",
+};
 
-// 辅助函数：动态获取资源路径
+const DEFAULT_RENDER_CONFIG = Object.freeze({
+  baseGridSize: 40,
+  gridWidth: 20,
+  gridHeight: 14,
+  colors: {},
+});
+
+const EMPTY_GRID_STATE = Object.freeze({
+  env_timeline: "0",
+  grid_state: { positions_xy: [], is_active: [] },
+  machines: {},
+  active_transfers: [],
+});
+
+// ─────────────────────────────────────────────
+// 工具函数
+// ─────────────────────────────────────────────
+
+/**
+ * 构建工厂静态资源 URL。
+ * 使用 import.meta.url 确保 Vite 生产构建后路径依然有效。
+ */
 function getAssetUrl(name) {
   if (!name) return "";
-  return `/src/assets/factories/${name}`;
+  return new URL(`../assets/factories/${name}`, import.meta.url).href;
 }
+
+/**
+ * 安全读取 localStorage，解析失败时返回 fallback。
+ */
+function readStorage(key, fallback = null) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * 安全写入 localStorage，序列化失败时静默跳过。
+ */
+function writeStorage(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.warn(`[FactoryStore] 无法写入 localStorage (${key}):`, e);
+  }
+}
+
+/**
+ * 校验配置对象的必要字段，通过返回 true。
+ */
+function validateConfig(config) {
+  if (!config || typeof config !== "object") return false;
+  if (typeof config.id !== "string" || !config.id.trim()) return false;
+  return true;
+}
+
+/**
+ * 规范化快照，填充缺失字段，保证后续消费安全。
+ */
+function normalizeSnapshot(snapshot, fallbackIndex) {
+  return {
+    env_timeline:
+      snapshot.timestamp ?? snapshot.env_timeline ?? `T+${fallbackIndex}`,
+    grid_state: snapshot.grid_state ?? { positions_xy: [], is_active: [] },
+    machines: snapshot.machines ?? {},
+    active_transfers: snapshot.active_transfers ?? [],
+  };
+}
+
+// ─────────────────────────────────────────────
+// Store 定义
+// ─────────────────────────────────────────────
 export const useFactoryStore = defineStore("factory", () => {
-  // ============ 1. 工厂列表管理 (无需改动) ============
-  // 工厂列表
+  // ══════════════════════════════════════════
+  // 1. 工厂列表
+  // ══════════════════════════════════════════
   const factories = ref([
     {
       id: "packet_factory",
@@ -46,423 +122,401 @@ export const useFactoryStore = defineStore("factory", () => {
   ]);
 
   const selectedFactoryId = ref(
-    localStorage.getItem("selectedFactoryId") || "packet_factory",
+    localStorage.getItem(STORAGE_KEYS.SELECTED_FACTORY) ?? "packet_factory",
   );
 
   const currentFactory = computed(() =>
-    factories.value.find((f) => f.id === selectedFactoryId.value),
+    factories.value.find((f) => f.id === selectedFactoryId.value) ?? null,
   );
 
-  const setCurrentFactory = (factoryId) => {
-    const factory = factories.value.find((f) => f.id === factoryId);
-    if (factory) {
-      selectedFactoryId.value = factoryId;
-      localStorage.setItem("selectedFactoryId", factoryId);
+  function getFactories() {
+    return factories.value;
+  }
+
+  function setCurrentFactory(factoryId) {
+    const exists = factories.value.some((f) => f.id === factoryId);
+    if (!exists) {
+      console.warn(`[FactoryStore] 未知工厂 ID: ${factoryId}`);
+      return;
     }
-  };
+    selectedFactoryId.value = factoryId;
+    localStorage.setItem(STORAGE_KEYS.SELECTED_FACTORY, factoryId);
+  }
 
-  const getFactories = () => factories.value;
+  // ══════════════════════════════════════════
+  // 2. 工厂配置管理
+  // ══════════════════════════════════════════
 
-  // ============ 1.5. 工厂配置管理 (Factory Configuration) ============
-  // 用户上传的工厂配置文件
-  const factoryConfigs = ref({});
-  // 当前选中的配置 ID
-  const currentConfigId = ref(null);
+  /**
+   * 配置持久化到 localStorage，刷新后可恢复完整内容。
+   * 读取时做 validateConfig 二次校验，防止缓存数据损坏导致崩溃。
+   */
+  const factoryConfigs = ref(
+    (() => {
+      const saved = readStorage(STORAGE_KEYS.FACTORY_CONFIGS, {});
+      // 过滤损坏条目
+      return Object.fromEntries(
+        Object.entries(saved).filter(([, v]) => validateConfig(v)),
+      );
+    })(),
+  );
+
+  const currentConfigId = ref(
+    readStorage(STORAGE_KEYS.CURRENT_CONFIG_ID, null),
+  );
 
   const currentConfig = computed(() => {
     if (!currentConfigId.value) return null;
-    return factoryConfigs.value[currentConfigId.value];
+    return factoryConfigs.value[currentConfigId.value] ?? null;
   });
 
-  const currentTopologyConfig = computed(() => {
-    return currentConfig.value?.topology || null;
-  });
+  const currentTopologyConfig = computed(
+    () => currentConfig.value?.topology ?? null,
+  );
 
-  const currentRenderConfig = computed(() => {
-    return (
-      currentConfig.value?.renderConfig || {
-        baseGridSize: 40,
-        gridWidth: 20,
-        gridHeight: 14,
-        colors: {},
-      }
-    );
-  });
+  const currentRenderConfig = computed(
+    () => currentConfig.value?.renderConfig ?? { ...DEFAULT_RENDER_CONFIG },
+  );
 
   /**
-   * 加载工厂配置文件
-   * @param {Object} config - 验证过的配置对象
+   * 持久化所有配置到 localStorage（每次变更后调用）。
+   */
+  function _persistConfigs() {
+    writeStorage(STORAGE_KEYS.FACTORY_CONFIGS, factoryConfigs.value);
+  }
+
+  /**
+   * 加载并激活一个外部配置文件对象。
+   * 会先做字段校验，失败时抛出错误而非静默写入。
    */
   function loadConfigFromFile(config) {
+    if (!validateConfig(config)) {
+      throw new Error(
+        "[FactoryStore] loadConfigFromFile: 无效配置，缺少 id 字段。",
+      );
+    }
     factoryConfigs.value[config.id] = config;
     currentConfigId.value = config.id;
-
-    // 可选：保存到 localStorage
-    localStorage.setItem("currentConfigId", config.id);
+    writeStorage(STORAGE_KEYS.CURRENT_CONFIG_ID, config.id);
+    _persistConfigs();
   }
 
-  /**
-   * 切换当前使用的配置
-   */
   function setCurrentConfig(configId) {
-    if (factoryConfigs.value[configId]) {
-      currentConfigId.value = configId;
-      localStorage.setItem("currentConfigId", configId);
+    if (!factoryConfigs.value[configId]) {
+      console.warn(`[FactoryStore] 未找到配置 ID: ${configId}`);
+      return;
     }
+    currentConfigId.value = configId;
+    writeStorage(STORAGE_KEYS.CURRENT_CONFIG_ID, configId);
   }
 
-  /**
-   * 获取所有已加载的配置
-   */
   function getLoadedConfigs() {
     return Object.values(factoryConfigs.value);
   }
 
-  /**
-   * 删除一个配置
-   */
   function deleteConfig(configId) {
     delete factoryConfigs.value[configId];
     if (currentConfigId.value === configId) {
       currentConfigId.value = null;
+      writeStorage(STORAGE_KEYS.CURRENT_CONFIG_ID, null);
     }
+    _persistConfigs();
   }
 
   /**
-   * 直接设置拓扑配置（用于从 JSON 加载或临时配置）
-   * @param {Object} topologyData - 拓扑数据 { zones, machines, waypoints, baseGridSize, gridWidth, gridHeight }
-   * @returns {string} 配置 ID
+   * 从拓扑数据对象直接构建完整配置并激活。
+   * @returns {string} 生成的配置 ID
    */
   function setCurrentTopologyConfig(topologyData) {
-    // 生成临时配置 ID（如果没有提供）
-    const configId = topologyData.id || `temp_config_${Date.now()}`;
+    const configId =
+      typeof topologyData.id === "string" && topologyData.id.trim()
+        ? topologyData.id
+        : `temp_config_${Date.now()}`;
 
-    // 创建完整的配置对象
     const completeConfig = {
       id: configId,
-      name: topologyData.name || "临时配置",
-      version: topologyData.version || "1.0",
+      name: topologyData.name ?? "临时配置",
+      version: topologyData.version ?? "1.0",
       timestamp: Date.now(),
       topology: {
-        zones: topologyData.zones || [],
-        machines: topologyData.machines || {},
-        waypoints: topologyData.waypoints || {},
-        gridWidth: topologyData.gridWidth || 20,
-        gridHeight: topologyData.gridHeight || 14,
+        zones: topologyData.zones ?? [],
+        machines: topologyData.machines ?? {},
+        waypoints: topologyData.waypoints ?? {},
+        gridWidth: topologyData.gridWidth ?? DEFAULT_RENDER_CONFIG.gridWidth,
+        gridHeight: topologyData.gridHeight ?? DEFAULT_RENDER_CONFIG.gridHeight,
       },
-      agvs: (topologyData.agvs || []).map((agv) => ({
+      agvs: (topologyData.agvs ?? []).map((agv) => ({
         id: agv.id,
-        name: agv.name || `AGV-${agv.id}`,
-        initialLocation: agv.initialLocation || [0, 0],
-        velocity: agv.velocity || 1.0,
-        capacity: agv.capacity || 100,
-        status: agv.status || "IDLE",
+        name: agv.name ?? `AGV-${agv.id}`,
+        initialLocation: agv.initialLocation ?? [0, 0],
+        velocity: agv.velocity ?? 1.0,
+        capacity: agv.capacity ?? 100,
+        status: agv.status ?? "IDLE",
       })),
       renderConfig: {
-        baseGridSize: topologyData.baseGridSize || 40,
-        gridWidth: topologyData.gridWidth || 20,
-        gridHeight: topologyData.gridHeight || 14,
-        colors: topologyData.colors || {},
+        baseGridSize:
+          topologyData.baseGridSize ?? DEFAULT_RENDER_CONFIG.baseGridSize,
+        gridWidth: topologyData.gridWidth ?? DEFAULT_RENDER_CONFIG.gridWidth,
+        gridHeight: topologyData.gridHeight ?? DEFAULT_RENDER_CONFIG.gridHeight,
+        colors: topologyData.colors ?? {},
       },
     };
 
-    // 存储到配置库
     factoryConfigs.value[configId] = completeConfig;
     currentConfigId.value = configId;
-
-    // 持久化当前配置 ID
-    localStorage.setItem("currentConfigId", configId);
+    writeStorage(STORAGE_KEYS.CURRENT_CONFIG_ID, configId);
+    _persistConfigs();
 
     return configId;
   }
 
-  /**
-   * 获取当前配置中的 AGV 列表
-   * @returns {Array} AGV 配置数组
-   */
+  // ──────────────────────────────────────────
+  // 配置辅助查询
+  // ──────────────────────────────────────────
+
   function getAGVs() {
-    if (!currentConfig.value) {
-      return [];
-    }
-    return currentConfig.value.agvs || [];
+    return currentConfig.value?.agvs ?? [];
   }
 
-  /**
-   * 初始化 AGV 到动画系统（推送初始位置快照）
-   */
-  function initializeAGVs() {
-    const agvs = getAGVs();
-    if (agvs.length === 0) {
-      return;
-    }
-
-    // 创建初始快照，包含所有 AGV 的初始位置
-    const initialPositions = agvs.map((agv) => agv.initialLocation);
-    const initialActiveStates = agvs.map(() => true);
-
-    const initialSnapshot = {
-      timestamp: "T+0",
-      env_timeline: "0",
-      grid_state: {
-        positions_xy: initialPositions,
-        is_active: initialActiveStates,
-      },
-      machines: {},
-      active_transfers: [],
-    };
-
-    // 清除历史记录并推送初始帧
-    reset();
-    pushSnapshot(initialSnapshot);
-
-    console.log(`✅ 已初始化 ${agvs.length} 个 AGV`);
-  }
-
-  /**
-   * 获取当前配置中的所有资产（节点信息）
-   * @returns {Object} { zones, machines, waypoints }
-   */
   function getCurrentAssets() {
-    if (!currentConfig.value) {
-      return { zones: [], machines: {}, waypoints: {} };
-    }
     return (
-      currentConfig.value.topology || { zones: [], machines: {}, waypoints: {} }
+      currentConfig.value?.topology ?? {
+        zones: [],
+        machines: {},
+        waypoints: {},
+      }
     );
   }
 
-  /**
-   * 获取资产统计信息
-   * @returns {Object} 统计数据
-   */
   function getAssetsStats() {
-    const assets = getCurrentAssets();
+    const { zones = [], machines = {}, waypoints = {} } = getCurrentAssets();
+    const zoneCount = zones.length;
+    const machineCount = Object.keys(machines).length;
+    const waypointCount = Object.keys(waypoints).length;
     return {
-      zoneCount: (assets.zones || []).length,
-      machineCount: Object.keys(assets.machines || {}).length,
-      waypointCount: Object.keys(assets.waypoints || {}).length,
-      totalAssets:
-        (assets.zones || []).length +
-        Object.keys(assets.machines || {}).length +
-        Object.keys(assets.waypoints || {}).length,
+      zoneCount,
+      machineCount,
+      waypointCount,
+      totalAssets: zoneCount + machineCount + waypointCount,
     };
   }
 
-  /**
-   * 格式化资产列表（用于 UI 显示）
-   * @returns {Array} 格式化的资产数组
-   */
   function formatAssetsList() {
-    const assets = getCurrentAssets();
+    const { zones = [], machines = {}, waypoints = {} } = getCurrentAssets();
     const list = [];
 
-    // 添加区域
-    if (assets.zones) {
-      assets.zones.forEach((zone) => {
-        list.push({
-          type: "zone",
-          icon: "🔒",
-          name: zone.name || `Zone ${zone.id}`,
-          description: `区域类型: ${zone.type || "unknown"}`,
-          data: zone,
-        });
+    zones.forEach((zone) => {
+      list.push({
+        type: "zone",
+        icon: "🔒",
+        name: zone.name ?? `Zone ${zone.id}`,
+        description: `区域类型: ${zone.type ?? "unknown"}`,
+        data: zone,
       });
-    }
+    });
 
-    // 添加机器
-    if (assets.machines) {
-      Object.entries(assets.machines).forEach(([key, machine]) => {
-        list.push({
-          type: "machine",
-          icon: "⚙️",
-          name: machine.name || `Machine ${key}`,
-          description: `状态: ${machine.status || "UNKNOWN"}`,
-          data: machine,
-        });
+    Object.entries(machines).forEach(([key, machine]) => {
+      list.push({
+        type: "machine",
+        icon: "⚙️",
+        name: machine.name ?? `Machine ${key}`,
+        description: `状态: ${machine.status ?? "UNKNOWN"}`,
+        data: machine,
       });
-    }
+    });
 
-    // 添加路由点
-    if (assets.waypoints) {
-      Object.entries(assets.waypoints).forEach(([key, waypoint]) => {
-        const icon = waypoint.type === "dock" ? "🚪" : "📍";
-        list.push({
-          type: "waypoint",
-          icon: icon,
-          name: waypoint.name || `Waypoint ${key}`,
-          description: `类型: ${waypoint.type || "route"}`,
-          data: waypoint,
-        });
+    Object.entries(waypoints).forEach(([key, waypoint]) => {
+      list.push({
+        type: "waypoint",
+        icon: waypoint.type === "dock" ? "🚪" : "📍",
+        name: waypoint.name ?? `Waypoint ${key}`,
+        description: `类型: ${waypoint.type ?? "route"}`,
+        data: waypoint,
       });
-    }
+    });
 
     return list;
   }
 
-  // ============ 2. 核心动画状态 (Animation State) ============
+  // ══════════════════════════════════════════
+  // 3. 动画状态
+  // ══════════════════════════════════════════
 
-  // 统一的数据源：历史帧队列
   const historyBuffer = ref([]);
-
-  // 辅助状态：是否处于“命令模式”（用于 ControlPanel 判断是否显示“脚本运行中”）
   const commandQueue = ref([]);
-
   const currentIndex = ref(0);
   const isPlaying = ref(false);
   const playbackSpeed = ref(1000);
 
-  // 计算属性：总步数
+  /**
+   * 是否处于"跟随直播尾部"模式。
+   * 用户手动拖动进度条后自动关闭，新帧推入时如果处于此模式则自动跟进。
+   */
+  const isLiveMode = ref(true);
+
   const totalSteps = computed(() => historyBuffer.value.length);
 
-  // 计算属性：当前帧状态 (UI 渲染源头)
   const currentState = computed(() => {
-    // 安全回退：如果 Buffer 为空，返回默认空对象
-    if (historyBuffer.value.length === 0) {
-      return {
-        env_timeline: "0",
-        grid_state: { positions_xy: [], is_active: [] },
-        machines: {},
-        active_transfers: [],
-      };
-    }
-
-    // 确保索引合法
-    const idx = Math.min(currentIndex.value, historyBuffer.value.length - 1);
+    if (historyBuffer.value.length === 0) return { ...EMPTY_GRID_STATE };
+    const idx = Math.min(
+      Math.max(0, currentIndex.value),
+      historyBuffer.value.length - 1,
+    );
     return historyBuffer.value[idx];
   });
 
-  // ============ 3. 动作方法 (Actions) ============
+  // ──────────────────────────────────────────
+  // 动画动作
+  // ──────────────────────────────────────────
 
-  /**
-   * 重置所有状态
-   */
   function reset() {
     isPlaying.value = false;
     currentIndex.value = 0;
-    historyBuffer.value = []; // 清空数据源
-    commandQueue.value = []; // 清空命令标记
+    historyBuffer.value = [];
+    commandQueue.value = [];
+    isLiveMode.value = true;
   }
 
   /**
-   * [核心] 向 Buffer 尾部追加一帧数据 (Push)
-   * 适用于：SSE 实时推送、runFullSystemTest 脚本驱动
+   * 向 Buffer 尾部追加一帧（SSE 实时推送 / 脚本驱动均使用此方法）。
+   * 只有在 isLiveMode 为 true 时才自动跟进到最新帧，
+   * 避免打断用户正在手动回放的操作。
    */
   function pushSnapshot(snapshot) {
-    // 1. 数据清洗与规范化
-    const frame = {
-      env_timeline: snapshot.timestamp || `T+${historyBuffer.value.length}`,
-      grid_state: snapshot.grid_state || { positions_xy: [], is_active: [] },
-      machines: snapshot.machines || {},
-      active_transfers: snapshot.active_transfers || [],
-      _meta: { wait: 0 }, // 可选元数据
-    };
-
-    // 2. 入队
+    const frame = normalizeSnapshot(snapshot, historyBuffer.value.length);
     historyBuffer.value.push(frame);
 
-    // 3. 自动跟进 (Live Mode 逻辑)
-    // 如果当前正处于最新帧（或者正在播放中），则自动跳到新的一帧
-    // 这样用户在查看历史数据时不会被强制打断
-    if (
-      isPlaying.value ||
-      currentIndex.value >= historyBuffer.value.length - 2
-    ) {
+    if (isLiveMode.value || isPlaying.value) {
       currentIndex.value = historyBuffer.value.length - 1;
     }
   }
 
   /**
-   * 加载完整历史数据 (离线回放模式)
-   * 直接替换整个 Buffer
+   * 加载完整离线历史数据，替换整个 Buffer。
    */
   function loadData(data) {
     reset();
     historyBuffer.value = data;
     currentIndex.value = 0;
+    isLiveMode.value = false;
   }
 
   /**
-   * 加载命令队列 (测试模式标记)
-   * 注意：这里只是标记“我们将要运行这些命令”，实际的数据生成由 runFullSystemTest.js 驱动 pushSnapshot 完成
+   * 标记"将要运行命令序列"（测试模式）。
+   * 实际帧数据由外部通过 pushSnapshot 驱动写入。
    */
   function loadCommandQueue(queue) {
     reset();
-    commandQueue.value = queue; // 仅用于 UI 显示总进度或当前模式
-    // 实际数据不在这里生成，而是等待 pushSnapshot
+    commandQueue.value = queue;
   }
 
-  // 切换播放
   function togglePlay() {
     if (historyBuffer.value.length === 0) return;
-
-    // 如果已到末尾，点击播放则重头开始
+    // 已到末尾时从头播放
     if (!isPlaying.value && currentIndex.value >= totalSteps.value - 1) {
       currentIndex.value = 0;
     }
     isPlaying.value = !isPlaying.value;
   }
 
-  // 手动拖动进度条
+  /**
+   * 手动定位到某帧（用于进度条拖动）。
+   * 离开尾部时退出 liveMode，回到尾部时重新进入。
+   */
   function setIndex(val) {
-    let index = parseInt(val);
+    if (historyBuffer.value.length === 0) return;
+
+    let index = parseInt(val, 10);
     if (isNaN(index)) index = 0;
-    if (index < 0) index = 0;
-    if (index >= historyBuffer.value.length)
-      index = historyBuffer.value.length - 1;
+    index = Math.max(0, Math.min(index, historyBuffer.value.length - 1));
 
     currentIndex.value = index;
+    isLiveMode.value = index === historyBuffer.value.length - 1;
   }
 
-  // 动画循环步进 (给 FactoryPlayerSSE 内部 requestAnimationFrame 用)
+  /**
+   * 动画循环步进，由 requestAnimationFrame 驱动调用。
+   * @returns {boolean} 是否成功步进（false 表示已到末尾或暂停）
+   */
   function nextStep() {
     if (!isPlaying.value) return false;
 
     if (currentIndex.value < totalSteps.value - 1) {
       currentIndex.value++;
       return true;
-    } else {
-      isPlaying.value = false;
-      return false;
     }
+
+    isPlaying.value = false;
+    return false;
   }
 
+  /**
+   * 初始化所有 AGV 到动画系统（写入初始快照）。
+   * 只在 buffer 为空时执行，避免意外清除已有历史数据。
+   */
+  function initializeAGVs() {
+    const agvs = getAGVs();
+    if (agvs.length === 0) return;
+
+    if (historyBuffer.value.length > 0) {
+      console.warn(
+        "[FactoryStore] initializeAGVs: buffer 非空，跳过初始化以保留现有数据。",
+      );
+      return;
+    }
+
+    const initialSnapshot = {
+      timestamp: "T+0",
+      env_timeline: "0",
+      grid_state: {
+        positions_xy: agvs.map((agv) => agv.initialLocation),
+        is_active: agvs.map(() => true),
+      },
+      machines: {},
+      active_transfers: [],
+    };
+
+    pushSnapshot(initialSnapshot);
+    console.log(`✅ 已初始化 ${agvs.length} 个 AGV`);
+  }
+
+  // ══════════════════════════════════════════
+  // 公开接口
+  // ══════════════════════════════════════════
   return {
-    // State - Factories & Configs
+    // ── 工厂列表 ──
     factories,
     selectedFactoryId,
+    currentFactory,
+    getFactories,
+    setCurrentFactory,
+
+    // ── 配置管理 ──
     factoryConfigs,
     currentConfigId,
-
-    // State - Animation
-    historyBuffer, // 统一使用这个作为数据源
-    commandQueue, // 用于 UI 判断模式
-    currentIndex,
-    isPlaying,
-    playbackSpeed,
-
-    // Getters - Factories & Configs
-    currentFactory,
     currentConfig,
     currentTopologyConfig,
     currentRenderConfig,
-    totalSteps,
-    currentState,
-    getFactories,
-    getLoadedConfigs,
-
-    // Actions - Factories & Configs
-    setCurrentFactory,
     loadConfigFromFile,
     setCurrentConfig,
+    getLoadedConfigs,
     deleteConfig,
     setCurrentTopologyConfig,
+    getAGVs,
+    initializeAGVs,
     getCurrentAssets,
     getAssetsStats,
     formatAssetsList,
-    getAGVs,
-    initializeAGVs,
 
-    // Actions - Animation
+    // ── 动画状态 ──
+    historyBuffer,
+    commandQueue,
+    currentIndex,
+    isPlaying,
+    isLiveMode,
+    playbackSpeed,
+    totalSteps,
+    currentState,
     reset,
     pushSnapshot,
     loadData,

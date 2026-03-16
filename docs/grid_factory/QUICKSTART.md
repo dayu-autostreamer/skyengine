@@ -49,244 +49,153 @@ uv sync
 ### 基本使用
 
 ```python
-from joint_sim import (
-    create_simulation,
-    GreedyScheduler,
-    RuleBasedScheduler,
-    PrioritizedRouter,
-    SimpleRouter,
-)
+from joint_sim import GridFactoryEnv, create_env_from_config
 
-# 方式一：使用便捷函数创建仿真
-sim = create_simulation(
-    n_machines=6,
-    n_agvs=3,
-    n_jobs=10,
-    grid_size=(20, 20),
-    seed=42
-)
+# 方式1: 从配置文件创建环境
+env = create_env_from_config("path/to/grid_factory.json")
 
-# 方式二：使用配置类创建
-from joint_sim import FactoryConfig, JointSimulation
+# 方式2: 直接创建环境（使用默认配置）
+env = GridFactoryEnv()
 
-config = FactoryConfig(
-    n_machines=6,
-    n_agvs=3,
-    n_jobs=10,
-    grid_size=(20, 20),
-    n_ops_per_job=(3, 6),      # 每个工件 3-6 个操作
-    op_duration_range=(3, 10), # 每个操作 3-10 时间单位
-    seed=42,
-)
-sim = JointSimulation(config)
+# 初始化环境
+obs, info = env.reset()
 
-# 设置调度器和路由器
-sim.set_scheduler(GreedyScheduler(priority_rule='lrpt'))
-sim.set_router(PrioritizedRouter())
+# 运行仿真
+for step in range(100):
+    # 使用协调器决策（推荐）
+    actions = coordinator.decide(obs)
+    obs, rewards, terminated, truncated, info = env.step(actions)
 
-# 按轮次运行仿真
-for step in range(1000):
-    state = sim.observe()
-    decisions = sim.decide()
-    sim.execute(decisions)
-
-    # 渲染（可选）
-    if step % 10 == 0:
-        sim.render(f'frames/frame_{step:04d}.svg')
-
-    if sim.is_done():
-        break
-
-# 获取指标
-metrics = sim.get_metrics()
-print(metrics.to_dict())
-```
-
-### 使用便捷的 step() 方法
-
-```python
-# 一步完成 observe -> decide -> execute
-for step in range(1000):
-    state, done = sim.step()
-    if done:
+    if terminated or truncated:
         break
 ```
 
-### 运行完整仿真
+### 使用配置文件
 
 ```python
-# 自动运行直到完成
-metrics = sim.run(
-    max_steps=5000,
-    render_interval=10,   # 每 10 步渲染一次
-    render_dir='frames',
-    verbose=True
-)
-print(f"完成工件数: {metrics.n_completed_jobs}")
-print(f"总 AGV 移动距离: {metrics.total_agv_distance}")
+from joint_sim.io import load_grid_factory_config, create_env_from_config
+
+# 加载配置
+config = load_grid_factory_config("grid_factory.json")
+
+# 创建环境
+env = create_env_from_config(config)
+
+# 重置并运行
+obs, info = env.reset()
 ```
 
 ---
 
 ## 核心组件
 
-### 调度器 (Scheduler)
+### 模块结构
 
-调度器负责工件加工顺序和机器任务分配：
-
-```python
-from joint_sim import GreedyScheduler, RuleBasedScheduler, RandomScheduler
-
-# 贪心调度器 - 基于优先规则
-scheduler = GreedyScheduler(priority_rule='lrpt')  # 最长剩余处理时间优先
-
-# 规则调度器 - 基于启发式规则
-scheduler = RuleBasedScheduler()
-
-# 随机调度器 - 随机分配（用于基准测试）
-scheduler = RandomScheduler()
-
-sim.set_scheduler(scheduler)
+```
+joint_sim/
+├── __init__.py              # 主入口，导出核心类
+├── grid_factory_env.py      # Gymnasium 环境实现
+├── io/                      # 配置加载模块
+│   ├── use_io.py           # 配置解析函数
+│   └── __init__.py
+├── proxy/                   # 服务代理模块
+│   ├── grid_factory_proxy.py
+│   └── __init__.py
+├── component/               # 算法组件
+│   ├── Coordinator/        # 协调器
+│   ├── JobSolver/          # 任务调度器
+│   ├── RouteSolver/        # 路由求解器
+│   └── Assigner/           # 分配器
+└── utils/                   # 工具和数据结构
+    ├── structure.py        # 核心数据类
+    └── __init__.py
 ```
 
-### 路由器 (Router)
-
-路由器负责 AGV 路径规划和任务分配：
+### 导入示例
 
 ```python
-from joint_sim import PrioritizedRouter, SimpleRouter, RandomRouter
+# 主入口
+from joint_sim import GridFactoryEnv, GridFactoryProxy, create_env_from_config
 
-# 优先级路由器 - 基于 A* 的优先级路径规划
-router = PrioritizedRouter(
-    assigner_type='cost',  # 'cost' 或 'greedy'
+# IO 模块
+from joint_sim.io import (
+    load_grid_factory_config,
+    parse_grid_config,
+    parse_machine_config,
+    parse_job_config,
 )
 
-# 简单路由器 - 最短路径规划
-router = SimpleRouter()
+# 组件模块
+from joint_sim.component import Coordinator, JobSolverFactory, RouteSolverFactory, AssignerFactory
 
-# 随机路由器 - 随机分配 AGV 任务
-router = RandomRouter()
-
-sim.set_router(router)
-```
-
-### 状态观察
-
-```python
-state = sim.observe()
-
-# 访问状态信息
-print(f"当前时间: {state.time}")
-print(f"AGV 数量: {len(state.agvs)}")
-print(f"机器数量: {len(state.machines)}")
-print(f"已完成工件: {state.n_completed_jobs}")
-print(f"空闲 AGV 数: {state.n_idle_agvs}")
-print(f"空闲机器数: {state.n_idle_machines}")
-
-# AGV 信息
-for agv in state.agvs:
-    print(f"AGV {agv.agv_id}: 位置={agv.position}, 状态={agv.status}")
-    if agv.carrying:
-        print(f"  携带工件: {agv.carrying.job_id}")
-
-# 机器信息
-for machine in state.machines:
-    print(f"Machine {machine.machine_id}: 状态={machine.status}, 队列={machine.queue_length}")
-```
-
-### 指标收集
-
-```python
-metrics = sim.get_metrics()
-
-# 指标字典
-metrics_dict = metrics.to_dict()
-# {
-#     'n_completed_jobs': 10,
-#     'total_agv_distance': 150,
-#     'avg_waiting_time': 5.2,
-#     ...
-# }
+# 数据结构
+from joint_sim.utils import Operation, Job, Machine, RoutingTask, AGV
 ```
 
 ---
 
 ## Gym 环境接口
 
-`joint_sim` 提供符合 OpenAI Gymnasium 标准的强化学习环境：
+### GridFactoryEnv
+
+`GridFactoryEnv` 是基于 PettingZoo ParallelEnv 的多智能体环境，兼容 Gymnasium 接口。
 
 ```python
-import gymnasium as gym
-from joint_sim import JointSimGymEnv, FactoryConfig
+from joint_sim import GridFactoryEnv
+from pogema import GridConfig
+from joint_sim.utils import MachineConfig, JobConfig
 
 # 创建环境
-config = FactoryConfig(
-    n_machines=6,
-    n_agvs=3,
-    n_jobs=10,
-    grid_size=(20, 20),
+env = GridFactoryEnv(
+    grid_config=GridConfig(
+        size=20,
+        num_agents=4,
+        density=0.0,
+        max_episode_steps=256,
+        obs_radius=5,
+    ),
+    machine_config=MachineConfig(
+        num_machines=4,
+        strategy="custom",
+        custom_positions=[(10, 6), (10, 9), (16, 6), (16, 9)],
+    ),
+    job_config=JobConfig(
+        num_jobs=5,
+        min_ops_per_job=2,
+        max_ops_per_job=4,
+    ),
 )
-
-env = JointSimGymEnv(
-    config=config,
-    assigner_type='cost',      # 'cost' 或 'greedy'
-    max_episode_steps=10000,
-    reward_scale=1.0
-)
-
-# 查看空间定义
-print(env.observation_space)  # Dict 空间
-print(env.action_space)       # Dict 空间
 
 # 重置环境
-obs, info = env.reset(seed=42)
+obs, info = env.reset()
 
 # 执行动作
-action = {
-    'agv_assignments': np.array([0, -1, 1], dtype=np.int32)  # -1 表示不分配
-}
-obs, reward, terminated, truncated, info = env.step(action)
+# actions: Dict[agent_id, action] 或 List[action]
+obs, rewards, terminated, truncated, info = env.step(actions)
 
-# 渲染
-env.render(mode='svg', filepath='frame.svg')
-
-# 获取可用动作
-available_actions = env.get_available_actions()
+# 环境属性
+print(env.pogema_env)       # 底层 Pogema 环境
+print(env.init_machines)    # 机器列表
+print(env.init_jobs)        # 任务列表
 ```
 
-### 观察空间
+### 环境方法
 
-```python
-observation_space = spaces.Dict({
-    'grid': spaces.Box(low=0, high=3, shape=(20, 20), dtype=np.int32),
-    'agv_positions': spaces.Box(low=0, high=20, shape=(n_agvs, 2), dtype=np.int32),
-    'agv_status': spaces.Box(low=0, high=3, shape=(n_agvs,), dtype=np.int32),
-    'agv_carrying': spaces.Box(low=-1, high=n_jobs, shape=(n_agvs,), dtype=np.int32),
-    'machine_status': spaces.Box(low=0, high=1, shape=(n_machines,), dtype=np.int32),
-    'machine_queue_length': spaces.Box(low=0, high=n_jobs, shape=(n_machines,), dtype=np.int32),
-    'time': spaces.Box(low=0, high=max_time, shape=(), dtype=np.int32),
-})
-```
-
-### 动作空间
-
-```python
-action_space = spaces.Dict({
-    'agv_assignments': spaces.Box(
-        low=-1, high=n_jobs-1,
-        shape=(n_agvs,), dtype=np.int32
-    )
-})
-# 每个 AGV 分配一个任务 ID，-1 表示不分配任务
-```
+| 方法 | 说明 |
+|------|------|
+| `reset()` | 重置环境，返回 (obs, info) |
+| `step(actions)` | 执行动作，返回 (obs, rewards, terminated, truncated, info) |
+| `show_actions(actions)` | 打印动作信息 |
+| `show_jobs()` | 打印任务信息 |
+| `set_env_timeline(t)` | 设置环境时间线 |
 
 ---
 
 ## Proxy 服务层
 
-`GridFactoryProxy` 提供异步执行和 SSE 流式传输的代理服务层，适用于 Web 服务集成：
+### GridFactoryProxy
 
-### 基本使用
+`GridFactoryProxy` 提供异步控制接口，适用于 Web 服务和前端集成。
 
 ```python
 from joint_sim.proxy import GridFactoryProxy, ExecutionStatus
@@ -294,528 +203,408 @@ from joint_sim.proxy import GridFactoryProxy, ExecutionStatus
 # 创建代理
 proxy = GridFactoryProxy()
 
-# 设置算法配置
-proxy.set_algorithm("greedy:prioritized:standard")
-# 格式: "scheduler:router:complexity"
+# 设置配置
+proxy.set_config({"path": "grid_factory.json"})  # 或传入完整配置字典
+proxy.set_algorithm("greedy+astar+nearest")
 
-# 或单独设置
-proxy.set_scheduler("greedy")
-proxy.set_router("prioritized")
+# 异步操作
+async def run_simulation():
+    # 初始化
+    await proxy.initialize()
 
-# 获取可用算法列表
-algorithms = proxy.get_algorithm_list()
-# {
-#     'schedulers': [...],
-#     'routers': [...],
-#     'complexity_options': [...],
-#     'presets': [...]
-# }
+    # 启动
+    await proxy.start()
+
+    # 获取状态快照
+    snapshot = await proxy.get_state_snapshot()
+    print(f"Step: {snapshot['step']}, Status: {snapshot['status']}")
+
+    # 获取事件流
+    events = await proxy.get_state_events()
+
+    # 暂停/恢复
+    await proxy.pause()
+    await proxy.start()
+
+    # 重置
+    await proxy.reset()
+
+    # 停止
+    await proxy.stop()
 ```
 
-### 从配置字典初始化
+### ExecutionStatus
 
 ```python
-# 准备配置数据（来自 JSON 文件）
-config = {
-    "id": "factory-001",
-    "name": "示例工厂",
-    "topology": {
-        "gridWidth": 20,
-        "gridHeight": 14,
-        "zones": [...],
-        "machines": {...},
-        "waypoints": {...}
-    },
-    "agvs": [...],
-    "jobs": [...],
-    "complexity": "standard"
-}
+from joint_sim.proxy import ExecutionStatus
 
-# 设置配置并初始化
-proxy.set_config(config)
-await proxy.initialize()
+class ExecutionStatus(str, Enum):
+    IDLE = "idle"          # 空闲
+    RUNNING = "running"    # 运行中
+    PAUSED = "paused"      # 已暂停
+    STOPPED = "stopped"    # 已停止
+    ERROR = "error"        # 错误
 ```
 
-### 生命周期控制
+### 代理方法
 
-```python
-# 启动执行
-await proxy.start()
-
-# 暂停执行
-await proxy.pause()
-
-# 重置环境
-await proxy.reset()
-
-# 停止执行
-await proxy.stop()
-
-# 清理资源
-await proxy.cleanup()
-
-# 检查状态
-if proxy.is_running():
-    print("正在运行")
-if proxy.is_paused():
-    print("已暂停")
-```
-
-### 获取状态快照
-
-```python
-# 获取状态快照（用于 SSE 推送）
-snapshot = await proxy.get_state_snapshot()
-# {
-#     'timestamp': 'T+100',
-#     'env_timeline': '100',
-#     'grid_state': {
-#         'positions_xy': [[x1, y1], [x2, y2], ...],
-#         'is_active': [True, False, ...]
-#     },
-#     'machines': {
-#         'M1': {'id': 'M1', 'status': 'WORKING', 'load': 2},
-#         ...
-#     },
-#     'agvs': [...],
-#     'jobs': [...],
-#     'summary': {...}
-# }
-
-# 获取指标快照
-metrics = await proxy.get_metrics_snapshot()
-
-# 获取控制状态
-status = await proxy.get_control_status()
-```
-
-### SSE 事件格式
-
-```python
-# 获取 SSE 事件
-state_events = await proxy.get_state_events()      # [('state', snapshot)]
-metrics_events = await proxy.get_metrics_events()  # [('metrics', metrics)]
-control_events = await proxy.get_control_events()  # [('control', status)]
-```
+| 方法 | 说明 |
+|------|------|
+| `set_config(config)` | 设置配置 |
+| `set_algorithm(algo)` | 设置算法 |
+| `initialize()` | 初始化环境 |
+| `start()` | 启动仿真 |
+| `pause()` | 暂停仿真 |
+| `reset()` | 重置环境 |
+| `stop()` | 停止仿真 |
+| `get_state_snapshot()` | 获取状态快照 |
+| `get_state_events()` | 获取状态事件队列 |
 
 ---
 
 ## JSON 配置加载
 
-### 配置文件格式
+### 配置文件结构
 
 ```json
 {
-    "id": "factory-001",
-    "name": "示例工厂",
-    "version": "1.0.0",
-    "description": "一个简单的工厂示例",
+    "id": "grid_factory",
+    "name": "测试产线",
+    "version": "1.2.0",
     "topology": {
         "gridWidth": 20,
         "gridHeight": 14,
-        "zones": [
-            {
-                "id": "zone-1",
-                "name": "工作区A",
-                "type": "workarea",
-                "area": {"x": 0, "y": 0, "w": 5, "h": 5},
-                "color": "#4CAF50"
-            }
-        ],
         "machines": {
-            "M1": {
-                "id": "M1",
-                "name": "机器1",
-                "location": [2, 3],
+            "MACHINE_1_1": {
+                "id": "TABLE_1_MACHINE_1",
+                "name": "PLC 1-2",
+                "location": [10, 6],
                 "size": [1, 1],
                 "status": "IDLE"
-            }
-        },
-        "waypoints": {
-            "dock-1": {
-                "id": "dock-1",
-                "type": "dock",
-                "location": [0, 0],
-                "name": "停靠点1"
             }
         }
     },
     "agvs": [
         {
             "id": 0,
-            "name": "AGV-0",
-            "initialLocation": [1, 1],
+            "name": "AGV-01",
+            "initialLocation": [5, 2],
             "velocity": 1.0,
-            "capacity": 100
+            "capacity": 100,
+            "status": "IDLE"
         }
     ],
-    "jobs": [
-        {
-            "job_id": 0,
-            "operations": [
-                {"machine_id": 0, "duration": 5},
-                {"machine_id": 1, "duration": 3}
-            ],
-            "arrival_time": 0
-        }
-    ]
+    "jobs": {
+        "job_list": [
+            {
+                "job_id": 0,
+                "name": "电池模组-A01",
+                "operations": [
+                    {"machine_id": 0, "duration": 5, "name": "涂胶"},
+                    {"machine_id": 1, "duration": 3, "name": "贴片"},
+                    {"machine_id": 2, "duration": 4, "name": "焊接"}
+                ],
+                "arrival_time": 0,
+                "due_time": 50,
+                "priority": 1
+            }
+        ]
+    }
 }
 ```
 
-### 加载配置
+### 配置解析
 
 ```python
 from joint_sim.io import (
-    load_factory_config,
-    to_factory_config,
-    to_factory_layout,
-    to_instance,
-    load_and_parse,
+    load_grid_factory_config,
+    parse_grid_config,
+    parse_machine_config,
+    parse_job_config,
+    create_env_from_config,
 )
 
-# 方式一：分步加载
-json_config = load_factory_config('factory.json')
-factory_config = to_factory_config(json_config, n_jobs=10)
-factory_layout = to_factory_layout(json_config)
-problem_instance = to_instance(json_config, complexity='standard')
+# 加载配置
+config = load_grid_factory_config("grid_factory.json")
 
-# 方式二：一步加载
-factory_config, factory_layout, problem_dict = load_and_parse('factory.json', n_jobs=10)
+# 解析各部分配置
+grid_config = parse_grid_config(config)
+machine_config, positions = parse_machine_config(config)
+job_config = parse_job_config(config, machine_config.num_machines)
 
-# 根据复杂度创建问题实例
-simple_instance = to_instance(json_config, complexity='simple')    # 无 docks, 无 zones
-standard_instance = to_instance(json_config, complexity='standard') # 无 docks, 有 zones
-full_instance = to_instance(json_config, complexity='full')        # 有 docks, 有 zones
+# 直接创建环境
+env = create_env_from_config("grid_factory.json")
+# 或使用字典
+env = create_env_from_config(config)
 ```
 
-### 配置类说明
+---
+
+## 算法配置
+
+### 可用算法
+
+| 类型 | 算法 | 说明 |
+|------|------|------|
+| JobSolver | `greedy` | 贪心调度 |
+| JobSolver | `best` | 最优调度 (OR-Tools) |
+| JobSolver | `priority` | 优先级调度 |
+| RouteSolver | `astar` | A* 路由 |
+| RouteSolver | `greedy` | 贪心路由 |
+| RouteSolver | `instant` | 即时路由 |
+| RouteSolver | `mapf_gpt` | GPT 路由 |
+| Assigner | `nearest` | 最近分配 |
+| Assigner | `random` | 随机分配 |
+| Assigner | `load_balance` | 负载均衡 |
+| Assigner | `greedy` | 贪心分配 |
+
+### 使用 Coordinator
 
 ```python
-from joint_sim.io import (
-    ZoneConfig,        # 区域配置
-    MachineConfig,     # 机器配置
-    WaypointConfig,    # 航点配置
-    AGVConfig,         # AGV 配置
-    OperationConfig,   # 操作配置
-    JobConfig,         # 工件配置
-    TopologyConfig,    # 拓扑配置
-    FactoryJSONConfig, # 完整工厂配置
+from joint_sim.component import Coordinator
+
+# 使用预设算法组合
+coordinator = Coordinator(
+    job_solver="greedy",
+    route_solver="astar",
+    assigner="nearest"
 )
+
+# 决策
+actions = coordinator.decide(observation)
+```
+
+### 预设算法组合
+
+```python
+from joint_sim.proxy import ALGORITHM_PRESETS
+
+# 可用预设
+presets = [
+    "greedy+astar+nearest",       # 贪心调度 + A*路由 + 最近分配
+    "best+astar+load_balance",    # 最优调度 + A*路由 + 负载均衡
+    "greedy+mapf_gpt+random",     # 贪心调度 + GPT路由 + 随机分配
+]
 ```
 
 ---
 
 ## 前端集成
 
-### 数据流
+### FastAPI 集成示例
 
-```
-ConfigPanel 上传配置
-    ↓
-store.loadConfigFromFile(config)
-    ↓
-设置 currentConfigId
-    ↓
-FactoryPlayerSSE 监听 currentConfigId
-    ↓
-configLoaded = true
-    ↓
-显示 FactoryVisualization
-    ↓
-使用 topologyConfig + currentState 渲染
-```
+```python
+from fastapi import FastAPI, WebSocket
+from joint_sim.proxy import GridFactoryProxy
 
-### SSE 连接示例
+app = FastAPI()
+proxy = GridFactoryProxy()
 
-```javascript
-// 连接 SSE 端点
-const eventSource = new EventSource('/api/factory/stream');
+@app.post("/factory/control/reset")
+async def reset_factory(config: dict):
+    proxy.set_config(config)
+    proxy.set_algorithm("greedy+astar+nearest")
+    await proxy.initialize()
+    return {"status": "initialized"}
 
-eventSource.addEventListener('state', (event) => {
-    const snapshot = JSON.parse(event.data);
-    // 更新可视化
-    updateVisualization(snapshot);
-});
+@app.post("/factory/control/play")
+async def play_factory():
+    await proxy.start()
+    return {"status": "running"}
 
-eventSource.addEventListener('metrics', (event) => {
-    const metrics = JSON.parse(event.data);
-    // 更新指标面板
-    updateMetrics(metrics);
-});
+@app.post("/factory/control/pause")
+async def pause_factory():
+    await proxy.pause()
+    return {"status": "paused"}
 
-eventSource.addEventListener('control', (event) => {
-    const status = JSON.parse(event.data);
-    // 更新控制状态
-    updateControlStatus(status);
-});
+@app.get("/stream/state")
+async def stream_state():
+    snapshot = await proxy.get_state_snapshot()
+    events = await proxy.get_state_events()
+    return {"snapshot": snapshot, "events": events}
 ```
 
-### 状态快照格式
+### WebSocket 状态推送
 
-```typescript
-interface StateSnapshot {
-    timestamp: string;       // "T+100"
-    env_timeline: string;    // "100"
-    grid_state: {
-        positions_xy: number[][];  // [[x1, y1], [x2, y2], ...]
-        is_active: boolean[];      // [true, false, ...]
-    };
-    machines: {
-        [key: string]: {
-            id: string;
-            position: number[];
-            status: string;
-            load: number;
-            queue_length: number;
-            current_job: number | null;
-        };
-    };
-    agvs: Array<{
-        id: number;
-        position: number[];
-        status: string;
-        is_active: boolean;
-        carrying: { job_id: number; op_index: number } | null;
-    }>;
-    active_transfers: Array<{
-        agv_id: number;
-        job_id: number;
-        from_op: number;
-        status: string;
-    }>;
-    jobs: Array<{
-        id: number;
-        status: string;
-        current_op_index: number;
-        is_completed: boolean;
-    }>;
-    summary: {
-        n_completed_jobs: number;
-        n_active_jobs: number;
-        n_idle_agvs: number;
-        n_idle_machines: number;
-        total_queue_length: number;
-    };
-}
+```python
+@app.websocket("/ws/state")
+async def websocket_state(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        events = await proxy.get_state_events()
+        if events:
+            await websocket.send_json(events)
+        await asyncio.sleep(0.1)
 ```
 
 ---
 
 ## 二次开发
 
-### 自定义调度器
+当前提供了多种内置算法，有些时候初次运行可能需要下载模型，请确保网络通畅
 
-```python
-from joint_sim.scheduler import Scheduler
-from joint_sim.entities import TransportRequest
-from joint_sim.state import FactoryState
+```bash 
+# 下载模型中：
+Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
+model-6M.pt:  82%|███████████████████████████████████████████████████████████▉             | 62.9M/76.6M [00:14<00:05, 2.70MB/s] 
 
-class MyScheduler(Scheduler):
-    def get_transport_requests(self, state: FactoryState) -> list[TransportRequest]:
-        """获取待分配的运输请求"""
-        requests = []
-        for job in state.jobs:
-            if job.status.value == 'waiting' and job.current_operation:
-                # 创建运输请求
-                requests.append(TransportRequest(
-                    job_id=job.job_id,
-                    from_machine=job.last_machine_id,
-                    to_machine=job.current_operation.machine_id,
-                    from_position=(0, 0),
-                    to_position=(0, 0),
-                    priority=job.total_remaining_time,
-                    request_time=state.time
-                ))
-        return requests
-
-# 使用自定义调度器
-sim.set_scheduler(MyScheduler())
 ```
 
-### 自定义路由器
+### 自定义 JobSolver
 
 ```python
-from joint_sim.router import Router, RoutePlan
-from joint_sim.entities import TransportRequest
-from joint_sim.state import FactoryState
+from joint_sim.component.JobSolver.template_solver.job_solver import JobSolver
 
-class MyRouter(Router):
-    def plan_routes(
-        self,
-        state: FactoryState,
-        requests: list[TransportRequest]
-    ) -> dict[int, RoutePlan]:
-        """规划 AGV 路径"""
-        plans = {}
+class MyJobSolver(JobSolver):
+    def solve(self, jobs, machines, **kwargs):
+        # 实现自定义调度逻辑
+        schedule = {}
+        for job in jobs:
+            for op in job.ops:
+                # 分配机器和时间
+                machine_id = self._select_machine(op, machines)
+                start_time = self._calc_start_time(machine_id)
+                schedule[(job.job_id, op.op_id)] = (machine_id, start_time)
+        return schedule
 
-        for agv in state.agvs:
-            if not agv.is_idle:
-                continue
-
-            # 选择最近的请求
-            best_request = None
-            best_distance = float('inf')
-
-            for req in requests:
-                dist = abs(agv.position[0] - req.from_position[0]) + \
-                       abs(agv.position[1] - req.from_position[1])
-                if dist < best_distance:
-                    best_distance = dist
-                    best_request = req
-
-            if best_request:
-                # 规划路径（使用 A* 等）
-                path = self._plan_path(state, agv.position, best_request.to_position)
-                if path:
-                    plans[agv.agv_id] = RoutePlan(
-                        agv_id=agv.agv_id,
-                        path=path,
-                        request=best_request
-                    )
-
-        return plans
-
-    def _plan_path(self, state, start, goal):
-        # 实现路径规划算法
-        pass
-
-# 使用自定义路由器
-sim.set_router(MyRouter())
+# 注册到工厂
+from joint_sim.component import JobSolverFactory
+JobSolverFactory.register("my_solver", MyJobSolver)
 ```
 
-### 从数据集加载地图
+### 自定义 RouteSolver
 
 ```python
-from joint_sim import FactoryConfig
+from joint_sim.component.RouteSolver.template_solver.route_solver import RouteSolver
 
-# 从 MAPF 数据集加载地图
-config = FactoryConfig.from_dataset(
-    map_name='random-32-32-10',
-    dataset_name='mapf_gpt',  # 或 'mapf_data'
-    n_machines=6,
-    n_agvs=3,
-    n_jobs=10,
-)
-
-sim = JointSimulation(config)
+class MyRouteSolver(RouteSolver):
+    def solve(self, tasks, agents, grid, **kwargs):
+        # 实现自定义路由逻辑
+        actions = {}
+        for agent_id, agent in enumerate(agents):
+            if agent.current_task:
+                actions[agent_id] = self._get_next_action(agent, grid)
+        return actions
 ```
 
-### 可视化定制
+### 自定义 Assigner
 
 ```python
-from joint_sim import SVGVisualizer, VisualizerConfig
+from joint_sim.component.Assigner.template_assigner.assigner import Assigner
 
-# 创建可视化器
-visualizer = SVGVisualizer(VisualizerConfig(
-    show_heatmap=True,
-    heatmap_decay=0.95,
-    cell_size=30,
-    margin=20,
-))
-
-# 渲染状态
-svg = visualizer.render(state)
-
-# 保存到文件
-visualizer.save(state, 'output.svg')
+class MyAssigner(Assigner):
+    def assign(self, tasks, agents, machines, **kwargs):
+        # 实现自定义分配逻辑
+        assignments = {}
+        for task in tasks:
+            agent_id = self._select_agent(task, agents)
+            assignments[task.task_id] = agent_id
+        return assignments
 ```
 
 ---
 
-## 相关链接
+## 数据结构
 
-- **GitHub 仓库**: <https://github.com/skyrimforest/SkyEngine>
-- **问题反馈**: <https://github.com/skyrimforest/SkyEngine/issues>
-- **维护者**: @SkyrimForest 吴昊
+### 核心类
+
+```python
+from joint_sim.utils import Operation, Job, Machine, RoutingTask, AGV
+
+# 工序
+op = Operation(
+    job_id=0,
+    op_id=0,
+    machine_options=[0, 1],
+    proc_time=5.0,
+    status="PENDING"
+)
+
+# 任务
+job = Job(
+    job_id=0,
+    ops=[op1, op2, op3],
+    release=0.0,
+    due=50.0
+)
+
+# 机器
+machine = Machine(
+    machine_id=0,
+    location=(10, 6)
+)
+
+# 路由任务
+task = RoutingTask(
+    task_id=0,
+    job_id=0,
+    op_id=0,
+    source=(5, 2),
+    destination=(10, 6),
+    ready_time=0.0
+)
+
+# AGV
+agv = AGV(
+    id=0,
+    pos=(5, 2),
+    current_task=None,
+    finished_tasks=[]
+)
+```
 
 ---
 
-## API 参考
+## 常见问题
 
-### 主要导出
-
-```python
-from joint_sim import (
-    # 仿真
-    JointSimulation,
-    create_simulation,
-
-    # 配置
-    FactoryConfig,
-    FactoryLayout,
-    generate_layout,
-    generate_jobs,
-
-    # 实体
-    Machine, Job, Operation, AGV,
-    TransportRequest, TransportTask,
-    MachineStatus, AGVStatus, JobStatus, JobLocationType,
-
-    # 状态
-    FactoryState,
-    SimulationSnapshot,
-
-    # 调度器
-    Scheduler,
-    GreedyScheduler,
-    RuleBasedScheduler,
-    RandomScheduler,
-
-    # 路由器
-    Router,
-    PrioritizedRouter,
-    SimpleRouter,
-    RandomRouter,
-    RoutePlan,
-
-    # 可视化
-    SVGVisualizer,
-    VisualizerConfig,
-
-    # 指标
-    Metrics,
-    MetricsCollector,
-
-    # Gym 环境
-    JointSimGymEnv,
-
-    # 问题定义
-    ProblemComplexity,
-    TransportTimeMode,
-    Position,
-    OperationSpec,
-    JobSpec,
-    MachineSpec,
-    DockSpec,
-    AGVSpec,
-    ZoneSpec,
-    JointSchedulingInstance,
-    SimpleJointInstance,
-    StandardJointInstance,
-    FullJointInstance,
-
-    # Proxy
-    GridFactoryProxy,
-    ExecutionStatus,
-)
-```
-
-### IO 模块
+### Q: 如何获取当前环境状态？
 
 ```python
-from joint_sim.io import (
-    ZoneConfig,
-    MachineConfig,
-    WaypointConfig,
-    AGVConfig,
-    OperationConfig,
-    JobConfig,
-    TopologyConfig,
-    FactoryJSONConfig,
-    load_factory_config,
-    to_factory_config,
-    to_factory_layout,
-    to_instance,
-    load_and_parse,
-)
+# 通过环境
+obs, info = env.reset()
+machines = env.init_machines
+jobs = env.init_jobs
+
+# 通过代理
+snapshot = await proxy.get_state_snapshot()
 ```
+
+### Q: 如何保存仿真动画？
+
+```python
+env = GridFactoryEnv()
+env.reset()
+
+# 运行仿真...
+
+# 保存动画
+env.pogema_env.save_animation("simulation.svg")
+```
+
+### Q: 如何处理多智能体动作？
+
+```python
+# 方式1: 字典
+actions = {0: 1, 1: 2, 2: 0, 3: 3}  # agent_id -> action
+
+# 方式2: 列表
+actions = [1, 2, 0, 3]  # 按顺序对应各智能体
+
+obs, rewards, terminated, truncated, info = env.step(actions)
+```
+
+---
+
+## 版本历史
+
+- **0.1.2** - 添加 Proxy 服务层，完善 IO 模块
+- **0.1.1** - 添加 JSON 配置加载
+- **0.1.0** - 初始版本
+
+---
+
+## 联系方式
+
+- **Author**: Skyrim Forestsea
+- **Email**: <hitskyrim@qq.com>
+- **GitHub**: <https://github.com/Skyrimforest/SkyEngine>

@@ -20,20 +20,12 @@
 
           <div class="scroll-box-container">
             <div class="factory-grid">
-              <div
-                v-for="factory in factories"
-                :key="factory.id"
-                class="factory-card"
-                @click="enterFactory(factory.id)"
-              >
+              <div v-for="factory in factories" :key="factory.id" class="factory-card"
+                @click="enterFactory(factory.id)">
                 <div class="card-image">
-                  <img
-                    :src="
-                      factory.image ||
-                      'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800'
-                    "
-                    :alt="factory.name"
-                  />
+                  <img :src="factory.image ||
+                    'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800'
+                    " :alt="factory.name" />
                   <div class="hover-overlay">
                     <span class="enter-btn">进入车间 →</span>
                   </div>

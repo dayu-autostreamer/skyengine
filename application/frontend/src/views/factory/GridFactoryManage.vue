@@ -32,7 +32,7 @@
               </option>
             </select>
             <button @click="handleExecutePlan" class="glass-btn primary" :disabled="isRunningTest" title="上传选中的方案">
-              🚀 上传
+              🚀 上传选中方案
             </button>
           </div>
         </div>

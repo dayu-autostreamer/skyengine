@@ -39,6 +39,7 @@ class FactoryProxyProtocol(Protocol):
     def set_config(self, config: dict) -> None: ...
     def set_algorithm(self, algorithm: str) -> None: ...
     def get_algorithm(self) -> str: ...
+    def get_initialized(self) -> Optional[bool]: ...
 
     # 生命周期方法
     async def initialize(self) -> None: ...
@@ -72,8 +73,8 @@ class BaseFactoryProxy:
 
     def __init__(self):
         # Execution State
-        self._status: ExecutionStatus = ExecutionStatus.IDLE
-        self._current_step: int = 0
+        self.status: ExecutionStatus = ExecutionStatus.IDLE
+        self.current_step: int = 0
         self._total_steps: int = 0
 
         # Data Streaming

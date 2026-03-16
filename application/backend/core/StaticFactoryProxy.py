@@ -206,9 +206,12 @@ class StaticFactoryProxy(BaseFactoryProxy):
         # Execution State
         self._current_step: int = 0
         self._total_steps: int = 55  # Default total steps for mock
-
+        self.initialized: Optional[bool] = False  # Track initialization state
     # ==================== Configuration Methods ====================
 
+    def get_initialized(self) -> Optional[bool]:
+        """Get initialization state"""
+        return self.initialized
     def set_config(self, config: dict):
         """Set factory configuration (not used for static proxy)"""
         # Static proxy doesn't need configuration
@@ -222,7 +225,7 @@ class StaticFactoryProxy(BaseFactoryProxy):
         self._control_queue = asyncio.Queue(maxsize=100)
         self._current_step = 0
         self._status = ExecutionStatus.IDLE
-
+        self.initialized = True  # Mark as initialized
     async def cleanup(self):
         """Cleanup factory resources"""
         # Stop if running

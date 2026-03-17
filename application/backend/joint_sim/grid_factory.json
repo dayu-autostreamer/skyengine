@@ -1,0 +1,253 @@
+{
+    "id": "grid_factory",
+    "name": "grid_factory测试产线",
+    "version": "1.2.0",
+    "createdAt": "2026-01-31",
+    "description": "测试grid_factory相关功能的配置文件。",
+    "topology": {
+        "gridWidth": 20,
+        "gridHeight": 14,
+        "zones": [],
+        "machines": {
+            "MACHINE_1_1": {
+                "id": "TABLE_1_MACHINE_1",
+                "name": "PLC 1-2",
+                "location": [
+                    10,
+                    6
+                ],
+                "size": [
+                    1,
+                    1
+                ],
+                "status": "IDLE"
+            },
+            "MACHINE_1_2": {
+                "id": "TABLE_1_MACHINE_2",
+                "name": "PLC 1-1",
+                "location": [
+                    10,
+                    9
+                ],
+                "size": [
+                    1,
+                    1
+                ],
+                "status": "IDLE"
+            },
+            "MACHINE_2_1": {
+                "id": "TABLE_2_MACHINE_1",
+                "name": "PLC 2-2",
+                "location": [
+                    16,
+                    6
+                ],
+                "size": [
+                    1,
+                    1
+                ],
+                "status": "IDLE"
+            },
+            "MACHINE_2_2": {
+                "id": "TABLE_2_MACHINE_2",
+                "name": "PLC 2-1",
+                "location": [
+                    16,
+                    9
+                ],
+                "size": [
+                    1,
+                    1
+                ],
+                "status": "IDLE"
+            }
+        },
+        "waypoints": {}
+    },
+    "agvs": [
+        {
+            "id": 0,
+            "name": "AGV-01",
+            "initialLocation": [
+                5,
+                2
+            ],
+            "velocity": 1.0,
+            "capacity": 100,
+            "status": "IDLE"
+        }
+    ],
+    "jobs": {
+        "_comment": "machine_id 映射: 0=MACHINE_1_1, 1=MACHINE_1_2, 2=MACHINE_2_1, 3=MACHINE_2_2",
+        "_machine_id_map": {
+            "0": "MACHINE_1_1",
+            "1": "MACHINE_1_2",
+            "2": "MACHINE_2_1",
+            "3": "MACHINE_2_2"
+        },
+        "job_list": [
+            {
+                "job_id": 0,
+                "name": "电池模组-A01",
+                "operations": [
+                    {
+                        "machine_id": 0,
+                        "duration": 5,
+                        "name": "涂胶"
+                    },
+                    {
+                        "machine_id": 1,
+                        "duration": 3,
+                        "name": "贴片"
+                    },
+                    {
+                        "machine_id": 2,
+                        "duration": 4,
+                        "name": "焊接"
+                    }
+                ],
+                "arrival_time": 0,
+                "due_time": 50,
+                "priority": 1
+            },
+            {
+                "job_id": 1,
+                "name": "电池模组-A02",
+                "operations": [
+                    {
+                        "machine_id": 1,
+                        "duration": 4,
+                        "name": "贴片"
+                    },
+                    {
+                        "machine_id": 2,
+                        "duration": 5,
+                        "name": "焊接"
+                    },
+                    {
+                        "machine_id": 3,
+                        "duration": 3,
+                        "name": "检测"
+                    }
+                ],
+                "arrival_time": 0,
+                "due_time": 60,
+                "priority": 1
+            },
+            {
+                "job_id": 2,
+                "name": "电池模组-B01",
+                "operations": [
+                    {
+                        "machine_id": 0,
+                        "duration": 6,
+                        "name": "涂胶"
+                    },
+                    {
+                        "machine_id": 2,
+                        "duration": 3,
+                        "name": "焊接"
+                    },
+                    {
+                        "machine_id": 1,
+                        "duration": 4,
+                        "name": "贴片"
+                    },
+                    {
+                        "machine_id": 3,
+                        "duration": 2,
+                        "name": "检测"
+                    }
+                ],
+                "arrival_time": 5,
+                "due_time": 70,
+                "priority": 2
+            },
+            {
+                "job_id": 3,
+                "name": "电池模组-B02",
+                "operations": [
+                    {
+                        "machine_id": 2,
+                        "duration": 4,
+                        "name": "焊接"
+                    },
+                    {
+                        "machine_id": 3,
+                        "duration": 5,
+                        "name": "检测"
+                    },
+                    {
+                        "machine_id": 0,
+                        "duration": 3,
+                        "name": "涂胶"
+                    }
+                ],
+                "arrival_time": 10,
+                "due_time": 80,
+                "priority": 2
+            },
+            {
+                "job_id": 4,
+                "name": "电池模组-C01",
+                "operations": [
+                    {
+                        "machine_id": 1,
+                        "duration": 5,
+                        "name": "贴片"
+                    },
+                    {
+                        "machine_id": 0,
+                        "duration": 4,
+                        "name": "涂胶"
+                    },
+                    {
+                        "machine_id": 3,
+                        "duration": 6,
+                        "name": "检测"
+                    }
+                ],
+                "arrival_time": 15,
+                "due_time": 90,
+                "priority": 3
+            }
+        ]
+    },
+    "renderConfig": {
+        "baseGridSize": 40,
+        "gridWidth": 20,
+        "gridHeight": 14,
+        "colors": {
+            "background": "#ECEFF1",
+            "grid": "#CFD8DC",
+            "dock": "#1565C0",
+            "dock_inner": "#42A5F5",
+            "dock_text": "#FFF",
+            "route": "#4CAF50",
+            "route_text": "#FFF",
+            "agv": "#FF5722",
+            "agv_stroke": "#FFF",
+            "machine_working": "#FFD700",
+            "machine_idle": "#90EE90",
+            "machine_broken": "#F44336",
+            "machine_maintenance": "#FF9800",
+            "machine_stroke": "#333",
+            "zone_restricted": "rgba(255, 235, 59, 0.15)",
+            "zone_restricted_line": "rgba(255, 152, 0, 1)",
+            "zone_workbench": "rgba(0, 20, 150, 0.5)",
+            "zone_workbench_line": "rgba(33, 150, 243, 1)",
+            "zone_obstacle": "rgba(0, 20, 150, 0.5)",
+            "zone_obstacle_line": "rgba(33, 150, 243, 0.5)",
+            "zone_workarea": "rgba(76, 175, 80, 0.3)",
+            "zone_workarea_line": "rgba(76, 175, 80, 1)",
+            "boundary": "rgba(100, 100, 100, 0.3)"
+        }
+    },
+    "metadata": {
+        "gridUnit": "米（假设每个网格 = 1m）",
+        "agvCapacity": 100,
+        "machineCount": 4,
+        "waypointCount": 12,
+        "notes": "这是一个示例配置文件。请根据实际需求修改机器位置、AGV初始位置、路径点等信息。"
+    }
+}

@@ -24,7 +24,6 @@ uv add joint-sim
 ```
 
 > 如果搜索不到，请清理缓存：uv cache clean
-> 当前在项目中预留提供了源代码版本
 
 或使用 pip：
 

@@ -386,15 +386,17 @@ async def switch_factory_proxy(factory_id: str = Body(..., embed=True)):
         try:
             current_factory_proxy = ProxyFactory.create(factory_type)
 
-            # todo fix 不成立，因为现在工厂代理的初始化是异步的，需要上传config之后才能init.不能在这里直接调用 initialize 方法
-            # await current_factory_proxy.initialize()
-
-            # 注册后端路由
-            RouteRegistry.register_to_app(app)
-            print(f"✅ 已注册 {len(RouteRegistry.get_routes())} 条后端路由")
-
-            print("✅ PacketFactoryProxy 已初始化并注册所有路由")
-            print(f"📋 可用路由列表：{list(RouteRegistry.get_routes().keys())}")
+            # todo 
+            if factory_type == "packet_factory":
+                # todo fix 不成立，因为现在工厂代理的初始化是异步的，需要上传config之后才能init.不能在这里直接调用 initialize 方法
+                await current_factory_proxy.initialize()
+                
+                # 注册后端路由
+                RouteRegistry.register_to_app(app)
+                print(f"✅ 已注册 {len(RouteRegistry.get_routes())} 条后端路由")
+                
+                print("✅ PacketFactoryProxy 已初始化并注册所有路由")
+                print(f"📋 可用路由列表：{list(RouteRegistry.get_routes().keys())}")
         except ValueError as e:
             return {"status": "error", "message": str(e)}
 

@@ -269,7 +269,7 @@ export function normalizeConfig(config) {
     version: config.version || '1.0.0',
     createdAt: config.createdAt || new Date().toISOString().split('T')[0],
     description: config.description || '',
-    
+
     topology: {
       zones: config.topology?.zones || [],
       machines: config.topology?.machines || {},
@@ -277,7 +277,7 @@ export function normalizeConfig(config) {
       gridWidth: config.topology?.gridWidth || 20,
       gridHeight: config.topology?.gridHeight || 14
     },
-    
+
     agvs: (config.agvs || []).map(agv => ({
       id: agv.id,
       name: agv.name || `AGV-${agv.id}`,
@@ -286,7 +286,10 @@ export function normalizeConfig(config) {
       capacity: agv.capacity || 100,
       status: agv.status || 'IDLE'
     })),
-    
+
+    // 保留 jobs 配置
+    jobs: config.jobs || { job_list: [] },
+
     renderConfig: {
       baseGridSize: config.renderConfig?.baseGridSize || 40,
       gridWidth: config.renderConfig?.gridWidth || config.topology?.gridWidth || 20,

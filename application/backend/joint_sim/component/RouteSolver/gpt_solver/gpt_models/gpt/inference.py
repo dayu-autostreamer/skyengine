@@ -173,7 +173,12 @@ class MAPFGPTInference:
         num_agents = len(observations)
         moves = {(0, 0): "w", (-1, 0): "u", (1, 0): "d", (0, -1): "l", (0, 1): "r"}
         if self.cost2go_data is None:
-            global_obs = observations[0]["global_obstacles"].copy().astype(int).tolist()
+            obstacles = observations[0]["global_obstacles"]
+            # 兼容 list 和 ndarray 两种类型
+            if isinstance(obstacles, list):
+                global_obs = obstacles
+            else:
+                global_obs = obstacles.copy().astype(int).tolist()
             self.cost2go_data = cost2go.precompute_cost2go(
                 global_obs, self.cfg.cost2go_radius
             )

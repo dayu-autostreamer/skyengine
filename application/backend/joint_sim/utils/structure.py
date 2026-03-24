@@ -98,6 +98,11 @@ class JobConfig(BaseModel):
     machine_choices: int = 2  # 每个工序可选机器数
     total_machines: int = 5  # 机器总数，用于分配 machine_options
     seed: int = 42  # 随机种子
+    strategy: str = "random"
+    # 新增：自定义Job列表 (strategy="custom" 时使用)
+    # 格式: List[Job] -> Job = List[(machine_options, proc_time)]
+    # 例如: [[([0, 1], 5), ([2], 3)], [[0], 4)] 表示两个 Job
+    custom_jobs: Optional[List[List[Tuple[List[int], int]]]] = None
 
 
 @dataclass

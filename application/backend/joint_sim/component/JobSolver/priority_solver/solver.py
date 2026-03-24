@@ -100,7 +100,7 @@ class GreedyJobSolver(JobSolver):
         self.time_stamp = self.time_stamp + 1
         jobs = obs["jobs"]
         machines = obs["machines"]
-
+        print("machines:", machines)
         # === 第一次调用,初始化计划 ===
         if not self.initialized:
             print(

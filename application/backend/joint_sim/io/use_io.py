@@ -52,10 +52,10 @@ def parse_grid_config(config: Dict[str, Any]) -> GridConfig:
 
     grid_width = topology.get("gridWidth", 20)
     grid_height = topology.get("gridHeight", 20)
-    
+
     if grid_width != grid_height:
         raise ValueError("gridWidth 和 gridHeight 必须相等")
-    
+
     num_agents = len(agvs)
 
     # 获取 AGV 初始位置
@@ -73,7 +73,9 @@ def parse_grid_config(config: Dict[str, Any]) -> GridConfig:
         obs_radius=5,
         on_target="restart",
         agents_xy=agents_start_xy if agents_start_xy else None,
-        targets_xy=agents_start_xy if agents_start_xy else None,  # 初始目标和起始位置相同
+        targets_xy=(
+            agents_start_xy if agents_start_xy else None
+        ),  # 初始目标和起始位置相同
     )
 
 
@@ -109,9 +111,11 @@ def parse_job_config(config: Dict[str, Any], num_machines: int) -> JobConfig:
     Returns:
         JobConfig 实例
     """
+    print(f"正在解析任务配置...{config}")
     jobs = config.get("jobs", {})
+    print(f"已解析任务配置，任务参数：\n{jobs}")
     job_list = jobs.get("job_list", [])
-
+    print(f"已解析任务配置，任务参数：\n{job_list}")
     if not job_list:
         # 如果没有任务，使用默认配置
         return JobConfig(
@@ -125,17 +129,29 @@ def parse_job_config(config: Dict[str, Any], num_machines: int) -> JobConfig:
             seed=42,
         )
 
+    # 解析 custom_jobs 格式: List[List[(machine_options, proc_time)]]
+    custom_jobs: List[List[Tuple[List[int], int]]] = []
+    all_durations = []
+
+    for job in job_list:
+        job_ops: List[Tuple[List[int], int]] = []
+        for op in job.get("operations", []):
+            machine_id = op.get("machine_id", 0)
+            duration = op.get("duration", 1)
+            # machine_options 是一个列表（支持多机器选择）
+            machine_options = (
+                [machine_id] if isinstance(machine_id, int) else machine_id
+            )
+            job_ops.append((machine_options, duration))
+            all_durations.append(duration)
+        custom_jobs.append(job_ops)
+
     # 计算工序数量的范围
-    ops_counts = [len(job.get("operations", [])) for job in job_list]
+    ops_counts = [len(job_ops) for job_ops in custom_jobs]
     min_ops = min(ops_counts) if ops_counts else 1
     max_ops = max(ops_counts) if ops_counts else 1
 
     # 计算处理时间的范围
-    all_durations = []
-    for job in job_list:
-        for op in job.get("operations", []):
-            all_durations.append(op.get("duration", 1))
-
     min_proc = min(all_durations) if all_durations else 1
     max_proc = max(all_durations) if all_durations else 1
 
@@ -148,6 +164,8 @@ def parse_job_config(config: Dict[str, Any], num_machines: int) -> JobConfig:
         machine_choices=1,  # JSON 中已指定机器
         total_machines=num_machines,
         seed=42,
+        strategy="custom",
+        custom_jobs=custom_jobs,
     )
 
 
@@ -167,16 +185,17 @@ def create_env_from_config(
     # 1. 按类型划分逻辑，加载/验证配置
     if isinstance(config_path, str):
         config = load_grid_factory_config(config_path)
-        print(f"成功从路径 {config_path} 加载配置")
+        # print(f"成功从路径 {config_path} 加载配置")
 
     elif isinstance(config_path, dict):
         config = config_path
-        print("直接使用传入的配置字典")
+        # print("直接使用传入的配置字典")
 
     else:
-        print(
-            f"config_path 必须是 str（文件路径）或 dict（配置字典），但收到 {type(config_path).__name__} 类型"
-        )
+        pass
+        # print(
+        #     f"config_path 必须是 str（文件路径）或 dict（配置字典），但收到 {type(config_path).__name__} 类型"
+        # )
 
     # 2. 解析配置
     grid_cfg = parse_grid_config(config)

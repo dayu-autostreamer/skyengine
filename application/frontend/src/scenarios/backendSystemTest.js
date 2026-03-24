@@ -56,6 +56,7 @@ export async function backendSystemTest(factoryStore, monitorStore, data, onFini
     monitorStore.clear();
     factoryStore.isPlaying = true; // 开启播放状态，让 Store 知道我们在进行实时更新
 
+    let cnt = 0;
 
     // 通过SSE获得agvFrame和machineFrame
     const stateUrl = getApiUrl(API_ROUTES.STREAM_STATE);
@@ -63,24 +64,25 @@ export async function backendSystemTest(factoryStore, monitorStore, data, onFini
         eventTypes: ['state'],  // 监听的事件类型
         eventHandlers: {
             // 处理快照事件 - 添加到缓冲队列
+
             state: (data) => {
                 console.log('[SSE] Received state:', data);
 
+
+                // 检查是否是有效状态（不是 idle/no_factory/error）
+                if (data.status === 'idle' || data.status === 'no_factory' || data.status === 'error') {
+                    console.log('[SSE] 跳过无效状态:', data.status);
+                    cnt += 1;
+                    return;
+                }
                 // 检查是否完成
-                if (data.status === 'finished' || data.status === 'stopped') {
+                if (cnt >= 5 || data.status === 'finished' || data.status === 'stopped') {
                     // 运行完成，断开连接
                     console.log('[backendSystemTest] 仿真完成');
                     cleanup();
                     if (onFinish) onFinish();
                     return;
                 }
-
-                // 检查是否是有效状态（不是 idle/no_factory/error）
-                if (data.status === 'idle' || data.status === 'no_factory' || data.status === 'error') {
-                    console.log('[SSE] 跳过无效状态:', data.status);
-                    return;
-                }
-
                 // 添加到缓冲队列（带去重）
                 factoryStore.pushSnapshot(data.frame);
 

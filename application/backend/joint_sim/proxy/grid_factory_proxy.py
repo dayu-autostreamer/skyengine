@@ -74,11 +74,12 @@ class GridFactoryProxy:
     # ====================================
 
     def set_config(self, config: dict) -> None:
+        print(f"[GridFactoryProxy] 设置 config: {config}")
         self._config = config
 
     def set_algorithm(self, algorithm: str) -> None:
         self._algorithm = algorithm
-        print(f"Algorithm set to: {self._algorithm}")
+        # print(f"Algorithm set to: {self._algorithm}")
 
     def get_algorithm(self) -> str:
         return self._algorithm
@@ -106,7 +107,7 @@ class GridFactoryProxy:
             route_solver=route_algo,  # RouteSolverFactory.create(route_algo),
             assigner=assign_algo,  # AssignerFactory.create(assign_algo)
         )
-
+        # 之前 reset的时候把自定义的设定全清了，现在使用预定配置
         obs, info = self.env.reset()
 
         self.inner_properties["obs"] = obs
@@ -178,6 +179,7 @@ class GridFactoryProxy:
         while self.status == ExecutionStatus.RUNNING:
 
             obs = self.inner_properties["obs"]
+            # print(f"[GridFactoryProxy] obs:{obs}")
 
             actions = self.coordinator.decide(obs)
 
@@ -198,13 +200,19 @@ class GridFactoryProxy:
                 self.status = ExecutionStatus.STOPPED
 
             frame = self._build_frame()
-            print(f"[GridFactoryProxy] Step {self.current_step}: Frame built {frame}")
-            frame_hash = hash(json.dumps(frame, sort_keys=True))
+            # print(f"[GridFactoryProxy] Step {self.current_step}: Frame built {frame}")
+            # 只检测 AGV 位置是否停滞
+            positions_hash = hash(
+                json.dumps(frame["grid_state"]["positions_xy"], sort_keys=True)
+            )
 
-            self.latest_frames.append(frame_hash)
-            # 检查frame，如果连续10帧一直命中缓存达3次，发送finished
+            self.latest_frames.append(positions_hash)
+            # 检查 AGV 位置，如果最近10帧中相同位置出现>=3次，认为停滞
             counter = Counter(self.latest_frames)
-            if counter[frame_hash] >= 3:
+            if counter[positions_hash] >= 3:
+                print(
+                    f"[GridFactoryProxy] AGV 位置停滞检测触发，位置hash={positions_hash}"
+                )
                 self.status = ExecutionStatus.STOPPED
 
             await self._state_queue.put(
@@ -225,7 +233,7 @@ class GridFactoryProxy:
         events = []
         while not self._state_queue.empty():
             events.append(await self._state_queue.get())
-        print(f"[GridFactoryProxy] 状态事件: {len(events)}")
+        # print(f"[GridFactoryProxy] 状态事件: {len(events)}")
         return events
 
     async def get_metrics_events(self) -> list:

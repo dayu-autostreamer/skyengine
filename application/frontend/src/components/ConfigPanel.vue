@@ -364,6 +364,13 @@ function downloadTemplate() {
           size: [2, 2],
           status: 'IDLE',
         },
+        MACHINE_2: {
+          id: 'MACHINE_2',
+          name: '机器 02',
+          location: [10, 5],
+          size: [2, 2],
+          status: 'IDLE',
+        },
       },
       waypoints: {
         WP_1: { location: [1, 1], type: 'dock', name: '上货点' },
@@ -387,6 +394,22 @@ function downloadTemplate() {
         status: 'IDLE',
       },
     ],
+    // 任务配置示例
+    jobs: {
+      job_list: [
+        {
+          job_id: 0,
+          name: '示例任务-01',
+          operations: [
+            { machine_id: 0, duration: 5, name: '工序1-加工' },
+            { machine_id: 1, duration: 3, name: '工序2-组装' },
+          ],
+          arrival_time: 0,
+          due_time: 50,
+          priority: 1,
+        },
+      ],
+    },
     renderConfig: {
       baseGridSize: 40,
       colors: {},

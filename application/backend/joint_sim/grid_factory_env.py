@@ -154,7 +154,7 @@ class GridFactoryEnv(ParallelEnv):
         """
         LOGGER.info("[GridFactoryEnv] 初始化 Job 层任务...")
 
-        self.job_config = self._create_default_job_config()
+        # self.job_config = self._create_default_job_config()
         jobs = generate_jobs(self.job_config)
 
         return jobs

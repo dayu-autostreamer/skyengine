@@ -34,11 +34,11 @@ ALGORITHM_PRESETS = [
     #     "value": "best+astar+load_balance",
     #     "description": "最优调度 + A*路由 + 负载均衡",
     # },
-    {
-        "label": "贪心调度 + GPT路由 + 随机分配",
-        "value": "greedy+mapf_gpt+random",
-        "description": "贪心调度 + GPT路由 + 随机分配",
-    },
+    # {
+    #     "label": "贪心调度 + GPT路由 + 随机分配",
+    #     "value": "greedy+mapf_gpt+random",
+    #     "description": "贪心调度 + GPT路由 + 随机分配",
+    # },
 ]
 
 

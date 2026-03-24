@@ -61,6 +61,9 @@ def parse_grid_config(config: Dict[str, Any]) -> GridConfig:
     # 获取 AGV 初始位置
     agents_start_xy = [tuple(agv["initialLocation"]) for agv in agvs]
 
+    # 注意：Grid 类要求 agents_xy 和 targets_xy 同时存在才会使用配置的位置
+    # 否则会走到 else 分支随机生成位置，导致 initialLocation 被覆盖
+    # 在 LifeLong 模式下，初始目标可以和起始位置相同（后续会被实际任务目标覆盖）
     return GridConfig(
         size=max(grid_width, grid_height),
         num_agents=num_agents,
@@ -70,6 +73,7 @@ def parse_grid_config(config: Dict[str, Any]) -> GridConfig:
         obs_radius=5,
         on_target="restart",
         agents_xy=agents_start_xy if agents_start_xy else None,
+        targets_xy=agents_start_xy if agents_start_xy else None,  # 初始目标和起始位置相同
     )
 
 

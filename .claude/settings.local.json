@@ -12,7 +12,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git rebase:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(find /e/Project/GroupWork/skyengine/application/frontend -type f \\\\\\(-name *.js -o -name *.vue -o -name *.ts \\\\\\))"
     ]
   }
 }

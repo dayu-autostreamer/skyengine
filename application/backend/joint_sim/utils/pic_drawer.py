@@ -10,9 +10,7 @@ from pogema import AnimationConfig
 import re
 
 
-def refactor_drawing_render(
-    svg_content, possible_color="#FFD700", current_color="#FFA500"
-):
+def refactor_drawing_render(svg_content, possible_color="#FFD700", current_color="#FFA500"):
     """
     输入 SVG 字符串，输出重构后的 SVG 字符串：
     - 修改 style：删除 .target 类，添加 possible_target 和 current_target
@@ -187,6 +185,9 @@ def draw_svg_with_machines_and_targets(
         svg_objects.append(obj)
 
     # 当前激活目标
+    #   1. 第 189-203 行：当前激活目标从 agent_states[0].get_target_xy() 获取，这是 pogema history 中记录的目标
+    #   2. 第 131-140 行：从 full_history 中找到 step <= timeline 的最后状态
+
     gh: GridHolder = grid_holder
     for agent_idx, agent_states in enumerate(gh.history):
         tx, ty = agent_states[0].get_target_xy()

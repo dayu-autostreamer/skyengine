@@ -59,10 +59,21 @@ class NearestAssigner(Assigner):
             nearest_task = min(available_tasks, key=calc_distance)
             available_tasks.remove(nearest_task)
             
-            # 分配目标机器位置
-            if nearest_task.destination is None and machines:
+            # [修复] 正确设置任务目标位置
+            # 根据 candidate_machines 选择目标机器
+            if nearest_task.candidate_machines:
+                valid_machines = [m for m in machines if m.id in nearest_task.candidate_machines]
+                if valid_machines:
+                    # 选择距离源位置最近的候选机器
+                    def machine_dist(m):
+                        return abs(agent_pos[0] - m.location[0]) + abs(agent_pos[1] - m.location[1])
+                    target_machine = min(valid_machines, key=machine_dist)
+                    nearest_task.destination = target_machine.location
+                elif machines:
+                    nearest_task.destination = machines[0].location
+            elif machines:
                 nearest_task.destination = machines[0].location
-            
+
             assignments[agv_id] = nearest_task
 
         return {"assignments": assignments, "pending_transfers": available_tasks}

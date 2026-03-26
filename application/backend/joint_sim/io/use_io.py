@@ -73,9 +73,7 @@ def parse_grid_config(config: Dict[str, Any]) -> GridConfig:
         obs_radius=5,
         on_target="restart",
         agents_xy=agents_start_xy if agents_start_xy else None,
-        targets_xy=(
-            agents_start_xy if agents_start_xy else None
-        ),  # 初始目标和起始位置相同
+        targets_xy=(agents_start_xy if agents_start_xy else None),  # 初始目标和起始位置相同
     )
 
 
@@ -139,9 +137,7 @@ def parse_job_config(config: Dict[str, Any], num_machines: int) -> JobConfig:
             machine_id = op.get("machine_id", 0)
             duration = op.get("duration", 1)
             # machine_options 是一个列表（支持多机器选择）
-            machine_options = (
-                [machine_id] if isinstance(machine_id, int) else machine_id
-            )
+            machine_options = [machine_id] if isinstance(machine_id, int) else machine_id
             job_ops.append((machine_options, duration))
             all_durations.append(duration)
         custom_jobs.append(job_ops)
@@ -169,9 +165,7 @@ def parse_job_config(config: Dict[str, Any], num_machines: int) -> JobConfig:
     )
 
 
-def create_env_from_config(
-    config_path: str | dict, random_target: bool = False
-) -> GridFactoryEnv:
+def create_env_from_config(config_path: str | dict, random_target: bool = False) -> GridFactoryEnv:
     """
     从配置文件创建 GridFactoryEnv 环境
 
@@ -245,10 +239,14 @@ if __name__ == "__main__":
 
     coordinator = Coordinator()
     # 测试多次步进
-    for i in range(150):
+    for i in range(50):
         actions = coordinator.decide(obs)
 
         obs, rewards, terminations, truncations, infos = env.step(actions)
+
+        print(f"步进 {i + 1}: 状态 {terminations}")
+        if terminations["job_done"]:
+            break
 
         res = draw_svg_with_machines_and_targets(env.pogema_env, env.env_timeline)
         makedirs("temp", exist_ok=True)

@@ -72,11 +72,10 @@ export async function backendSystemTest(factoryStore, monitorStore, data, onFini
                 // 检查是否是有效状态（不是 idle/no_factory/error）
                 if (data.status === 'idle' || data.status === 'no_factory' || data.status === 'error') {
                     console.log('[SSE] 跳过无效状态:', data.status);
-                    cnt += 1;
                     return;
                 }
                 // 检查是否完成
-                if (cnt >= 5 || data.status === 'finished' || data.status === 'stopped') {
+                if (data.status === 'finished' || data.status === 'stopped') {
                     // 运行完成，断开连接
                     console.log('[backendSystemTest] 仿真完成');
                     cleanup();

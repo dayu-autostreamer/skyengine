@@ -159,7 +159,15 @@ class GridFactoryProxy:
                 "is_active": [agv.current_task is not None for agv in agv_list],
             },
             "machines": [
-                {"id": m.id, "location": list(m.location), "current_op": m.current_op}
+                {
+                    "id": m.id,
+                    "location": list(m.location),
+                    "current_op": (
+                        (m.current_op.job_id, m.current_op.op_id)
+                        if m.current_op
+                        else None
+                    ),
+                }
                 for m in pogema.machines
             ],
             "active_transfers": [
@@ -185,6 +193,8 @@ class GridFactoryProxy:
 
             obs, rewards, terminations, truncations, infos = self.env.step(actions)
 
+            print(f"步进 {self.current_step + 1}: 状态 {terminations}")
+
             res = draw_svg_with_machines_and_targets(
                 self.env.pogema_env, self.env.env_timeline
             )
@@ -196,32 +206,22 @@ class GridFactoryProxy:
 
             self.current_step += 1
 
-            if self.current_step > self._max_steps:
+            if self.current_step > self._max_steps or terminations["job_done"]:
+                # 最后一轮直接结束
                 self.status = ExecutionStatus.STOPPED
-
+                state = ("state", {"status": self.status.name, "frame": None})
+                metric = ("metrics", {"status": self.status.name, "reward": rewards})
+                return
+            
             frame = self._build_frame()
-            # print(f"[GridFactoryProxy] Step {self.current_step}: Frame built {frame}")
-            # 只检测 AGV 位置是否停滞
-            positions_hash = hash(
-                json.dumps(frame["grid_state"]["positions_xy"], sort_keys=True)
-            )
 
-            self.latest_frames.append(positions_hash)
-            # 检查 AGV 位置，如果最近10帧中相同位置出现>=3次，认为停滞
-            counter = Counter(self.latest_frames)
-            if counter[positions_hash] >= 3:
-                print(
-                    f"[GridFactoryProxy] AGV 位置停滞检测触发，位置hash={positions_hash}"
-                )
-                self.status = ExecutionStatus.STOPPED
+            state = ("state", {"status": self.status.name, "frame": frame})
+            metric = ("metrics", {"status": self.status.name, "reward": rewards})
 
-            await self._state_queue.put(
-                ("state", {"status": self.status.name, "frame": frame})
-            )
-            # metrics
-            await self._metrics_queue.put(
-                ("metrics", {"status": self.status.name, "reward": rewards})
-            )
+            print(f"[GridFactoryProxy] 发送状态事件: {state}")
+            print(f"[GridFactoryProxy] 发送指标事件: {metric}")
+            await self._state_queue.put(state)
+            await self._metrics_queue.put(metric)
 
             await asyncio.sleep(0.5)
 

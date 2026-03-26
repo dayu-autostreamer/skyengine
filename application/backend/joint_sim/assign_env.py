@@ -47,9 +47,7 @@ class PogemaLifeLongWithAssign(PogemaLifeLong):
         self.buffered_tasks: List[RoutingTask] = []
 
         # AGV相关的路由信息
-        self.agv_current_task: List[Union[RoutingTask, None]] = [
-            None
-        ] * self.grid_config.num_agents
+        self.agv_current_task: List[Union[RoutingTask, None]] = [None] * self.grid_config.num_agents
         self.agv_finished_tasks: List[List[RoutingTask]] = [
             [] for _ in range(self.grid_config.num_agents)
         ]
@@ -103,9 +101,7 @@ class PogemaLifeLongWithAssign(PogemaLifeLong):
 
         for idx in range(self.grid_config.num_agents):
             if self.padding_init_request and self.grid_config.possible_targets_xy:
-                self.grid.finishes_xy[idx] = random.choice(
-                    self.grid_config.possible_targets_xy
-                )
+                self.grid.finishes_xy[idx] = random.choice(self.grid_config.possible_targets_xy)
                 self.agv_current_task[idx] = None
             else:
                 self.grid.finishes_xy[idx] = self.grid.positions_xy[idx]
@@ -230,9 +226,7 @@ class PogemaLifeLongWithAssign(PogemaLifeLong):
                 if hash_ops_completed and job.completion_time == -1:
                     job.completion_time = self.env_timeline
                     if self.debug_mode:
-                        print(
-                            f"  - [SUCCESS] Job {job.job_id} finished at {self.env_timeline}"
-                        )
+                        print(f"  - [SUCCESS] Job {job.job_id} finished at {self.env_timeline}")
 
                 # 注意：这里不从 activated_machines 移除
                 # 下一次循环会检查 input_queue，如果有新任务则继续，没有则移除
@@ -243,9 +237,12 @@ class PogemaLifeLongWithAssign(PogemaLifeLong):
             self.pending_transfers = new_transfers
 
         rewards = {}
-        terminations = {}
         truncations = {}
         infos = {}
+
+        # 检查是否所有 job 已完成，持续返回终止信号
+        terminations = self.job_all_done()
+
         observations = {
             "jobs": self.jobs,
             "machines": self.machines,
@@ -326,6 +323,37 @@ class PogemaLifeLongWithAssign(PogemaLifeLong):
                         self.activated_machines.append(target_machine)
                         # 注意：不需要重置 machine_process_time，因为它是休眠状态，应该是0
 
+                    #   Step 9 分析：
+                    #   - AGV 到达目标 (10, 6)，卸货完成
+                    #   - buffered_tasks 中有 2 个任务，dest 是 (1, 0) 和 (2, 0)（错误格式）
+                    #   - Assigner 分配 None
+
+                    #   Step 12 才分配新任务，延迟了 3 步！
+
+                    #   问题根因：
+                    #   1. machine_process() 在 AGV 卸货之前被调用（第 288 行）
+                    #   2. AGV 卸货后，Op 0 被放入 input_queue
+                    #   3. 但 machine_process() 已经执行过了，Op 0 的状态还没更新为 "FINISHED"
+                    #   4. 所以 Op 1 的物理约束检查失败，任务还在 buffered_tasks 中
+                    #   5. 直到下一个 step，machine_process() 处理 Op 0，状态才更新
+
+                    #   解决方案：在 AGV 卸货后，如果机器空闲且 input_queue 有任务，应该立即处理，让 Op 状态更新，这样后续任务的物理约束检查才能通过。
+                    # [修复] 立即处理机器一步，让 Operation 状态更新
+                    # 这样后续任务的物理约束检查才能通过
+                    if target_machine.current_op is None and target_machine.input_queue:
+                        target_machine.current_op = target_machine.input_queue.pop(0)
+                        self.machine_process_time[target_machine.id] = 0
+                        # 如果加工时间为 0，立即完成
+                        if target_machine.current_op.proc_time <= 0:
+                            hash_op = (
+                                target_machine.current_op.job_id,
+                                target_machine.current_op.op_id,
+                            )
+                            real_op_now = self.hash_operations[hash_op]
+                            real_op_now.status = "FINISHED"
+                            real_op_now.finish_process_at = self.env_timeline
+                            target_machine.current_op = None
+
                     # 记录任务完成
                     self.agv_finished_tasks[agent_idx].append(current_transfer)
                     if current_transfer in self.active_transfers:
@@ -334,9 +362,7 @@ class PogemaLifeLongWithAssign(PogemaLifeLong):
                 else:
                     # 如果到达的不是机器位置（异常情况），可能需要LogError或者暂时忽略
                     if self.debug_mode:
-                        print(
-                            f"[WARNING] Agent {agent_idx} arrived at {pos} but no machine found."
-                        )
+                        print(f"[WARNING] Agent {agent_idx} arrived at {pos} but no machine found.")
 
             # --- Case B: AGV 空闲分配新任务 ---
             if self.agv_current_task[agent_idx] is None:
@@ -347,6 +373,13 @@ class PogemaLifeLongWithAssign(PogemaLifeLong):
                         )
                     continue
 
+                # [修复] 优先使用 assignments，如果没有则从 transfers_to_assign 中获取 这个修复是错的。
+                # new_transfer = assignments.get(agent_idx)
+                # if new_transfer is None and self.transfers_to_assign:
+                #     # 从待分配列表中取出第一个任务
+                #     new_transfer = self.transfers_to_assign.pop(0)
+
+                # if new_transfer is not None:
                 if assignments.get(agent_idx) is not None:
                     new_transfer = assignments[agent_idx]
                     new_transfer.assign_time = self.env_timeline

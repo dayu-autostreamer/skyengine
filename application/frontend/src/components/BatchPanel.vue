@@ -115,8 +115,13 @@
             <span class="hint">{{ logs.length }} 行</span>
           </div>
           <div ref="logBoxRef" class="log-box">
-            <div v-for="l in logs" :key="l.id" class="log-line" :class="{ err: l.isErr }">
-              <span class="log-ep" v-if="l.epTag">{{ l.epTag }}</span>
+            <div
+              v-for="l in logs"
+              :key="l.id"
+              class="log-line"
+              :class="{ err: l.isErr }"
+              v-memo="[l.text, l.isErr]"
+            >
               {{ l.text }}
             </div>
             <div v-if="!logs.length" class="log-empty">（暂无日志，启动后此处实时显示 run.py stdout）</div>
@@ -230,7 +235,7 @@ const status = reactive({
 const logs = shallowRef([])
 const results = ref([])
 const logBoxRef = ref(null)
-const MAX_LOG_LINES = 300
+const MAX_LOG_LINES = 5000
 
 // 日志节流：高频 SSE 日志（每秒可能上百行）先入 buffer，定时批量 flush 到 logs
 // 否则每行触发一次响应式 + DOM patch，第 2 个 episode logs 突破 2000 后会卡死浏览器
@@ -242,17 +247,18 @@ const LOG_FLUSH_BATCH = 200     // 单次最多 flush 多少行（防极端 burs
 
 function _makeLogEntry(text) {
   const lower = text.toLowerCase()
-  const epIdx = text.indexOf('ep#')
   return {
     id: ++_logIdCounter,                              // 稳定 key，splice 不会引起整体重渲染
-    text,
-    isErr: lower.includes('error'),                   // 预计算，模板直接读
-    epTag: epIdx >= 0 ? text.slice(epIdx, epIdx + 5) : '',
+    text,                                             // 已含 "[ep#N] xxx" 前缀，不再单独抽 epTag
+    isErr: lower.includes('error') || lower.includes('traceback'),  // 预计算，模板直接读
   }
 }
 
 function _flushLogs() {
-  if (_logBuffer.length === 0) return
+  if (_logBuffer.length === 0) {
+    _logFlushTimer = null  // 关键：buffer 空时清掉 timer id，下次 pushLog 才能重新调度
+    return
+  }
   const take = _logBuffer.splice(0, Math.min(_logBuffer.length, LOG_FLUSH_BATCH))
   const next = logs.value.concat(take)
   // 超容量时整体裁剪一次（构造新数组，避免 in-place splice 引起 key 大幅迁移）
@@ -263,9 +269,11 @@ function _flushLogs() {
   nextTick(() => {
     if (logBoxRef.value) logBoxRef.value.scrollTop = logBoxRef.value.scrollHeight
   })
-  // buffer 还有剩余 → 立即再排一帧
+  // buffer 还有剩余 → 立即再排一帧；空了就置 null，否则后续 pushLog 不会调度新 timer
   if (_logBuffer.length > 0) {
     _logFlushTimer = setTimeout(_flushLogs, LOG_FLUSH_INTERVAL)
+  } else {
+    _logFlushTimer = null
   }
 }
 
@@ -380,6 +388,9 @@ function openStream() {
     status.done = true
     running.value = false
     pushLog(`========== 批处理完成：${d.completed}/${d.total}${d.cancelled ? '（已取消）' : ''} ==========`)
+    // 强制把残留 buffer 全部 flush 出来（防止最后一段日志卡在 buffer 里）
+    if (_logFlushTimer != null) { clearTimeout(_logFlushTimer); _logFlushTimer = null }
+    _flushLogs()
     closeStream()
   })
 
@@ -389,6 +400,8 @@ function openStream() {
     running.value = false
     pushLog(`[ERROR] ${d.message}`)
     ElMessage.error('批处理异常：' + d.message)
+    if (_logFlushTimer != null) { clearTimeout(_logFlushTimer); _logFlushTimer = null }
+    _flushLogs()
     closeStream()
   })
 

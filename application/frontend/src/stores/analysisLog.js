@@ -23,7 +23,22 @@ import { ref, computed } from 'vue'
 import { apiGet, apiPost, apiDelete, API_ROUTES } from '@/utils/api'
 import { STATIC_FACTORY_CONFIG } from '@/scenarios/fullSystemTest'
 
-const SCHEMA_VERSION = '1.0'
+const SCHEMA_VERSION = '1.1'
+
+export function collectInsertionRequests(frames, explicit = []) {
+  const records = new Map()
+  for (const record of explicit || []) {
+    if (record?.request_id) records.set(record.request_id, record)
+  }
+  for (const frame of frames || []) {
+    for (const record of frame?.insertion_requests || []) {
+      if (record?.request_id) records.set(record.request_id, record)
+    }
+  }
+  return [...records.values()].sort((a, b) =>
+    Number(a.accepted_step ?? 0) - Number(b.accepted_step ?? 0),
+  )
+}
 
 /**
  * 派生 summary（永远重算，外部 JSON 自带的 summary 字段一律忽略）。
@@ -49,6 +64,7 @@ export function computeSummary(frames, metricsTimeline, events) {
     acc[t] = (acc[t] || 0) + 1
     return acc
   }, {})
+  const insertionRequests = collectInsertionRequests(frames)
 
   return {
     total_steps: frames.length,
@@ -57,6 +73,9 @@ export function computeSummary(frames, metricsTimeline, events) {
     avg_utilization: avgUtilization,
     event_total: events.length,
     event_counts: eventCounts,
+    insertion_count: insertionRequests.length,
+    insertion_completed: insertionRequests.filter((record) => record.phase === 'completed').length,
+    insertion_failed: insertionRequests.filter((record) => record.phase === 'failed').length,
   }
 }
 
@@ -174,6 +193,7 @@ export const useAnalysisLogStore = defineStore('analysisLog', () => {
     const frames = JSON.parse(JSON.stringify(factoryStore.historyBuffer || []))
     const metricsTimeline = JSON.parse(JSON.stringify(monitorStore.metricsTimeline || []))
     const events = JSON.parse(JSON.stringify(monitorStore.eventQueue || monitorStore.events || []))
+    const insertionRequests = collectInsertionRequests(frames)
 
     const factoryId = canonicalFactoryId(
       meta.factory_id || factoryStore.selectedFactoryId || 'unknown',
@@ -198,6 +218,7 @@ export const useAnalysisLogStore = defineStore('analysisLog', () => {
       frames,
       metricsTimeline,
       events,
+      insertionRequests,
       summary: computeSummary(frames, metricsTimeline, events),
     }
 
@@ -231,6 +252,7 @@ export const useAnalysisLogStore = defineStore('analysisLog', () => {
       frames: payload.frames,
       metricsTimeline: payload.metricsTimeline,
       events: payload.events,
+      insertionRequests: collectInsertionRequests(payload.frames, payload.insertionRequests),
       // summary 由后端重算（C13：永远派生）
     }
 

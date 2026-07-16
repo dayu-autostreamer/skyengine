@@ -1,404 +1,247 @@
 <template>
   <div class="job-insert-panel">
-    <!-- 上传区 -->
-    <div
-      class="drop-zone"
-      :class="{ active: isDragging }"
-      @click="triggerFileInput"
-      @dragover.prevent="isDragging = true"
-      @dragleave.prevent="isDragging = false"
-      @drop.prevent="handleDrop"
-    >
-      <input
-        ref="fileInputRef"
-        type="file"
-        accept=".json,application/json"
-        style="display: none"
-        @change="handleFileSelect"
-      />
-      <div class="drop-content">
-        <span class="drop-icon">📂</span>
-        <p class="drop-title">拖拽 FJSP 文件到此处</p>
-        <p class="drop-hint">或点击选择 .json（如 dataset/fjsp/J10P5M6.json）</p>
+    <div class="mode-tabs" role="tablist">
+      <button :class="{ active: mode === 'quick' }" @click="mode = 'quick'">快速插单</button>
+      <button :class="{ active: mode === 'json' }" @click="mode = 'json'">JSON 批量上传</button>
+    </div>
+
+    <div v-if="disabledReason" class="notice">{{ disabledReason }}</div>
+
+    <form v-if="mode === 'quick'" class="quick-form" @submit.prevent="submitQuick">
+      <div class="form-grid">
+        <label>订单名称<input v-model.trim="quick.name" maxlength="40" required /></label>
+        <label>优先级
+          <select v-model.number="quick.priority">
+            <option :value="100">高（不抢占）</option><option :value="200">特急（可暂停非特急）</option>
+          </select>
+        </label>
+        <label title="从插单请求受理时的仿真 step 开始计算">相对交期（受理后 step）
+          <input v-model.number="quick.dueInSteps" type="number" min="1" placeholder="可选" />
+        </label>
+      </div>
+
+      <div class="section-head">
+        <span>工序</span><button type="button" class="small-btn" @click="addOperation">+ 添加工序</button>
+      </div>
+      <div v-for="(op, opIndex) in quick.operations" :key="op.id" class="operation-block">
+        <div class="operation-title">
+          <strong>工序 {{ opIndex + 1 }}</strong>
+          <button v-if="quick.operations.length > 1" type="button" class="icon-btn" title="删除工序" @click="removeOperation(opIndex)">x</button>
+        </div>
+        <div class="candidate-header"><span></span><span>候选设备</span><span>加工时间（step）</span></div>
+        <div class="candidate-list">
+          <label v-for="machine in machineOptions" :key="machine.id" class="candidate-row">
+            <input v-model="op.selected" type="checkbox" :value="machine.id" />
+            <span>{{ machine.name }}</span>
+            <input v-model.number="op.times[machine.id]" type="number" min="1" step="1" :disabled="!op.selected.includes(machine.id)" />
+          </label>
+        </div>
+      </div>
+      <button class="primary-btn" :disabled="submitDisabled" type="submit">{{ submitting ? '提交中...' : '提交紧急订单' }}</button>
+    </form>
+
+    <div v-else class="json-pane">
+      <div class="drop-zone" :class="{ active: isDragging }" @click="fileInputRef?.click()"
+           @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false" @drop.prevent="handleDrop">
+        <input ref="fileInputRef" type="file" accept=".json,application/json" hidden @change="handleFileSelect" />
+        <strong>选择或拖入 FJSP v2 JSON</strong>
+        <span>最多 20 个 Job，每个 Job 最多 20 道工序</span>
+      </div>
+      <div v-if="parseError" class="result error">{{ parseError }}</div>
+      <div v-if="parsed" class="file-summary">
+        <span>{{ parsed.jobs.length }} Jobs</span><span>{{ parsed.machines }} 台机器</span>
+        <span>{{ parsed.jobs.reduce((n, job) => n + job.length, 0) }} 道工序</span>
+      </div>
+      <div class="action-row">
+        <button class="primary-btn" :disabled="submitDisabled || !parsed" @click="submitBody(parsed)">{{ submitting ? '提交中...' : '提交批量插单' }}</button>
+        <button class="ghost-btn" :disabled="submitting" @click="resetJson">清空</button>
       </div>
     </div>
 
-    <!-- 解析结果 -->
-    <template v-if="parseError">
-      <div class="result-box error">
-        <span class="result-icon">❌</span>
-        <div>
-          <div class="result-title">文件解析失败</div>
-          <div class="result-detail">{{ parseError }}</div>
-        </div>
-      </div>
-    </template>
+    <div v-if="lastResult" class="result" :class="lastResult.status">
+      <strong>{{ lastResult.status === 'ok' ? '已受理' : lastResult.status === 'partial' ? '部分受理' : '提交失败' }}</strong>
+      <span>{{ lastResult.message || (lastResult.request_id ? `请求 ${lastResult.request_id}` : '') }}</span>
+      <span v-for="item in lastResult.rejected || []" :key="item.index">Job {{ item.index }}：{{ item.reason || item.message }}</span>
+    </div>
 
-    <template v-else-if="parsed">
-      <div class="section-title">解析结果</div>
-      <div class="stat-grid">
-        <div class="stat">
-          <span class="stat-k">Jobs</span>
-          <span class="stat-v">{{ parsed.jobs.length }}</span>
+    <div class="records">
+      <div class="section-head"><span>本次运行插单记录</span><span class="count">{{ insertionRecords.length }}</span></div>
+      <div v-if="!insertionRecords.length" class="empty">暂无插单记录</div>
+      <article v-for="record in insertionRecords" :key="record.request_id" class="record">
+        <div class="record-head">
+          <strong>{{ record.inserted?.map(item => item.name).join('、') || record.request_id }}</strong>
+          <span class="phase" :class="record.phase">{{ phaseLabel(record.phase) }}</span>
         </div>
-        <div class="stat">
-          <span class="stat-k">文件机器数</span>
-          <span class="stat-v">{{ parsed.machines ?? '—' }}</span>
+        <div class="meta">
+          <span>{{ record.request_id }}</span><span>Job {{ record.job_ids?.join(', ') }}</span><span>step {{ record.accepted_step }}</span>
+          <span v-if="record.revision">版本 {{ record.revision }}</span><span v-if="record.latency_ms != null">{{ Math.round(record.latency_ms) }} ms</span>
         </div>
-        <div class="stat">
-          <span class="stat-k">当前工厂机器数</span>
-          <span class="stat-v">{{ factoryMachineCount }}</span>
+        <div class="timeline">
+          <span v-for="phase in phases" :key="phase" :class="{ reached: reachedPhase(record, phase) }">{{ phaseLabel(phase) }}</span>
         </div>
-        <div class="stat">
-          <span class="stat-k">候选机器分布</span>
-          <span class="stat-v small">min={{ candidateDist.min }}, max={{ candidateDist.max }}, avg={{ candidateDist.avg }}</span>
-        </div>
-      </div>
-
-      <!-- 机器数不匹配警告 -->
-      <div v-if="machineMismatch" class="warning-bar">
-        ⚠️ 文件机器数({{ parsed.machines }})与当前工厂({{ factoryMachineCount }})不匹配，提交后端将拒绝
-      </div>
-
-      <!-- Job 列表预览(前 5) -->
-      <div class="section-title">Job 列表预览(前 5)</div>
-      <div class="job-preview-list">
-        <div v-for="(job, i) in parsed.jobs.slice(0, 5)" :key="i" class="job-preview-row">
-          <span class="job-idx">[{{ i }}]</span>
-          <span class="job-ops">ops={{ job.length }}</span>
-          <span class="job-cands">
-            候选=[{{ job.map(op => op.length).join(', ') }}]
-          </span>
-        </div>
-        <div v-if="parsed.jobs.length > 5" class="job-preview-more">
-          ...共 {{ parsed.jobs.length }} 个 job
-        </div>
-      </div>
-
-      <!-- 提交按钮 -->
-      <div class="action-row">
-        <button
-          class="primary-btn"
-          :disabled="submitting"
-          @click="submit"
-        >
-          {{ submitting ? '提交中...' : `提交插单 (${parsed.jobs.length} jobs)` }}
-        </button>
-        <button class="ghost-btn" :disabled="submitting" @click="reset">清空</button>
-      </div>
-    </template>
-
-    <!-- 上次结果 -->
-    <template v-if="lastResult">
-      <div class="section-title">上次结果</div>
-      <div class="result-box" :class="lastResult.status">
-        <div class="result-row">
-          <span class="result-icon">
-            {{ lastResult.status === 'ok' ? '✅' : lastResult.status === 'partial' ? '⚠️' : '❌' }}
-          </span>
-          <span class="result-title">
-            {{ statusText(lastResult.status) }}
-          </span>
-        </div>
-        <div v-if="lastResult.inserted?.length" class="result-detail">
-          已插入：job_id = {{ insertedRange }}
-          <span class="muted">({{ lastResult.inserted.length }} 个)</span>
-        </div>
-        <div v-if="lastResult.rejected?.length" class="result-detail">
-          拒绝：{{ lastResult.rejected.length }} 个
-          <ul class="rejected-list">
-            <li v-for="(r, i) in lastResult.rejected" :key="i">
-              job[{{ r.index }}]: {{ r.message }}
-            </li>
-          </ul>
-        </div>
-        <div v-if="lastResult.message" class="result-detail">{{ lastResult.message }}</div>
-      </div>
-    </template>
+        <div class="progress">工序进度 {{ recordProgress(record).done }}/{{ recordProgress(record).total }}</div>
+        <div v-if="record.error" class="failure">{{ record.error }}</div>
+      </article>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useFactoryStore } from '@/stores/factory'
 import { apiPost, API_ROUTES } from '@/utils/api'
 
+const props = defineProps({
+  isRunning: { type: Boolean, default: false },
+  algorithm: { type: String, default: '' },
+  supportsInsertion: { type: Boolean, default: false },
+})
 const store = useFactoryStore()
-
+const mode = ref('quick')
+const submitting = ref(false)
+const parsed = ref(null)
+const parseError = ref('')
+const lastResult = ref(null)
 const fileInputRef = ref(null)
 const isDragging = ref(false)
-const parsed = ref(null)        // { machines, jobs, extensions? }
-const parseError = ref('')
-const submitting = ref(false)
-const lastResult = ref(null)    // { status, inserted, rejected, message? }
+let operationId = 1
+const quick = reactive({ name: '', priority: 100, dueInSteps: null, operations: [] })
+const phases = ['queued', 'replanning', 'scheduled', 'transporting', 'processing', 'completed']
+const phaseOrder = Object.fromEntries(phases.map((phase, index) => [phase, index]))
 
-// 当前工厂机器数（从 topologyConfig 数 keys；可能为 0 表示未知）
-const factoryMachineCount = computed(() => {
-  const machines = store.currentTopologyConfig?.machines
-  if (!machines) return 0
-  return Object.keys(machines).length
+const machineOptions = computed(() => {
+  const live = Object.values(store.latestState?.machines || {})
+  if (live.length) return live.map((m, index) => ({ id: Number(m.runtime_id ?? m.id ?? index), name: m.display_name || m.name || `M${index}` }))
+  return Object.values(store.currentTopologyConfig?.machines || {}).map((m, index) => ({ id: index, name: m.name || m.id || `M${index}` }))
 })
-
-const machineMismatch = computed(() => {
-  if (!parsed.value?.machines) return false
-  if (!factoryMachineCount.value) return false  // 当前工厂未知，不算冲突
-  return parsed.value.machines !== factoryMachineCount.value
+const insertionRecords = computed(() => store.currentState?.insertion_requests || [])
+const disabledReason = computed(() => {
+  if (!props.supportsInsertion) return '当前工厂不支持真实插单'
+  if (!props.isRunning) return '仿真启动后才可提交插单'
+  const parts = props.algorithm.toLowerCase().split('+')
+  if (parts[0] !== 'pso') return `当前 FJSP 算法为 ${parts[0] || '未知'}，第一版仅支持 PSO`
+  if (parts[2] !== 'nearest') return `当前指派器为 ${parts[2] || '未知'}，第一版仅支持 nearest`
+  return ''
 })
+const submitDisabled = computed(() => submitting.value || Boolean(disabledReason.value))
 
-// 候选机器分布
-const candidateDist = computed(() => {
-  if (!parsed.value?.jobs) return { min: 0, max: 0, avg: 0 }
-  const all = parsed.value.jobs.flat().map(op => op.length)
-  if (!all.length) return { min: 0, max: 0, avg: 0 }
-  const sum = all.reduce((a, b) => a + b, 0)
-  return {
-    min: Math.min(...all),
-    max: Math.max(...all),
-    avg: +(sum / all.length).toFixed(2),
-  }
-})
+function addOperation() {
+  const first = machineOptions.value[0]?.id
+  quick.operations.push({ id: operationId++, selected: first == null ? [] : [first], times: first == null ? {} : { [first]: 5 } })
+}
+function removeOperation(index) { quick.operations.splice(index, 1) }
+addOperation()
 
-const insertedRange = computed(() => {
-  const ids = (lastResult.value?.inserted || []).map(x => x.job_id).sort((a, b) => a - b)
-  if (!ids.length) return ''
-  if (ids.length === 1) return String(ids[0])
-  return `${ids[0]}..${ids[ids.length - 1]}`
-})
-
-function triggerFileInput() {
-  if (!parsed.value || parseError.value) fileInputRef.value?.click()
+function validateFjspBody(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('文件内容必须是 JSON 对象')
+  if (!Number.isInteger(data.machines) || data.machines <= 0) throw new Error('machines 必须是正整数')
+  if (data.machines !== machineOptions.value.length) throw new Error(`机器数应为 ${machineOptions.value.length}`)
+  if (!Array.isArray(data.jobs) || !data.jobs.length || data.jobs.length > 20) throw new Error('jobs 数量必须为 1~20')
+  data.jobs.forEach((job, jobIndex) => {
+    if (!Array.isArray(job) || !job.length || job.length > 20) throw new Error(`Job ${jobIndex} 的工序数必须为 1~20`)
+    job.forEach((op, opIndex) => {
+      if (!Array.isArray(op) || !op.length) throw new Error(`Job ${jobIndex} 工序 ${opIndex} 缺少候选机器`)
+      const seen = new Set()
+      op.forEach((alt) => {
+        if (!Number.isInteger(alt?.machine) || alt.machine < 0 || alt.machine >= data.machines) throw new Error(`Job ${jobIndex} 工序 ${opIndex} 的机器编号非法`)
+        if (seen.has(alt.machine)) throw new Error(`Job ${jobIndex} 工序 ${opIndex} 包含重复机器`)
+        if (typeof alt.processing !== 'number' || !Number.isFinite(alt.processing) || alt.processing <= 0) throw new Error(`Job ${jobIndex} 工序 ${opIndex} 的加工时间非法`)
+        seen.add(alt.machine)
+      })
+    })
+  })
+  const metadata = data.extensions?.job_metadata
+  if (metadata != null && (!Array.isArray(metadata) || metadata.length !== data.jobs.length)) throw new Error('job_metadata 必须与 jobs 一一对应')
+  return { machines: data.machines, jobs: data.jobs, extensions: data.extensions || {} }
 }
 
-function handleFileSelect(e) {
-  const file = e.target.files?.[0]
-  e.target.value = ''  // 允许重复选同一文件
-  if (file) readFile(file)
+function submitQuick() {
+  try {
+    if (!quick.name) throw new Error('请填写订单名称')
+    const jobs = [quick.operations.map((op, index) => {
+      if (!op.selected.length) throw new Error(`工序 ${index + 1} 至少选择一台候选机器`)
+      return op.selected.map((machine) => {
+        const processing = Number(op.times[machine])
+        if (!Number.isInteger(processing) || processing <= 0) throw new Error(`工序 ${index + 1} 的加工时间必须是正整数 step`)
+        return { machine, processing }
+      })
+    })]
+    const meta = { name: quick.name, priority: quick.priority }
+    if (quick.dueInSteps != null && quick.dueInSteps !== '') meta.due_in_steps = Number(quick.dueInSteps)
+    submitBody(validateFjspBody({ machines: machineOptions.value.length, jobs, extensions: { job_metadata: [meta] } }))
+  } catch (error) { ElMessage.error(error.message) }
 }
 
-function handleDrop(e) {
-  isDragging.value = false
-  const file = e.dataTransfer.files?.[0]
-  if (file) readFile(file)
+async function submitBody(body) {
+  if (submitDisabled.value || !body) return
+  submitting.value = true
+  try {
+    const response = await apiPost(API_ROUTES.FACTORY_CONTROL_INSERT_JOBS, body, { timeout: 30000 })
+    lastResult.value = response
+    if (response.status === 'ok') ElMessage.success('紧急订单已进入重规划队列')
+    else if (response.status === 'partial') ElMessage.warning('部分 Job 已进入重规划队列')
+    else ElMessage.error(response.message || '插单失败')
+  } catch (error) {
+    lastResult.value = { status: 'error', message: error.message, rejected: [] }
+    ElMessage.error('插单请求失败')
+  } finally { submitting.value = false }
 }
 
 function readFile(file) {
   parseError.value = ''
-  lastResult.value = null
   const reader = new FileReader()
   reader.onload = () => {
-    try {
-      const data = JSON.parse(reader.result)
-      const validated = validateFjspBody(data)
-      parsed.value = validated
-    } catch (e) {
-      parseError.value = `JSON 解析失败: ${e.message}`
-      parsed.value = null
-    }
+    try { parsed.value = validateFjspBody(JSON.parse(reader.result)) }
+    catch (error) { parsed.value = null; parseError.value = error.message }
   }
-  reader.onerror = () => {
-    parseError.value = '文件读取失败'
-    parsed.value = null
-  }
+  reader.onerror = () => { parsed.value = null; parseError.value = '文件读取失败' }
   reader.readAsText(file)
 }
-
-/** 轻量前端预校验，对齐后端 _parse_insert_body 语义。 */
-function validateFjspBody(data) {
-  if (!data || typeof data !== 'object') {
-    throw new Error('文件内容必须是 JSON 对象')
-  }
-  if (!Array.isArray(data.jobs) || data.jobs.length === 0) {
-    throw new Error('文件缺少 jobs 字段，或 jobs 为空（应为 FJSP 实例格式）')
-  }
-  // 顶层字段
-  return {
-    machines: typeof data.machines === 'number' ? data.machines : null,
-    jobs: data.jobs,
-    extensions: data.extensions || {},
-  }
-}
-
-async function submit() {
-  if (!parsed.value || submitting.value) return
-  submitting.value = true
-  try {
-    const body = {
-      jobs: parsed.value.jobs,
-    }
-    if (parsed.value.machines != null) body.machines = parsed.value.machines
-    if (parsed.value.extensions && Object.keys(parsed.value.extensions).length) {
-      body.extensions = parsed.value.extensions
-    }
-    const resp = await apiPost(API_ROUTES.FACTORY_CONTROL_INSERT_JOBS, body)
-    lastResult.value = resp
-    if (resp.status === 'ok') {
-      ElMessage.success(`已插单 ${resp.inserted?.length || 0} 个 job`)
-    } else if (resp.status === 'partial') {
-      ElMessage.warning(`部分成功：${resp.inserted?.length || 0} 入队，${resp.rejected?.length || 0} 拒绝`)
-    } else {
-      ElMessage.error(resp.message || '插单失败')
-    }
-  } catch (e) {
-    lastResult.value = { status: 'error', message: e.message || '网络错误', inserted: [], rejected: [] }
-    ElMessage.error('插单请求失败')
-  } finally {
-    submitting.value = false
-  }
-}
-
-function reset() {
-  parsed.value = null
-  parseError.value = ''
-  lastResult.value = null
-}
-
-function statusText(s) {
-  if (s === 'ok') return '提交成功'
-  if (s === 'partial') return '部分成功'
-  return '提交失败'
+function handleFileSelect(event) { const file = event.target.files?.[0]; event.target.value = ''; if (file) readFile(file) }
+function handleDrop(event) { isDragging.value = false; const file = event.dataTransfer.files?.[0]; if (file) readFile(file) }
+function resetJson() { parsed.value = null; parseError.value = ''; lastResult.value = null }
+function phaseLabel(phase) { return ({ queued: '排队', replanning: '重规划', scheduled: '已排程', transporting: '运输中', processing: '加工中', completed: '已完成', failed: '失败' })[phase] || phase }
+function reachedPhase(record, phase) { return record.phase === 'failed' ? (record.timeline || []).some(item => item.phase === phase) : phaseOrder[phase] <= (phaseOrder[record.phase] ?? -1) }
+function recordProgress(record) {
+  const ids = new Set(record.job_ids || [])
+  return (store.currentState?.jobs || []).filter(job => ids.has(job.job_id)).reduce((sum, job) => ({ done: sum.done + (job.progress?.done || 0), total: sum.total + (job.progress?.total || 0) }), { done: 0, total: 0 })
 }
 </script>
 
 <style scoped>
-.job-insert-panel {
-  padding: 12px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  font-size: 12px;
-}
-
-/* 拖拽区 */
-.drop-zone {
-  border: 1.5px dashed rgba(100, 180, 255, 0.3);
-  border-radius: 8px;
-  padding: 18px 12px;
-  text-align: center;
-  cursor: pointer;
-  background: rgba(20, 25, 45, 0.4);
-  transition: all 0.2s;
-}
-.drop-zone:hover, .drop-zone.active {
-  border-color: rgba(100, 180, 255, 0.6);
-  background: rgba(100, 180, 255, 0.08);
-}
-.drop-content { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.drop-icon { font-size: 24px; opacity: 0.7; }
-.drop-title { margin: 0; color: rgba(200, 220, 255, 0.9); font-weight: 500; }
-.drop-hint { margin: 0; font-size: 10px; color: rgba(160, 190, 230, 0.5); }
-
-/* 区块标题 */
-.section-title {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: rgba(100, 180, 255, 0.7);
-  border-top: 1px dashed rgba(255, 255, 255, 0.06);
-  padding-top: 8px;
-  margin-top: 4px;
-}
-
-/* 统计网格 */
-.stat-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
-}
-.stat-k { font-size: 10px; color: rgba(160, 190, 230, 0.6); }
-.stat-v { font-size: 13px; color: rgba(220, 230, 245, 0.95); font-weight: 600; font-variant-numeric: tabular-nums; }
-.stat-v.small { font-size: 11px; font-weight: 500; }
-
-/* 警告条 */
-.warning-bar {
-  padding: 6px 10px;
-  background: rgba(255, 180, 80, 0.12);
-  border: 1px solid rgba(255, 180, 80, 0.3);
-  border-radius: 4px;
-  color: #ffb450;
-  font-size: 11px;
-}
-
-/* job 预览列表 */
-.job-preview-list {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  max-height: 140px;
-  overflow-y: auto;
-}
-.job-preview-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 3px 6px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 3px;
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-}
-.job-idx { color: rgba(100, 180, 255, 0.9); font-weight: 600; min-width: 30px; }
-.job-ops { color: rgba(220, 230, 245, 0.85); }
-.job-cands { color: rgba(160, 190, 230, 0.7); font-size: 10px; }
-.job-preview-more {
-  font-size: 10px;
-  color: rgba(160, 190, 230, 0.5);
-  text-align: center;
-  padding: 2px;
-}
-
-/* 操作按钮 */
-.action-row { display: flex; gap: 6px; margin-top: 4px; }
-.primary-btn {
-  flex: 1;
-  padding: 8px 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.5), rgba(118, 75, 162, 0.5));
-  border: 1px solid rgba(102, 126, 234, 0.3);
-  border-radius: 6px;
-  color: rgba(220, 230, 245, 0.95);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.primary-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.7), rgba(118, 75, 162, 0.7));
-}
-.primary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.ghost-btn {
-  padding: 8px 14px;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: rgba(160, 190, 230, 0.7);
-  font-size: 12px;
-  cursor: pointer;
-}
-.ghost-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.05); }
-.ghost-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* 结果框 */
-.result-box {
-  padding: 8px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-}
-.result-box.ok { background: rgba(102, 208, 106, 0.08); border: 1px solid rgba(102, 208, 106, 0.2); }
-.result-box.partial { background: rgba(255, 180, 80, 0.08); border: 1px solid rgba(255, 180, 80, 0.2); }
-.result-box.error { background: rgba(255, 100, 100, 0.08); border: 1px solid rgba(255, 100, 100, 0.2); }
-.result-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-.result-icon { font-size: 14px; }
-.result-title { font-weight: 600; color: rgba(220, 230, 245, 0.95); }
-.result-detail { color: rgba(180, 200, 220, 0.85); margin-left: 20px; font-size: 10px; }
-.result-detail .muted { color: rgba(160, 190, 230, 0.5); margin-left: 4px; }
-.rejected-list { margin: 4px 0 0 16px; padding: 0; color: rgba(255, 180, 180, 0.85); }
-.rejected-list li { margin: 1px 0; }
+.job-insert-panel { display:flex; flex-direction:column; gap:12px; padding:12px 10px; color:#dce6f5; font-size:12px; }
+.mode-tabs { display:grid; grid-template-columns:1fr 1fr; border:1px solid rgba(130,160,195,.22); border-radius:6px; overflow:hidden; }
+.mode-tabs button { padding:8px; border:0; background:#172033; color:#91a6c2; cursor:pointer; }
+.mode-tabs button.active { background:#2d6f78; color:#fff; }
+.notice { padding:8px 10px; border-left:3px solid #d99b3d; background:rgba(217,155,61,.11); color:#f2c77f; }
+.quick-form,.json-pane { display:flex; flex-direction:column; gap:10px; }
+.form-grid { display:grid; grid-template-columns:2fr 1fr; gap:8px; }
+.form-grid label:last-child { grid-column:1 / -1; }
+label { display:flex; flex-direction:column; gap:4px; color:#9fb2ca; }
+input,select { box-sizing:border-box; min-width:0; padding:6px 7px; border:1px solid rgba(145,175,210,.22); border-radius:4px; background:#11192a; color:#e8eef7; }
+.section-head,.operation-title,.record-head,.meta,.action-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.section-head { padding-top:7px; border-top:1px solid rgba(255,255,255,.08); color:#7fc1c6; font-weight:600; }
+.small-btn,.icon-btn,.ghost-btn { border:1px solid rgba(145,175,210,.2); background:transparent; color:#aec1d8; border-radius:4px; cursor:pointer; }
+.small-btn { padding:4px 8px; }.icon-btn { width:24px; height:24px; }
+.operation-block { padding:8px; border:1px solid rgba(145,175,210,.14); border-radius:6px; background:rgba(17,25,42,.7); }
+.candidate-list { display:grid; gap:4px; margin-top:7px; }
+.candidate-header { display:grid; grid-template-columns:18px 1fr 76px; gap:7px; margin-top:7px; color:#70859f; font-size:10px; }
+.candidate-row { display:grid; grid-template-columns:18px 1fr 76px; align-items:center; gap:7px; }
+.candidate-row input[type=checkbox] { width:14px; height:14px; }
+.primary-btn { padding:8px 12px; border:1px solid #3d8f96; border-radius:5px; background:#28747a; color:white; font-weight:600; cursor:pointer; }
+.primary-btn:disabled,.ghost-btn:disabled { opacity:.4; cursor:not-allowed; }.ghost-btn { padding:8px 12px; }
+.drop-zone { display:flex; flex-direction:column; align-items:center; gap:5px; padding:22px 12px; border:1px dashed rgba(110,180,190,.45); border-radius:6px; background:#131d2e; cursor:pointer; }
+.drop-zone.active { border-color:#6fc4c9; background:#172b38; }.drop-zone span,.empty { color:#7f94ae; }
+.file-summary { display:flex; gap:12px; padding:8px; background:#151f31; }.action-row .primary-btn { flex:1; }
+.result { display:flex; flex-direction:column; gap:4px; padding:8px 10px; border-left:3px solid #6ba7b0; background:#141f31; }
+.result.error { border-color:#d66b6b; color:#f2aaaa; }.result.partial { border-color:#d6a34f; }
+.records { display:flex; flex-direction:column; gap:7px; }.count { min-width:20px; text-align:center; padding:1px 5px; border-radius:10px; background:#21364a; }
+.record { padding:9px; border:1px solid rgba(145,175,210,.15); border-radius:6px; background:#121b2b; }
+.record-head strong { overflow-wrap:anywhere; }.phase { padding:2px 6px; border-radius:3px; background:#29455b; white-space:nowrap; }.phase.completed { background:#28614d; }.phase.failed { background:#6b3035; }
+.meta { justify-content:flex-start; flex-wrap:wrap; margin-top:6px; color:#8498b1; font-size:10px; }
+.timeline { display:grid; grid-template-columns:repeat(6,1fr); gap:3px; margin-top:8px; }
+.timeline span { padding:3px 1px; text-align:center; color:#677b94; border-top:2px solid #29374a; font-size:9px; }.timeline span.reached { color:#a8d8db; border-color:#4ca0a7; }
+.progress { margin-top:7px; color:#a9b9cc; }.failure { margin-top:5px; color:#ef9b9b; overflow-wrap:anywhere; }
+@media (max-width:420px) { .form-grid { grid-template-columns:1fr; }.form-grid label:last-child { grid-column:auto; }.timeline { grid-template-columns:repeat(3,1fr); } }
 </style>

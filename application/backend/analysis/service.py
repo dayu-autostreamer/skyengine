@@ -28,7 +28,27 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
+
+
+def collect_insertion_requests(
+    frames: list | None,
+    explicit: list | None = None,
+) -> list:
+    records: dict[str, dict] = {}
+    for record in explicit or []:
+        if isinstance(record, dict) and record.get("request_id"):
+            records[str(record["request_id"])] = record
+    for frame in frames or []:
+        if not isinstance(frame, dict):
+            continue
+        for record in frame.get("insertion_requests") or []:
+            if isinstance(record, dict) and record.get("request_id"):
+                records[str(record["request_id"])] = record
+    return sorted(
+        records.values(),
+        key=lambda record: float(record.get("accepted_step") or 0),
+    )
 DEFAULT_ARCHIVE_DIR = Path("./dataset/run")
 
 # 文件名规范字符集（factory_id / algorithm / stem 都要满足）
@@ -74,6 +94,7 @@ def compute_summary(
     frames: list | None,
     metrics_timeline: list | None,
     events: list | None,
+    insertion_requests: list | None = None,
 ) -> dict:
     """从三流派生 summary。对外部 JSON 容错：缺失返回 0/null，不抛异常。"""
     frames = frames or []
@@ -100,6 +121,7 @@ def compute_summary(
             continue
         t = e.get("type") or "unknown"
         event_counts[t] = event_counts.get(t, 0) + 1
+    insertion_requests = collect_insertion_requests(frames, insertion_requests)
 
     return {
         "total_steps": len(frames),
@@ -108,6 +130,13 @@ def compute_summary(
         "avg_utilization": avg_utilization,
         "event_total": len(events),
         "event_counts": event_counts,
+        "insertion_count": len(insertion_requests),
+        "insertion_completed": sum(
+            1 for record in insertion_requests if record.get("phase") == "completed"
+        ),
+        "insertion_failed": sum(
+            1 for record in insertion_requests if record.get("phase") == "failed"
+        ),
     }
 
 
@@ -202,6 +231,7 @@ class AnalysisService:
         frames = payload.get("frames")
         metrics_timeline = payload.get("metricsTimeline")
         events = payload.get("events")
+        insertion_requests = payload.get("insertionRequests", [])
         # 三流必备校验（允许空数组，但不允许缺失）
         if frames is None or metrics_timeline is None or events is None:
             raise ValueError(
@@ -210,6 +240,9 @@ class AnalysisService:
         if not isinstance(frames, list) or not isinstance(metrics_timeline, list) \
                 or not isinstance(events, list):
             raise ValueError("frames / metricsTimeline / events must be arrays")
+        if not isinstance(insertion_requests, list):
+            raise ValueError("insertionRequests must be an array")
+        insertion_requests = collect_insertion_requests(frames, insertion_requests)
 
         factory_id = payload.get("factory_id") or "unknown"
         algorithm = payload.get("algorithm") or ""
@@ -231,7 +264,7 @@ class AnalysisService:
         run_id = final_stem
 
         # 重算 summary（永远派生，忽略外部 summary 字段）
-        summary = compute_summary(frames, metrics_timeline, events)
+        summary = compute_summary(frames, metrics_timeline, events, insertion_requests)
 
         # started_at / finished_at
         started_at = (frames[0].get("env_timeline") if frames else None) \
@@ -255,6 +288,7 @@ class AnalysisService:
             "frames": frames,
             "metricsTimeline": metrics_timeline,
             "events": events,
+            "insertionRequests": insertion_requests,
             "summary": summary,
         }
 

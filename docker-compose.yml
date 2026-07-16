@@ -25,8 +25,10 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - SKYENGINE_COMPOSE_PATH=/opt/skyengine/docker-compose-online.yaml
+      - SKYENGINE_BATCH_COMPOSE_PATH=/opt/skyengine/docker-compose-batch.yaml
       # SkyEngine 项目根目录 — 需在 .env 中设置 SKYENGINE_PROJECT_DIR
       - SKYENGINE_PROJECT_DIR=${SKYENGINE_PROJECT_DIR:?SKYENGINE_PROJECT_DIR not set}
+      - SKYENGINE_BATCH_DATASET_HOST_DIR=${SKYENGINE_BATCH_DATASET_HOST_DIR:?SKYENGINE_BATCH_DATASET_HOST_DIR not set}
       - ENGINE_URL=http://engine:8080
       - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
     networks:
@@ -50,6 +52,8 @@ services:
       - /app/node_modules
     environment:
       - PYTHONUNBUFFERED=1
+      # SkyEngine application backend 地址；容器内使用 Compose 服务名
+      - BACKEND_URL=${BACKEND_URL:-http://backend:8000}
       # RAG 后端地址 — 需在 .env 中设置 RAG_BACKEND_URL
       - RAG_BACKEND_URL=${RAG_BACKEND_URL:-http://backend:8000}
     depends_on:

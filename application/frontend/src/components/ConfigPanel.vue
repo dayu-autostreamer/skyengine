@@ -87,6 +87,8 @@
           </div>
         </div>
 
+        <slot name="data-source-extra"></slot>
+
         <!-- 生成 / 导出按钮 -->
         <div class="action-buttons">
           <el-button size="small" :disabled="!canGenerate && !isGenerating" @click="resetDataSource"> ✕ 重置</el-button>
@@ -230,7 +232,7 @@ import FactoryAssetPanel from './FactoryAssetPanel.vue'
 const store = useFactoryStore()
 
 // --- Emits (向上传递编辑模式状态) ---
-const emit = defineEmits(['edit-mode-change'])
+const emit = defineEmits(['edit-mode-change', 'config-loaded'])
 function onEditModeChange(val) {
   emit('edit-mode-change', val)
 }
@@ -330,6 +332,7 @@ function uploadConfig() {
 
       // 1. 加载到 Store（前端渲染）
       store.loadConfigFromFile(config)
+      emit('config-loaded', config)
 
       // 2. 上传到后端
       const response = await apiPost(API_ROUTES.FACTORY_CONFIG_UPLOAD, {
@@ -376,6 +379,7 @@ async function selectConfig(configId) {
   try {
     // 1. 更新本地 store
     store.setCurrentConfig(configId)
+    emit('config-loaded', config)
 
     // 2. 同步到后端
     const response = await apiPost(API_ROUTES.FACTORY_CONFIG_UPLOAD, {
@@ -460,14 +464,25 @@ function downloadTemplate() {
           job_id: 0,
           name: '示例任务-01',
           operations: [
-            { machine_id: 0, duration: 5, name: '工序1-加工' },
-            { machine_id: 1, duration: 3, name: '工序2-组装' },
+            { name: '工序1-加工', machine_options_with_time: [[0, 5], [1, 7]] },
+            { name: '工序2-组装', machine_options_with_time: [[1, 3], [0, 6]] },
           ],
           arrival_time: 0,
           due_time: 50,
           priority: 1,
         },
       ],
+    },
+    // 异常配置示例。使用 exception_config，避免和前端日志/状态事件 event 混淆。
+    exception_config: {
+      preset: 'no_event',
+    },
+    // 加工时间波动配置。不是 Exception；用于工序开始加工时采样实际加工时长。
+    processing_time_config: {
+      preset: 'none',
+    },
+    simulation_control: {
+      max_steps: 1000,
     },
     renderConfig: {
       baseGridSize: 40,
@@ -540,6 +555,7 @@ async function generateConfig() {
     store.factoryConfigs = {}
     store.reset()
     store.loadConfigFromFile(config)
+    emit('config-loaded', config)
     store.initializeAGVs()
     // 2. 上传到后端
     const response = await apiPost(API_ROUTES.FACTORY_CONFIG_UPLOAD, {

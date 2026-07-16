@@ -77,7 +77,7 @@
       </template>
 
       <template #tab-insert>
-        <JobInsertPanel />
+        <JobInsertPanel :is-running="false" :supports-insertion="false" />
       </template>
     </FactoryTabsPanel>
   </div>

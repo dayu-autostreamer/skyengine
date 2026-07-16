@@ -9,9 +9,16 @@ export default {
   unit: '%',
   series: (ctx) => {
     const metrics = ctx.metrics || []
-    return metrics.map((p) => ({
-      x: p.step,
-      y: Math.round(((p.metrics?.machine_utilization ?? 0) * 100) * 100) / 100,
-    }))
+    const data = metrics
+      .map((p, idx) => {
+        const raw = p?.metrics?.machine_utilization
+        if (typeof raw !== 'number') return null
+        return {
+          x: p?.step ?? idx,
+          y: Math.round(raw * 10000) / 100,
+        }
+      })
+      .filter(Boolean)
+    return [{ name: '机器利用率', data, color: '#66d06a' }]
   },
 }

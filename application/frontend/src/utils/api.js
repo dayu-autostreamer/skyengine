@@ -22,6 +22,8 @@ export const API_ROUTES = {
   FACTORY_CONTROL_SWITCH: "/factory/control/switch",
   FACTORY_CONTROL_DISCONNECT: "/factory/control/disconnect",
   FACTORY_CONTROL_INSERT_JOBS: "/factory/control/insert_jobs",
+  FACTORY_EXCEPTION_INJECT: "/factory/exception/inject",
+  FACTORY_EXCEPTION_CLEAR: "/factory/exception/clear",
 
   // 调度算法相关
   FACTORY_ALGORITHM_SET: "/factory/algorithm/set",

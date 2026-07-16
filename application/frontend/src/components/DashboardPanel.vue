@@ -56,6 +56,7 @@ const props = defineProps({
 const monitorStore = useMonitorStore()
 const factoryStore = useFactoryStore()
 const analysisLog = useAnalysisLogStore()
+const MAX_TREND_POINTS = 72
 
 // 归一化 ctx —— 实时模式 source=live，数据来自 monitorStore
 const ctx = computed(() => ({
@@ -84,6 +85,27 @@ function hookLabel(hookId) {
   return getHook(hookId)?.label || hookId
 }
 
+function compactSeries(series, aggregation = 'mean') {
+  const data = series?.data || []
+  if (data.length <= MAX_TREND_POINTS) return series
+
+  const pointCount = Math.min(MAX_TREND_POINTS, data.length)
+  const compacted = []
+  for (let bucket = 0; bucket < pointCount; bucket += 1) {
+    const start = Math.floor((bucket * data.length) / pointCount)
+    const end = Math.floor(((bucket + 1) * data.length) / pointCount)
+    const points = data.slice(start, Math.max(start + 1, end))
+    const last = points[points.length - 1]
+    const values = points.map((point) => point.y).filter(Number.isFinite)
+    if (!last || values.length === 0) continue
+    const y = aggregation === 'last'
+      ? last.y
+      : values.reduce((sum, value) => sum + value, 0) / values.length
+    compacted.push({ x: last.x, y: Number(y.toFixed(2)) })
+  }
+  return { ...series, data: compacted }
+}
+
 function safeSeries(card) {
   const hook = getHook(card.hook)
   if (!hook) {
@@ -92,7 +114,8 @@ function safeSeries(card) {
   }
   try {
     const r = hook.series(ctx.value)
-    return Array.isArray(r) ? r : []
+    if (!Array.isArray(r) || card.template !== 'line') return Array.isArray(r) ? r : []
+    return r.map((series) => compactSeries(series, card.aggregation || 'mean'))
   } catch (e) {
     console.warn(`[DashboardPanel] hook ${card.hook} error:`, e)
     return []

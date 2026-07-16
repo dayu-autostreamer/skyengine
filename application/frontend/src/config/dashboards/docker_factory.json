@@ -3,12 +3,13 @@
   "title": "容器化工厂 实时看板",
   "layout": "grid-2col",
   "cards": [
-    { "hook": "machine_util",   "template": "line", "title": "机器利用率",   "yMax": 100, "unit": "%" },
-    { "hook": "efficiency",     "template": "line", "title": "系统效率",     "yMax": 100, "unit": "%" },
-    { "hook": "agv_activity",   "template": "line", "title": "AGV 活动数" },
-    { "hook": "job_progress",   "template": "line", "title": "Job 完成进度" },
-    { "hook": "machine_load",   "template": "bar",  "title": "各机器负载",   "mode": "grouped" },
-    { "hook": "agv_stats",      "template": "line", "title": "AGV 综合指标", "multiSeries": true },
-    { "hook": "event_timeline", "template": "line", "title": "事件累计",     "multiSeries": true }
+    { "hook": "machine_util",   "template": "line", "title": "机器利用率",   "yMax": 100, "unit": "%", "aggregation": "mean" },
+    { "hook": "efficiency",     "template": "line", "title": "系统效率",     "yMax": 100, "unit": "%", "aggregation": "mean" },
+    { "hook": "agv_activity",   "template": "line", "title": "AGV 活动数", "aggregation": "mean" },
+    { "hook": "job_progress",   "template": "line", "title": "Job 完成进度", "aggregation": "last" },
+    { "hook": "machine_load",   "template": "horizontal-bar",  "title": "各机器队列负载", "unit": "任务数", "height": "300px" },
+    { "hook": "agv_stats",      "template": "line", "title": "AGV 综合指标", "multiSeries": true, "aggregation": "mean" },
+    { "hook": "exception_summary", "template": "line", "title": "异常累计", "multiSeries": true, "aggregation": "last" },
+    { "hook": "event_timeline", "template": "line", "title": "事件累计",     "multiSeries": true, "aggregation": "last" }
   ]
 }

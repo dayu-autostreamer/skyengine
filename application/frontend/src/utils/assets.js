@@ -34,11 +34,13 @@ export const MACHINE_SCREEN_EMISSIVE = 0x112244
 // ==================== AGV ====================
 export const AGV_ACTIVE_COLOR = 0x3a6ea5
 export const AGV_IDLE_COLOR = 0xaabbcc
+export const AGV_DOWN_COLOR = 0x884455
 export const AGV_FORK_COLOR = 0x667788
 export const AGV_WHEEL_COLOR = 0x333333
 export const AGV_ARROW_COLOR = 0x0099dd
 export const AGV_LIGHT_ACTIVE = 0x00e87b
 export const AGV_LIGHT_IDLE = 0x8899aa
+export const AGV_LIGHT_DOWN = 0xff2d55
 
 // ==================== 区域 ====================
 export const ZONE_COLORS = {

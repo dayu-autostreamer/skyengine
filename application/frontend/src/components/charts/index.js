@@ -10,10 +10,12 @@
  */
 import LineChart from './LineChart.vue'
 import BarChart from './BarChart.vue'
+import HorizontalBarChart from './HorizontalBarChart.vue'
 
 export const TEMPLATES = {
   line: LineChart,
   bar: BarChart,
+  'horizontal-bar': HorizontalBarChart,
 }
 
 export function getTemplate(name) {

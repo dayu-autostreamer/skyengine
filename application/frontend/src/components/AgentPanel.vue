@@ -118,7 +118,7 @@
     >
       <div class="agent-header-left">
         <span class="collapse-arrow" v-if="agvList.length > 0">{{ agvCollapsed ? '▶' : '▼' }}</span>
-        <h3>🤖 异常检测</h3>
+        <h3>🤖 AGV 状态</h3>
       </div>
       <span class="agent-counter" v-if="agvList.length > 0">
         {{ activeCount }}/{{ agvList.length }} 活跃
@@ -315,7 +315,7 @@ const machineList = computed(() => {
     const status = m.status || (m.current_op ? 'WORKING' : 'IDLE')
     return {
       key,
-      name: m.name ?? key,
+      name: m.name ?? store.getMachineDisplayName(m.id ?? key, store.currentState),
       status,
       isWorking: status === 'WORKING',
       current_op: m.current_op ?? null,

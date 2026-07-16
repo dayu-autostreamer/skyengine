@@ -612,6 +612,35 @@ async def insert_jobs_control(body: dict = Body(...)):
         return {"status": "error", "message": str(e)}
 
 
+@app.post("/factory/exception/inject")
+async def inject_exception_control(body: dict = Body(...)):
+    """运行时手动注入 Exception。
+    Exception 是环境动力学扰动；前端日志仍通过 /stream/events 展示。"""
+    if current_factory_proxy is None:
+        return {"status": "error", "message": "No factory loaded"}
+    if not hasattr(current_factory_proxy, "inject_exception"):
+        return {"status": "error", "message": "Current factory does not support runtime Exception injection"}
+    try:
+        return await current_factory_proxy.inject_exception(body)
+    except Exception as e:
+        print(f"❌ Exception 注入失败: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/factory/exception/clear")
+async def clear_exception_control(body: dict | None = Body(default=None)):
+    """清理运行时手动或仍活跃的 Exception 效果。"""
+    if current_factory_proxy is None:
+        return {"status": "error", "message": "No factory loaded"}
+    if not hasattr(current_factory_proxy, "clear_exceptions"):
+        return {"status": "error", "message": "Current factory does not support runtime Exception clearing"}
+    try:
+        return await current_factory_proxy.clear_exceptions(body or {})
+    except Exception as e:
+        print(f"❌ Exception 清理失败: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+
 # ==================== 批处理（DockerProxy 专用）====================
 # 设计见 finalpro/SkyEngine/explore/0704批处理前端调用设计.md
 # 4 个端点：start / cancel / status / stream

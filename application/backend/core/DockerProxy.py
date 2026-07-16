@@ -16,6 +16,7 @@ import asyncio
 import json
 import logging
 import datetime
+import subprocess
 from enum import Enum
 
 import httpx
@@ -137,19 +138,34 @@ class DockerProxy:
         self._total_steps: int = 0
 
         # ---- compose 配置 ----
-        self._compose_file: str = os.getenv(
-            "SKYENGINE_COMPOSE_PATH",
-            "/opt/skyengine/docker-compose-online.yaml",
-        )
         self._project_dir: str = os.getenv(
             "SKYENGINE_PROJECT_DIR",
             "",
+        )
+        if not self._project_dir and os.name == "nt":
+            self._project_dir = self._default_windows_project_dir()
+
+        self._compose_file: str = self._resolve_windows_host_path(
+            os.getenv(
+                "SKYENGINE_COMPOSE_PATH",
+                "/opt/skyengine/docker-compose-online.yaml",
+            ),
+            fallback_filename="docker-compose-online.yaml",
+        )
+        self._batch_compose_file: str = self._resolve_windows_host_path(
+            os.getenv(
+                "SKYENGINE_BATCH_COMPOSE_PATH",
+                "/opt/skyengine/docker-compose-batch.yaml",
+            ),
+            fallback_filename="docker-compose.yaml",
         )
         self._project_name: str = "skyengine-online"
         self._engine_url: str = os.getenv(
             "ENGINE_URL",
             f"http://localhost:{os.getenv('ENGINE_PORT', '8080')}",
         )
+        if os.name == "nt" and self._engine_url == "http://engine:8080":
+            self._engine_url = "http://localhost:8080"
 
         self._config: dict = {}
         self._algorithm: str = "pso+astar+nearest"
@@ -162,10 +178,6 @@ class DockerProxy:
         # ---- 批处理模式（参考 experiment/exp0503/run_experiments.py）----
         # 用实验 compose（docker-compose.yaml）跑 run.py，串行多 episode
         # 与在线模式互斥（GPU + project name 不冲突，但同时跑会资源争用）
-        self._batch_compose_file: str = os.getenv(
-            "SKYENGINE_BATCH_COMPOSE_PATH",
-            "/opt/skyengine/docker-compose-batch.yaml",
-        )
         # 宿主机上 dataset 目录路径（compose 把它以 :ro 挂到容器 /dataset）。
         # 上传的实例文件写到此处，容器内即可见。默认指向 finalpro/SkyEngine/dataset。
         self._batch_dataset_host_dir: str = os.getenv(
@@ -182,6 +194,37 @@ class DockerProxy:
             "total": 0,
             "results": [],
         }
+
+    @staticmethod
+    def _default_windows_project_dir() -> str:
+        """Windows 本地开发默认使用 skyengine-frontend 的兄弟目录 SkyEngine-dev。"""
+        frontend_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "..")
+        )
+        candidate = os.path.join(os.path.dirname(frontend_root), "SkyEngine-dev")
+        return candidate if os.path.isdir(candidate) else ""
+
+    def _resolve_windows_host_path(self, path: str, fallback_filename: str) -> str:
+        """把容器内 /opt/skyengine 路径转换为 Windows 宿主机真实路径。"""
+        if os.name != "nt" or not path:
+            return path
+
+        normalized = path.replace("\\", "/")
+        candidates: list[str] = []
+        if normalized.startswith("/opt/skyengine/") and self._project_dir:
+            tail = normalized.removeprefix("/opt/skyengine/")
+            if tail == "docker-compose-batch.yaml":
+                candidates.append(os.path.join(self._project_dir, "docker-compose.yaml"))
+            candidates.append(os.path.join(self._project_dir, tail))
+
+        if self._project_dir:
+            candidates.append(os.path.join(self._project_dir, fallback_filename))
+
+        for candidate in candidates:
+            if os.path.exists(candidate):
+                return os.path.normpath(candidate)
+
+        return os.path.normpath(candidates[0]) if candidates else path
 
     # ==================== docker compose 辅助 ====================
 
@@ -200,20 +243,22 @@ class DockerProxy:
         if env:
             merged_env.update(env)
 
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+        result = await asyncio.to_thread(
+            subprocess.run,
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
             env=merged_env,
         )
-        stdout, stderr = await proc.communicate()
 
-        if proc.returncode != 0:
-            err = stderr.decode().strip()
-            logger.error(f"[DockerProxy] compose 失败 (rc={proc.returncode}): {err}")
+        if result.returncode != 0:
+            err = (result.stderr or result.stdout or "").strip()
+            logger.error(f"[DockerProxy] compose 失败 (rc={result.returncode}): {err}")
             raise RuntimeError(f"docker compose failed: {err}")
 
-        return stdout.decode().strip()
+        return result.stdout.strip()
 
     # ==================== 配置方法 ====================
 
@@ -292,8 +337,8 @@ class DockerProxy:
         }
         logger.info(f"[DockerProxy] mapf={mapf_image}, fjsp={fjsp_image}")
 
-        # 2. 启动算法容器
-        await self._compose("up", "-d", "mapf", "fjsp", env=compose_env)
+        # 2. 启动算法容器。每轮仿真强制重建算法服务，避免上轮 MAPF/FJSP 内部缓存残留。
+        await self._compose("up", "-d", "--force-recreate", "mapf", "fjsp", env=compose_env)
 
         # 2.5 等待 fjsp/mapf 的 Flask 就绪（避免 play 时 Connection refused）
         await self._wait_for_service("fjsp", 8002)
@@ -336,6 +381,45 @@ class DockerProxy:
         except Exception as e:
             logger.error(f"[DockerProxy] insert_jobs 失败: {e}")
             return {"status": "error", "message": str(e)}
+
+    async def inject_exception(self, body: dict) -> dict:
+        """转发运行时 Exception 注入请求到 engine。"""
+        if not self._engine_url:
+            return {"status": "error", "message": "engine 未就绪"}
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(f"{self._engine_url}/sim/exception/inject", json=body)
+                if resp.status_code == 404:
+                    await self._refresh_engine_after_missing_exception_api()
+                    resp = await client.post(f"{self._engine_url}/sim/exception/inject", json=body)
+                return resp.json()
+        except Exception as e:
+            logger.error(f"[DockerProxy] inject_exception 失败: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def clear_exceptions(self, body: dict) -> dict:
+        """转发运行时 Exception 清理请求到 engine。"""
+        if not self._engine_url:
+            return {"status": "error", "message": "engine 未就绪"}
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(f"{self._engine_url}/sim/exception/clear", json=body or {})
+                if resp.status_code == 404:
+                    await self._refresh_engine_after_missing_exception_api()
+                    resp = await client.post(f"{self._engine_url}/sim/exception/clear", json=body or {})
+                return resp.json()
+        except Exception as e:
+            logger.error(f"[DockerProxy] clear_exceptions 失败: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def _refresh_engine_after_missing_exception_api(self) -> None:
+        """旧 engine 容器不含运行时 Exception API 时，重建 engine 后再重试。"""
+        logger.warning("[DockerProxy] engine 缺少 Exception API，尝试重建 engine 容器")
+        self._streaming = False
+        await self._compose("up", "-d", "--force-recreate", "engine")
+        await self._wait_for_health(timeout=60.0)
+        self.initialized = True
+        self.status = ExecutionStatus.IDLE
 
     async def reset(self) -> None:
         if self._engine_url:
@@ -403,6 +487,10 @@ class DockerProxy:
         会撞上 Connection refused，仿真线程直接崩溃。
         """
         logger.info(f"[DockerProxy] 等待 {host}:{port} 就绪 ...")
+        if os.name == "nt" and host in {"fjsp", "mapf"}:
+            await self._wait_for_compose_service_from_engine(host, port, timeout)
+            return
+
         async with httpx.AsyncClient() as client:
             for i in range(int(timeout)):
                 try:
@@ -412,6 +500,29 @@ class DockerProxy:
                     return
                 except Exception:
                     pass
+                await asyncio.sleep(1.0)
+        raise TimeoutError(f"Service {host}:{port} not ready within {timeout}s")
+
+    async def _wait_for_compose_service_from_engine(self, host: str, port: int, timeout: float) -> None:
+        """Windows 宿主机无法解析 Compose 服务名，借 engine 容器在内部网络探测。"""
+        script = (
+            "import sys, urllib.error, urllib.request\n"
+            f"url='http://{host}:{port}/'\n"
+            "try:\n"
+            "    resp=urllib.request.urlopen(url, timeout=2)\n"
+            "    print(resp.status)\n"
+            "except urllib.error.HTTPError as e:\n"
+            "    print(e.code)\n"
+            "except Exception as e:\n"
+            "    print(e, file=sys.stderr)\n"
+            "    sys.exit(1)\n"
+        )
+        for i in range(int(timeout)):
+            try:
+                status = await self._compose("exec", "-T", "engine", "python", "-c", script)
+                logger.info(f"[DockerProxy] {host}:{port} 就绪 (耗时 {i}s, status={status})")
+                return
+            except Exception:
                 await asyncio.sleep(1.0)
         raise TimeoutError(f"Service {host}:{port} not ready within {timeout}s")
 
@@ -526,16 +637,19 @@ class DockerProxy:
         if env:
             merged_env.update(env)
 
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+        result = await asyncio.to_thread(
+            subprocess.run,
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
             env=merged_env,
         )
-        stdout, stderr = await proc.communicate()
-        if proc.returncode != 0:
-            raise RuntimeError(f"batch compose failed: {stderr.decode().strip()}")
-        return stdout.decode().strip()
+        if result.returncode != 0:
+            err = (result.stderr or result.stdout or "").strip()
+            raise RuntimeError(f"batch compose failed: {err}")
+        return result.stdout.strip()
 
     def get_batch_status(self) -> dict:
         """查询批处理状态。"""

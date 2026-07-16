@@ -52,7 +52,9 @@
           <div v-for="op in job.ops" :key="op.op_id" class="op-detail-row">
             <span class="od-id">Op{{ op.op_id }}</span>
             <span class="od-status" :class="`op-${op.status.toLowerCase()}`">{{ op.status }}</span>
-            <span class="od-mach">{{ op.assigned_machine != null ? `M${op.assigned_machine}` : '—' }}</span>
+            <span class="od-mach" :title="op.assigned_machine != null ? `运行 ID: M${op.assigned_machine}` : ''">
+              {{ store.getMachineDisplayName(op.assigned_machine, store.currentState) }}
+            </span>
             <span class="od-time">proc {{ op.proc_time }}t</span>
             <span class="od-time">wait {{ op.wait_for_machine_time }}t</span>
             <span class="od-ts" v-if="op.start_process_at >= 0">
@@ -129,7 +131,7 @@ const jobList = computed(() =>
         ...op,
         title:
           `Op${op.op_id} [${op.status}]\n` +
-          `proc_time=${op.proc_time}, machine=${op.assigned_machine ?? '—'}\n` +
+          `proc_time=${op.proc_time}, machine=${store.getMachineDisplayName(op.assigned_machine, store.currentState)}\n` +
           `wait=${op.wait_for_machine_time}t\n` +
           `start=${op.start_process_at}, finish=${op.finish_process_at}`,
       })),

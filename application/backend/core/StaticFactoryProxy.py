@@ -80,30 +80,10 @@ class StaticFactoryProxy(BaseFactoryProxy):
     async def stop(self):
         pass
 
-    # ==================== 插单 mock ====================
-    # StaticFactory 没有真实仿真循环，insert_jobs 无法真正落地。
-    # 这里返回合成的 partial/ok 响应，仅用于前端 JobInsertPanel UI 联调。
-    # 真实插单链路在 DockerProxy → engine /sim/insert_jobs。
-
     async def insert_jobs(self, body: dict) -> dict:
-        jobs = (body or {}).get("jobs") or []
-        if not jobs:
-            return {"status": "error", "message": "jobs 为空", "inserted": [], "rejected": []}
-        machines = body.get("machines")
-        rejected = []
-        valid_idx = []
-        for i, job in enumerate(jobs):
-            if not isinstance(job, list) or not job:
-                rejected.append({"index": i, "message": "job 不是非空 ops 数组"})
-                continue
-            valid_idx.append(i)
-        inserted = [{"job_id": i, "ops": len(jobs[i])} for i in valid_idx]
-        status = "ok" if not rejected else ("partial" if inserted else "error")
         return {
-            "status": status,
-            "inserted": inserted,
-            "rejected": rejected,
-            "message": f"[StaticFactory mock] 接收 {len(jobs)} 个 job（mock，未真正落地）",
+            "status": "error", "phase": "rejected", "inserted": [], "rejected": [],
+            "message": "StaticFactory 不支持真实插单，请切换到容器化工厂",
         }
 
     # ==================== 快照 / 流式（恒空） ====================

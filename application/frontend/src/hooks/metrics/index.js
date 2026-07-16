@@ -20,6 +20,7 @@ import eventTimeline from './event_timeline.js'
 import machineLoad from './machine_load.js'
 import agvStats from './agv_stats.js'
 import efficiency from './efficiency.js'
+import exceptionSummary from './exception_summary.js'
 
 export const HOOKS = {
   machine_util: machineUtil,
@@ -28,6 +29,7 @@ export const HOOKS = {
   agv_stats: agvStats,
   job_progress: jobProgress,
   event_timeline: eventTimeline,
+  exception_summary: exceptionSummary,
   machine_load: machineLoad,
 }
 

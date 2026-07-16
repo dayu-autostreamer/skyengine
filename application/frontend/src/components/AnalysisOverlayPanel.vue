@@ -130,7 +130,7 @@
             </div>
           </div>
 
-          <div class="ao-charts-grid">
+          <div v-if="hasChartData" class="ao-charts-grid">
             <div v-for="hook in hooks" :key="hook.id" class="ao-chart-card">
               <div class="ao-chart-head">
                 <span class="ao-chart-title">{{ hook.label }}</span>
@@ -141,6 +141,33 @@
                 :y-label="hook.unit || ''"
                 height="200px"
               />
+            </div>
+          </div>
+
+          <div v-else class="ao-data-empty">
+            该样本没有可绘制的时序数据，下面展示已归档的摘要和事件。
+          </div>
+
+          <div class="ao-detail-data-grid">
+            <div class="ao-data-card">
+              <div class="ao-data-title">摘要字段</div>
+              <div v-if="summaryEntries.length === 0" class="ao-data-empty small">暂无摘要字段</div>
+              <div v-for="item in summaryEntries" :key="item.key" class="ao-data-row">
+                <span>{{ item.key }}</span>
+                <code>{{ item.value }}</code>
+              </div>
+            </div>
+            <div class="ao-data-card">
+              <div class="ao-data-title">日志事件</div>
+              <div v-if="detailEvents.length === 0" class="ao-data-empty small">暂无事件数据</div>
+              <div v-for="event in detailEvents" :key="event.id || `${event.type}-${event.step}-${event.idx}`" class="ao-event-row">
+                <div class="ao-event-main">
+                  <span class="ao-event-step">#{{ event.step ?? event.idx ?? '--' }}</span>
+                  <span class="ao-event-title">{{ event.title || event.type || 'event' }}</span>
+                </div>
+                <div v-if="event.message" class="ao-event-message">{{ event.message }}</div>
+                <pre v-if="event.payload && Object.keys(event.payload || {}).length" class="ao-event-payload">{{ formatJson(event.payload) }}</pre>
+              </div>
             </div>
           </div>
         </template>
@@ -171,6 +198,24 @@ const currentRun = computed(() => {
   if (!currentRunId.value) return null
   if (analysisLog.currentDetail?.id === currentRunId.value) return analysisLog.currentDetail
   return null
+})
+
+const hasChartData = computed(() => {
+  if (!currentRun.value) return false
+  return (
+    (currentRun.value.metricsTimeline || []).length > 0 ||
+    (currentRun.value.frames || []).length > 1
+  )
+})
+
+const detailEvents = computed(() => (currentRun.value?.events || []).slice(0, 200))
+
+const summaryEntries = computed(() => {
+  const summary = currentRun.value?.summary || {}
+  return Object.entries(summary).map(([key, value]) => ({
+    key,
+    value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+  }))
 })
 
 // 进入详情视图：按需加载完整 Run
@@ -242,6 +287,14 @@ function formatTime(iso) {
   const pad = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
          `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+function formatJson(value) {
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch {
+    return String(value)
+  }
 }
 
 async function handleExport(id) {
@@ -372,6 +425,101 @@ function handleDelete(id) {
 .ao-empty-icon { font-size: 40px; opacity: 0.5; margin-bottom: 10px; }
 .ao-empty p { margin: 0 0 4px; font-size: 13px; color: rgba(220, 230, 245, 0.8); }
 .ao-empty-hint { font-size: 11px; color: var(--ao-fg-dim); }
+
+.ao-data-empty {
+  padding: 10px 12px;
+  border: 1px dashed var(--ao-border);
+  border-radius: 7px;
+  color: var(--ao-fg-dim);
+  background: rgba(100, 180, 255, 0.035);
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+.ao-data-empty.small {
+  padding: 8px;
+  margin: 0;
+  text-align: center;
+}
+
+.ao-detail-data-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.2fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.ao-data-card {
+  min-width: 0;
+  background: var(--ao-bg);
+  border: 1px solid var(--ao-border);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.ao-data-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(220, 230, 245, 0.9);
+  margin-bottom: 8px;
+}
+
+.ao-data-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(100, 180, 255, 0.08);
+  color: var(--ao-fg-dim);
+}
+
+.ao-data-row code {
+  color: var(--ao-fg);
+  font-family: 'Consolas', 'Monaco', monospace;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.ao-event-row {
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(100, 180, 255, 0.08);
+}
+
+.ao-event-main {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ao-event-step {
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: rgba(100, 180, 255, 0.75);
+  font-size: 10px;
+}
+
+.ao-event-title {
+  color: rgba(220, 230, 245, 0.88);
+  font-weight: 600;
+}
+
+.ao-event-message {
+  margin-top: 3px;
+  color: var(--ao-fg-dim);
+  font-size: 11px;
+}
+
+.ao-event-payload {
+  margin: 6px 0 0;
+  max-height: 140px;
+  overflow: auto;
+  white-space: pre-wrap;
+  color: rgba(220, 230, 245, 0.78);
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 10px;
+  line-height: 1.35;
+  background: rgba(5, 10, 20, 0.25);
+  border-radius: 5px;
+  padding: 6px;
+}
 
 .ao-run-list {
   display: flex;

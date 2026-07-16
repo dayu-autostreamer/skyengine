@@ -57,11 +57,25 @@
   border-bottom: 1px solid rgba(100, 180, 255, 0.1);
   padding: 0 4px;
   flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 180, 255, 0.35) transparent;
+}
+
+.dp-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.dp-tabs::-webkit-scrollbar-thumb {
+  background: rgba(100, 180, 255, 0.35);
+  border-radius: 2px;
 }
 
 .dp-tab-btn {
-  flex: 1;
-  padding: 7px 0;
+  flex: 0 0 auto;
+  min-width: 58px;
+  padding: 7px 6px;
   border: none;
   background: transparent;
   color: rgba(160, 190, 230, 0.5);

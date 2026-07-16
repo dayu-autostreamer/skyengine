@@ -3,7 +3,7 @@
     v-if="showPanel"
     :title="currentTab.label"
     :icon="currentTab.icon"
-    :width="300"
+    :width="360"
     :height="480"
     :initial-pos="{ x: 12, y: 12 }"
     :max-height="0"

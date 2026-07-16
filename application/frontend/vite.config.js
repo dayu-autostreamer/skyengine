@@ -19,7 +19,7 @@ export default defineConfig({
     host: true,  // 监听所有网络接口，等同于 --host
     proxy: {
       "/api": {
-        target: 'http://backend:8000',
+        target: process.env.BACKEND_URL || 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },

@@ -5,8 +5,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     // ============ 1. 事件队列 (Event Queue) ============
     const eventQueue = ref([])
     const totalEventCount = ref(0)
-
-    const MAX_EVENT_BUFFER = 50
+    const eventKeySet = new Set()
 
     // ============ 2. 图表/指标 State ============
     const chartData = ref({
@@ -88,37 +87,54 @@ export const useMonitorStore = defineStore('monitor', () => {
 
     /**
      * 推送事件入队 (Push) — canonical shape
-     * payload: { type(业务名), level(info|success|warning|error), message, idx, timestamp }
+     * payload: { type(业务名), level(info|success|warning|error), message, idx, timestamp, category, title, payload, step }
      *
      * 内部存储形如：
      *   { id, timestamp, idx, type, level, message }
      * 其中 timestamp 优先用 payload 传入的 "T+xs" canonical 字符串；
      * 未提供时退化为 Date 对象（兼容老调用）。
      */
-    function pushEvent(payload) {
+    function eventKey(payload) {
+        const type = payload?.type || 'narrative'
+        const step = payload?.step ?? payload?.idx ?? 0
+        const category = payload?.category || ''
+        const eventPayload = payload?.payload || {}
+        return `${step}|${category}|${type}|${JSON.stringify(eventPayload)}`
+    }
+
+    function pushEvent(payload, { dedupe = false } = {}) {
+        const key = eventKey(payload)
+        if (dedupe && eventKeySet.has(key)) {
+            return
+        }
         const {
             type = 'narrative',
             level = 'info',
             message = '',
             idx = 0,
             timestamp = null,
+            category = null,
+            title = '',
+            payload: eventPayload = {},
+            step = idx,
         } = payload
 
         const newEvent = {
             id: Date.now() + Math.random(),
             timestamp: timestamp != null ? timestamp : new Date(),
             idx,
+            step,
+            category,
             type, // 业务名：machine_start_op / transfer_started / narrative / ...
             level, // info / success / warning / error
+            title,
             message,
+            payload: eventPayload,
         }
 
         eventQueue.value.push(newEvent)
+        eventKeySet.add(key)
         totalEventCount.value++
-
-        if (eventQueue.value.length > MAX_EVENT_BUFFER) {
-            eventQueue.value.shift()
-        }
     }
 
     /**
@@ -264,6 +280,8 @@ export const useMonitorStore = defineStore('monitor', () => {
     // 重置/清空 Monitor 状态
     function clear() {
         eventQueue.value = []
+        eventKeySet.clear()
+        totalEventCount.value = 0
         metricsTimeline.value = []
         runId.value = null
         runStartTime.value = null
@@ -277,7 +295,30 @@ export const useMonitorStore = defineStore('monitor', () => {
      */
     function clearSim() {
         eventQueue.value = []
+        eventKeySet.clear()
+        totalEventCount.value = 0
         metricsTimeline.value = []
+        heatmaps.value = null
+        episodeSummary.value = null
+    }
+
+    function loadArchiveData(metrics = [], events = []) {
+        metricsTimeline.value = JSON.parse(JSON.stringify(metrics || []))
+        eventKeySet.clear()
+        eventQueue.value = JSON.parse(JSON.stringify(events || [])).map((event, idx) => ({
+            id: event.id ?? Date.now() + idx + Math.random(),
+            timestamp: event.timestamp ?? null,
+            idx: event.idx ?? event.step ?? idx,
+            step: event.step ?? event.idx ?? idx,
+            category: event.category ?? null,
+            type: event.type ?? 'narrative',
+            level: event.level ?? 'info',
+            title: event.title ?? '',
+            message: event.message ?? '',
+            payload: event.payload ?? {},
+        }))
+        eventQueue.value.forEach((event) => eventKeySet.add(eventKey(event)))
+        totalEventCount.value = eventQueue.value.length
         heatmaps.value = null
         episodeSummary.value = null
     }
@@ -297,7 +338,7 @@ export const useMonitorStore = defineStore('monitor', () => {
                 message: `makespan=${data.episode_summary?.completed_makespan ?? '--'}`,
                 type: 'success',
                 idx: data.step ?? 0,
-            })
+            }, { dedupe: true })
             return
         }
         if (data.status === 'running' && data.metrics) {
@@ -315,16 +356,50 @@ export const useMonitorStore = defineStore('monitor', () => {
 
     /**
      * 推送 sim_server (DockerFactory) 业务事件
-     * data: {timestamp, type, message, level} — 已是 canonical，直接委托 pushEvent
+     * data: {step, timestamp, category, type, title, message, level, payload} — 已是 canonical，直接委托 pushEvent
      */
     function pushSimEvent(data) {
         if (!data) return
         pushEvent({
             type: data.type || 'narrative',
             level: data.level || 'info',
+            category: data.category || null,
+            title: data.title || '',
             message: data.message || '',
-            idx: 0,
+            idx: data.step ?? 0,
+            step: data.step ?? 0,
             timestamp: data.timestamp,
+            payload: data.payload || {},
+        }, { dedupe: true })
+    }
+
+    function exceptionTitle(type, payload = {}) {
+        if (type === 'machine_breakdown') return '机器故障'
+        if (type === 'machine_recovery') return '机器恢复'
+        if (type === 'agv_breakdown') return 'AGV 故障'
+        if (type === 'agv_recovery') return 'AGV 恢复'
+        if (type === 'temporary_obstacle') return '临时障碍'
+        if (type === 'obstacle_clear') return '障碍清除'
+        if (type === 'urgent_job_arrival') return '紧急插单'
+        return payload?.title || type || 'Exception'
+    }
+
+    function pushSimFrameEvents(events = [], fallbackStep = 0) {
+        if (!Array.isArray(events) || events.length === 0) return
+        events.forEach((event) => {
+            const type = event?.type || 'exception'
+            const step = event?.step ?? fallbackStep ?? 0
+            pushEvent({
+                type,
+                level: event?.level || 'warning',
+                category: event?.category || 'exception',
+                title: event?.title || exceptionTitle(type, event?.payload),
+                message: event?.message || '',
+                idx: step,
+                step,
+                timestamp: event?.timestamp ?? `T+${step}s`,
+                payload: event?.payload || {},
+            }, { dedupe: true })
         })
     }
 
@@ -354,8 +429,10 @@ export const useMonitorStore = defineStore('monitor', () => {
         clear,
         // sim_server 专用
         clearSim,
+        loadArchiveData,
         pushSimMetrics,
         pushSimEvent,
+        pushSimFrameEvents,
         // Agent 对话
         pushAgentMessage,
         appendAgentChunk,

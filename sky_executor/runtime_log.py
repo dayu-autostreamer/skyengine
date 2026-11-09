@@ -12,7 +12,9 @@ def _json(value: Any) -> Any:
         return value
     if isinstance(value, Mapping):
         return {str(key): _json(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple, set)):
+    if isinstance(value, set):
+        return [_json(item) for item in sorted(value)]
+    if isinstance(value, (list, tuple)):
         return [_json(item) for item in value]
     if hasattr(value, "model_dump"):
         return _json(value.model_dump())
@@ -23,17 +25,17 @@ def _json(value: Any) -> Any:
     return str(value)
 
 
-def build_runtime_frame(session, insertion_requests: list[dict] | None = None) -> dict[str, Any]:
+def _build_runtime_frame(session, insertion_requests: list[dict] | None = None) -> dict[str, Any]:
     """Build the one frame format used by SSE, training traces and replay.
 
     This reads the live formal ``SimulationSession`` state.  It does not run
     another simulator and it is independent from AnimationMonitor/rendering.
     """
-    pogema = session.env.pogema_env
-    from sky_executor.grid_factory.factory.observation import observable_state
-    public: dict = observable_state(pogema)
+    env = session.env
+    pogema = env.state
+    observation = env.project_solver_observation()
+    public = observation["task_observation"]
     agents, jobs, machines = public["agents"], public["jobs"], public["machines"]
-    current_jobs = {job.job_id: job for job in jobs}
     machine_rows = []
     for machine in machines:
         op = getattr(machine, "current_op", None)
@@ -83,17 +85,16 @@ def build_runtime_frame(session, insertion_requests: list[dict] | None = None) -
                 "processed_time": op.processed_time,
             } for op in job.ops],
         })
-    exception = getattr(session.env, "exception_injector", None)
-    obstacles = getattr(exception, "_active_obstacles", {}) if exception else {}
-    events = list(getattr(pogema, "last_events", []) or [])
+    obstacles = public["blocked_cells"]
+    events = public["events"]
     frame = {
         "schema_version": 2,
-        "step": int(session.step_index),
-        "timestamp": f"T+{session.step_index}s",
+        "step": int(env.env_timeline),
+        "timestamp": f"T+{env.env_timeline}s",
         "env_timeline": int(getattr(pogema, "env_timeline", session.step_index)),
         "grid_state": {
             "positions_xy": [list(agent.pos) for agent in agents],
-            "finishes_xy": [list(item) for item in getattr(pogema.grid, "finishes_xy", [])],
+            "finishes_xy": [list(pogema._to_public_xy(item)) for item in pogema.grid.finishes_xy],
             "is_active": [getattr(agent, "current_task", None) is not None for agent in agents],
             "agv_status": list(getattr(pogema, "agv_status", [])),
             "agv_repair_remaining": [None] * len(agents),
@@ -109,12 +110,12 @@ def build_runtime_frame(session, insertion_requests: list[dict] | None = None) -
         "job_epoch": int(getattr(pogema, "job_epoch", 0)),
         "events": _json(events),
         "event_metrics": _json(getattr(pogema, "event_metrics", {}) or {}),
-        "blocked_cells": [list(cell) for cell in obstacles.keys()],
+        "blocked_cells": [list(cell) for cell in obstacles],
         "machines": machine_rows,
         "jobs": job_rows,
         "active_transfers": [_json(task) for task in getattr(pogema, "active_transfers", [])],
         "pending_transfers": [_json(task) for task in getattr(pogema, "transfers_to_assign", [])],
-        "insertion_requests": deepcopy(insertion_requests or []),
+        "insertion_requests": deepcopy(list(env.job_insertions.snapshot()) if insertion_requests is None else insertion_requests),
     }
     frame["agvs"] = [{
         "id": int(agent.id), "pos": list(agent.pos),
@@ -130,3 +131,9 @@ def build_runtime_frame(session, insertion_requests: list[dict] | None = None) -
 def serialize_action(action: dict[str, Any] | None) -> dict[str, Any]:
     """Serialize a native action without embedding mutable Pydantic objects."""
     return _json(action or {})
+
+
+def build_runtime_frame(session, insertion_requests=None):
+    """Read once after an immediate chain; every field uses that same committed state."""
+    with session.env.read_state():
+        return _build_runtime_frame(session, insertion_requests)

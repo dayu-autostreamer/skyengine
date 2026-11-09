@@ -77,16 +77,12 @@ def _material_config(raw: dict | None, topology: dict) -> dict:
 def _exception_config(raw: dict | None, obs_radius: int) -> dict | None:
     if not raw:
         return raw
-    normalized = deepcopy(raw)
-    for event in normalized.get("schedule", []) or []:
-        if event.get("type") == "temporary_obstacle" and isinstance(event.get("cell"), (list, tuple)):
-            cell = event["cell"]
-            if len(cell) >= 2:
-                event["cell"] = [int(cell[0]) + obs_radius, int(cell[1]) + obs_radius]
-    return normalized
+    return deepcopy(raw)
 
 
-def create_env_from_config(config: dict, *, agent_observation_type: str = "default", headless: bool = False) -> GridFactoryEnv:
+def create_env_from_config(config: dict, *, agent_observation_type: str = "default",
+                           headless: bool = False, scene_factory=None,
+                           machine_preparation="before_simulation_step") -> GridFactoryEnv:
     """Create the shared Grid environment from the public factory schema."""
     topology = config.get("topology", {})
     agvs = config.get("agvs", [])
@@ -94,16 +90,17 @@ def create_env_from_config(config: dict, *, agent_observation_type: str = "defau
     machine_values = list(machines.values())
     machine_positions = [tuple(m["location"]) for m in machine_values if "location" in m]
     agent_positions = [tuple(a["initialLocation"]) for a in agvs]
-    occupied: dict[tuple[int, int], int] = {}
+    occupied = {}
     for agv, position in zip(agvs, agent_positions):
         if position in occupied:
             raise ValueError(f"AGV {occupied[position]} 和 AGV {agv['id']} 初始位置重复: {position}")
         occupied[position] = agv["id"]
     material = _material_config(config.get("material_handling_config"), topology)
     extra = [tuple(material[key]) for key in ("raw_material_source", "finished_goods_destination") if key in material]
-    jobs_config = config.get("jobs") or {}
-    configured_jobs: list = jobs_config.get("job_list", []) if isinstance(jobs_config, dict) else jobs_config
-    extra.extend(tuple(job[key]) for job in configured_jobs for key in ("raw_material_source", "finished_goods_destination") if job.get(key) is not None)
+    configured_jobs = config.get("jobs") or {}
+    configured_jobs = configured_jobs.get("job_list", []) if isinstance(configured_jobs, dict) else configured_jobs
+    extra.extend(tuple(job[key]) for job in configured_jobs
+                 for key in ("raw_material_source", "finished_goods_destination") if job.get(key) is not None)
 
     raw_map = config.get("map") or topology.get("map")
     if raw_map:
@@ -126,7 +123,6 @@ def create_env_from_config(config: dict, *, agent_observation_type: str = "defau
         on_target="restart",
         agents_xy=agent_positions or None,
         targets_xy=agent_positions or None,
-        collision_system="soft",
     )
     if agent_observation_type != "default":
         grid_kwargs["observation_type"] = agent_observation_type
@@ -180,36 +176,37 @@ def create_env_from_config(config: dict, *, agent_observation_type: str = "defau
         processing_time_config=config.get("processing_time_config"),
         material_handling_config=material,
         headless=headless,
+        perception_config=config.get("perception"),
+        scene_factory=scene_factory,
+        machine_preparation=machine_preparation,
     )
-    # Preserve dynamic-order attributes from the public JSON schema.  The
-    # legacy custom-job generator only carries operation tuples, so attach
-    # job-level release, due-date and priority after construction.
     for generated, source in zip(env.init_jobs, job_list):
         generated.job_id = int(source.get("job_id", generated.job_id))
-        generated.raw_material_source = tuple(source["raw_material_source"]) if source.get("raw_material_source") is not None else None
-        generated.finished_goods_destination = tuple(source["finished_goods_destination"]) if source.get("finished_goods_destination") is not None else None
-        generated.release = float(source.get("release", source.get("release_time", 0.0)) or 0.0)
+        generated.release = float(source.get("release", source.get("release_time", 0)) or 0)
         generated.due = source.get("due")
         generated.priority = int(source.get("priority", 0) or 0)
         generated.request_id = source.get("request_id")
-        for operation, source_operation in zip(generated.ops, source.get("operations", [])):
+        for operation, definition in zip(generated.ops, source.get("operations", ())):
             operation.job_id = generated.job_id
-            operation.release = float(source_operation.get("release", generated.release) or generated.release)
-            operation.due = source_operation.get("due", generated.due)
-            operation.priority = int(source_operation.get("priority", generated.priority) or generated.priority)
+            operation.release = float(definition.get("release", generated.release) or generated.release)
+            operation.due = definition.get("due", generated.due)
+            operation.priority = int(definition.get("priority", generated.priority) or generated.priority)
+        for field in ("raw_material_source", "finished_goods_destination"):
+            value = source.get(field)
+            setattr(generated, field, tuple(value) if value is not None else None)
     return env
 
 
 class SimulationSession:
     """Framework-independent environment/coordinator session."""
 
-    def __init__(self, env: GridFactoryEnv, coordinator: Coordinator | None = None):
+    def __init__(self, env: GridFactoryEnv, coordinator: Coordinator | None = None, *, decision_policy=None):
         self.env = env
         self.coordinator = coordinator
+        self.decision_policy = decision_policy
         self.obs, self.info = self.env.reset()
         self.step_index = 0
         self.done = False
-        self.last_actions = None
 
     @classmethod
     def from_config(
@@ -222,146 +219,144 @@ class SimulationSession:
         native_actions: bool = False,
         agent_observation_type: str = "default",
         headless: bool = False,
+        scene_factory=None,
+        decision_policy=None,
+        machine_preparation="before_simulation_step",
         **kwargs,
     ):
-        env = create_env_from_config(config, agent_observation_type=agent_observation_type, headless=headless)
-        coordinator: Coordinator | None = None
-        if not native_actions:
-            coordinator = Coordinator(
-                job_solver=job_solver,
-                route_solver=route_solver,
-                assigner=assigner,
-                **kwargs,
-            )
-        return cls(env, coordinator)
+        env = create_env_from_config(config, agent_observation_type=agent_observation_type,
+                                     headless=headless, scene_factory=scene_factory,
+                                     machine_preparation=machine_preparation)
+        coordinator = None if native_actions else Coordinator(
+            job_solver=job_solver, route_solver=route_solver, assigner=assigner, **kwargs)
+        return cls(env, coordinator, decision_policy=decision_policy)
 
     @classmethod
-    def from_environment(cls, env: GridFactoryEnv, *, job_solver: str = "greedy", route_solver: str = "astar", assigner: str = "nearest", **kwargs):
-        coordinator = Coordinator(
-            job_solver=job_solver,
-            route_solver=route_solver,
-            assigner=assigner,
-            **kwargs,
-        )
-        return cls(env, coordinator)
+    def from_environment(
+        cls, env: GridFactoryEnv, *, job_solver: str = "greedy", route_solver: str = "astar",
+        assigner: str = "nearest", native_actions: bool = False, decision_policy=None, **kwargs,
+    ):
+        coordinator = None if native_actions else Coordinator(
+            job_solver=job_solver, route_solver=route_solver, assigner=assigner, **kwargs)
+        return cls(env, coordinator, decision_policy=decision_policy)
 
     def reset(self, seed: int | None = None):
-        reset = getattr(self.coordinator, "reset", None)
-        if callable(reset):
-            reset()
-        elif self.coordinator is not None:
-            for component in (
-                self.coordinator.job_solver,
-                self.coordinator.route_solver,
-                self.coordinator.assigner,
-            ):
-                reset = getattr(component, "reset", None)
-                if callable(reset):
-                    reset()
+        if self.coordinator is not None:
+            self.coordinator.reset()
         self.obs, self.info = self.env.reset(seed=seed)
         self.step_index = 0
         self.done = False
-        self.last_actions = None
         return self.obs, self.info
 
+    def _controller(self):
+        return self.env.ensure_controller(self.coordinator, decision_policy=self.decision_policy)
+
+    def snapshot(self):
+        return self._controller().snapshot()
+
+    def run_decision_cycle(self):
+        return self._controller().run_decision_cycle()
+
+    def run_decision_loop(self):
+        self._controller().run_decision_loop()
+
+    def stop_decision_loop(self):
+        if self.env._controller is not None:
+            self.env._controller.stop_decision_loop()
+
+    @property
+    def last_actions(self):
+        with self.env.read_state():
+            return deepcopy(self.env.last_actions)
+
+    @property
+    def decision_count(self):
+        return self.env._controller.decision_count if self.env._controller is not None else 0
+
+    def _simulation_step(self, provided_decision=None, *, evaluate_decision):
+        with self.env.simulation_step_lock:
+            if self.done:
+                raise RuntimeError("simulation session is already done")
+            self._controller()
+            worker = self.env.perception_worker
+            with self.env.run_operation(worker):
+                output = self.env.synchronous_step(self.coordinator, provided_decision,
+                    evaluate_decision=evaluate_decision, run_worker=worker)
+                with self.env.read_state():
+                    self.env.require_current_run(worker)
+                    self.obs, rewards, terminations, truncations, infos = output
+                    self.step_index = self.env.env_timeline
+                    agent_truncated = truncations.get("agent_truncated", {})
+                    self.done = bool(terminations.get("job_done")
+                        or (isinstance(agent_truncated, dict) and agent_truncated.get("__all__"))
+                        or truncations.get("__all__"))
+                return output
+
     def step(self, actions: dict | None = None):
-        if self.done:
-            raise RuntimeError("simulation session is already done")
-        if actions is None:
-            if self.coordinator is None:
-                raise ValueError("native-action sessions require an explicit action")
-            actions = self.coordinator.decide(self.obs)
-        actions = self.normalize_action(actions or {})
-        self.last_actions = actions
-        self.obs, rewards, terminations, truncations, infos = self.env.step(actions)
-        self.step_index += 1
-        agent_truncated = truncations.get("agent_truncated", {})
-        self.done = bool(
-            terminations.get("job_done")
-            or (isinstance(agent_truncated, dict) and agent_truncated.get("__all__"))
-            or truncations.get("__all__")
-        )
-        return self.obs, rewards, terminations, truncations, infos
+        if actions is None and self.coordinator is None:
+            raise ValueError("native-action sessions require an explicit action")
+        return self._simulation_step(actions, evaluate_decision=True)
 
     def normalize_action(self, actions: dict) -> dict:
-        """Normalize native actions at the formal environment boundary.
+        from sky_executor.actions import normalize_action
+        return normalize_action(actions)
 
-        Training traces are JSON, while live coordinator actions can contain
-        ``RoutingTask`` objects.  Both forms enter GridFactoryEnv through this
-        method, so replay and online execution use exactly the same protocol.
-        """
-        from sky_executor.grid_factory.factory.Utils.structure import RoutingTask
+    def advance_simulation_step(self):
+        return self._simulation_step(evaluate_decision=False)
 
-        result = dict(actions or {})
-        job_actions = dict(result.get("job_actions") or {})
-        requests = []
-        for item in job_actions.get("transfer_requests", []) or []:
-            requests.append(item.model_dump() if hasattr(item, "model_dump") else item.dict() if hasattr(item, "dict") else dict(item))
-        job_actions["transfer_requests"] = requests
-        task_actions = dict(result.get("assign_actions") or {})
-        pending = []
-        for item in task_actions.get("pending_transfers", []) or []:
-            pending.append(item.model_dump() if hasattr(item, "model_dump") else item.dict() if hasattr(item, "dict") else dict(item))
-        task_actions["pending_transfers"] = pending
-        assignments = {}
-        for key, value in (task_actions.get("assignments") or {}).items():
-            if value is None or isinstance(value, RoutingTask):
-                assignments[int(key)] = value
-            elif isinstance(value, dict):
-                task_id = int(value.get("task_id", -1))
-                assignments[int(key)] = task_id
-            else:
-                assignments[int(key)] = int(value)
-        task_actions["assignments"] = assignments
-        result["job_actions"] = job_actions
-        result["assign_actions"] = task_actions
-        result["agent_actions"] = list(result.get("agent_actions") or [])
-        return result
+    def _save_observation(self, worker):
+        snapshot = worker.request_snapshot().result()
+        with self.env.read_state():
+            self.env.require_current_run(worker)
+            self.obs = snapshot.observation
 
     def inject_exception(self, event: dict, step: int | None = None) -> dict:
-        injector = getattr(self.env, "exception_injector", None)
-        if injector is None:
-            return {"status": "error", "message": "ExceptionInjector is unavailable"}
-        return injector.inject_manual(self.env.pogema_env, self.step_index if step is None else step, event)
+        worker = self.env.ensure_perception_worker()
+        injector = self.env.scene_adapter.fault_injector
+        with self.env.run_operation(worker):
+            with injector.input_lock:
+                self.env.require_current_run(worker)
+                result = injector.inject_manual(event, step=self.step_index if step is None else step)
+            self._save_observation(worker)
+            return result
 
     def clear_exceptions(self, target: dict | None = None, step: int | None = None) -> dict:
-        injector = getattr(self.env, "exception_injector", None)
-        if injector is None:
-            return {"status": "error", "message": "ExceptionInjector is unavailable"}
-        return injector.clear_manual(
-            self.env.pogema_env,
-            self.step_index if step is None else step,
-            target,
-        )
+        worker = self.env.ensure_perception_worker()
+        injector = self.env.scene_adapter.fault_injector
+        with self.env.run_operation(worker):
+            with injector.input_lock:
+                self.env.require_current_run(worker)
+                result = injector.clear_manual(target, step=self.step_index if step is None else step)
+            self._save_observation(worker)
+            return result
 
-    def insert_jobs(self, new_jobs: list, replanned_keys: set[tuple[int, int]]) -> None:
-        """Install jobs and discard superseded pending transfers atomically."""
-        pogema = self.env.pogema_env
-        existing_keys: list = [key for key in replanned_keys if key in pogema.hash_operations]
-        new_ids: list[int] = [job.job_id for job in new_jobs]
-        if len(new_ids) != len(set(new_ids)) or set(new_ids) & {job.job_id for job in pogema._all_jobs}:
-            raise ValueError("inserted job ids must be new and unique")
-        pogema.apply_reschedule({"cancel_operations": existing_keys})
-        for job in new_jobs:
-            if job.raw_material_source is None or job.finished_goods_destination is None:
-                job.raw_material_source = job.raw_material_source or pogema.raw_material_source
-                job.finished_goods_destination = job.finished_goods_destination or pogema.finished_goods_destination
-            job.material_location = job.raw_material_source
-            pogema._all_jobs.append(job)
-            pogema._future_jobs.append(job)
-        pogema._release_due_jobs(pogema.env_timeline)
-        pogema.job_epoch += 1
-        self.refresh_observation()
+    def _submit_job_report(self, content):
+        with self.env.processing_lock:
+            worker = self.env.ensure_perception_worker()
+            report = self.env.scene_adapter.job_report(content)
+            handle = worker.submit_report(report)
+        with self.env.run_operation(worker):
+            report_result = handle.result()
+            self._save_observation(worker)
+            return report_result
 
-    def refresh_observation(self) -> None:
-        self.obs, _, _, _, self.info = self.env.pack_output([{}, {}], [{}, {}], [{}, {}])
+    def submit_job_insertion(self, request):
+        """Register a request through the same report queue as device inputs."""
+        return self._submit_job_report(request)
 
-    def reschedule(self, action: dict) -> None:
-        self.env.pogema_env.apply_reschedule(action)
-        self.refresh_observation()
+    def apply_job_plan(self, update):
+        """Apply a production-plan outcome without bypassing report ordering."""
+        return self._submit_job_report(update)
 
-    def residual_problem(self) -> dict:
-        return self.env.pogema_env.residual_problem()
+    def residual_problem(self):
+        return self.env.residual_problem()
+
+    def reschedule(self, action):
+        from sky_executor.perception.contracts import RescheduleRequest
+        return self._submit_job_report(RescheduleRequest(deepcopy(action)))
+
+    def check_job_releases(self):
+        return self.env.scene_adapter.check_job_releases()
 
     def state_frame(self) -> dict:
         from sky_executor.runtime_log import build_runtime_frame
@@ -374,15 +369,13 @@ class SimulationSession:
         return self.env.metrics_hub.get_heatmaps()
 
     def close(self) -> None:
-        if self.coordinator is not None:
-            for component in (
-                self.coordinator.job_solver,
-                self.coordinator.route_solver,
-                self.coordinator.assigner,
-            ):
-                close = getattr(component, "close", None)
-                if callable(close):
-                    close()
-        close = getattr(self.env, "close", None)
-        if callable(close):
-            close()
+        self.stop_decision_loop()
+        self.env.decision_notifications.close()
+        try:
+            if self.coordinator is not None:
+                for component in (self.coordinator.job_solver, self.coordinator.route_solver, self.coordinator.assigner):
+                    close = getattr(component, "close", None)
+                    if close is not None:
+                        close()
+        finally:
+            self.env.close()

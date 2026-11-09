@@ -41,7 +41,7 @@ class ProcessingTimeSampler:
 
     def __init__(self, config: Optional[dict] = None):
         self.raw_config = deepcopy(config) if isinstance(config, dict) else None
-        self.config = self._normalize_config(config)
+        self.config = normalize_processing_config(config)
         self.enabled = bool(self.config.get("enabled", False))
         self._seed = int(self.config.get("random_seed", 42))
         self._episode_seed = self._seed
@@ -60,7 +60,7 @@ class ProcessingTimeSampler:
         if not self.enabled:
             return nominal, None
 
-        dist = self._resolve_distribution(operation, machine_id)
+        dist = resolve_processing_distribution(self.config, operation, machine_id)
         if not dist:
             return nominal, None
 
@@ -70,95 +70,6 @@ class ProcessingTimeSampler:
         self.rng = random.Random(int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], "big"))
         sampled = self._sample_distribution(dist, nominal)
         return sampled, deepcopy(dist)
-
-    def _normalize_config(self, config: Optional[dict]) -> dict:
-        if not isinstance(config, dict):
-            return deepcopy(self.DEFAULT_CONFIG)
-        preset_name = config.get("preset", "none")
-        preset = deepcopy(self.PRESETS.get(preset_name, {}))
-        merged = deepcopy(self.DEFAULT_CONFIG)
-        merged.update(preset)
-        merged.update(deepcopy(config))
-        if preset_name not in ("none", "no_variance") and "enabled" not in config:
-            merged["enabled"] = True
-        return merged
-
-    def _resolve_distribution(self, operation: Any, machine_id: int) -> Optional[dict]:
-        op_cfg = getattr(operation, "processing_time_config", None)
-        for cfg in (op_cfg, self.config):
-            dist = self._distribution_from_config(cfg, operation, machine_id)
-            if dist:
-                return dist
-        return None
-
-    def _distribution_from_config(self, cfg: Any, operation: Any, machine_id: int) -> Optional[dict]:
-        if not isinstance(cfg, dict):
-            return None
-
-        machine_dist = self._lookup_machine_distribution(
-            cfg.get("machine_distributions")
-            or cfg.get("distributions_by_machine")
-            or cfg.get("processing_time_distributions"),
-            machine_id,
-        )
-        if machine_dist:
-            return machine_dist
-
-        op_dist = self._lookup_operation_distribution(
-            cfg.get("operation_distributions")
-            or cfg.get("operations")
-            or cfg.get("processing_time_distributions"),
-            operation,
-            machine_id,
-        )
-        if op_dist:
-            return op_dist
-
-        for key in ("distribution", "processing_time_distribution", "default_distribution"):
-            value = cfg.get(key)
-            if self._looks_like_distribution(value):
-                return value
-        if self._looks_like_distribution(cfg):
-            return cfg
-        return None
-
-    def _lookup_machine_distribution(self, mapping: Any, machine_id: int) -> Optional[dict]:
-        if not isinstance(mapping, dict):
-            return None
-        value = mapping.get(str(machine_id), mapping.get(machine_id))
-        return value if self._looks_like_distribution(value) else None
-
-    def _lookup_operation_distribution(self, mapping: Any, operation: Any, machine_id: int) -> Optional[dict]:
-        if not isinstance(mapping, dict):
-            return None
-        job_id = getattr(operation, "job_id", None)
-        op_id = getattr(operation, "op_id", None)
-        keys = [
-            f"{job_id}:{op_id}",
-            f"{job_id}.{op_id}",
-            f"{job_id}-{op_id}",
-            str(op_id),
-            op_id,
-        ]
-        for key in keys:
-            value = mapping.get(key)
-            if self._looks_like_distribution(value):
-                return value
-            if isinstance(value, dict):
-                machine_value = self._lookup_machine_distribution(
-                    value.get("machine_distributions")
-                    or value.get("distributions_by_machine")
-                    or value.get("processing_time_distributions"),
-                    machine_id,
-                )
-                if machine_value:
-                    return machine_value
-                if self._looks_like_distribution(value.get("distribution")):
-                    return value.get("distribution")
-        return None
-
-    def _looks_like_distribution(self, value: Any) -> bool:
-        return isinstance(value, dict) and isinstance(value.get("dist"), str)
 
     def _sample_distribution(self, dist: dict, nominal: float) -> float:
         kind = str(dist.get("dist", "")).lower()
@@ -203,3 +114,98 @@ class ProcessingTimeSampler:
                 draw = self.rng.gauss(mean, std)
             return nominal * draw / positive_mean
         raise ValueError(f"unsupported processing distribution: {kind}")
+
+
+def normalize_processing_config(config: Optional[dict]) -> dict:
+    if not isinstance(config, dict):
+        return deepcopy(ProcessingTimeSampler.DEFAULT_CONFIG)
+    preset_name = config.get("preset", "none")
+    preset = deepcopy(ProcessingTimeSampler.PRESETS.get(preset_name, {}))
+    merged = deepcopy(ProcessingTimeSampler.DEFAULT_CONFIG)
+    merged.update(preset)
+    merged.update(deepcopy(config))
+    if preset_name not in ("none", "no_variance") and "enabled" not in config:
+        merged["enabled"] = True
+    return merged
+
+
+def resolve_processing_distribution(config, operation: Any, machine_id: int) -> Optional[dict]:
+    op_cfg = getattr(operation, "processing_time_config", None)
+    for cfg in (op_cfg, config):
+        dist = _distribution_from_config(cfg, operation, machine_id)
+        if dist:
+            return dist
+    return None
+
+
+def _distribution_from_config(cfg: Any, operation: Any, machine_id: int) -> Optional[dict]:
+    if not isinstance(cfg, dict):
+        return None
+
+    machine_dist = _lookup_machine_distribution(
+        cfg.get("machine_distributions")
+        or cfg.get("distributions_by_machine")
+        or cfg.get("processing_time_distributions"),
+        machine_id,
+    )
+    if machine_dist:
+        return machine_dist
+
+    op_dist = _lookup_operation_distribution(
+        cfg.get("operation_distributions")
+        or cfg.get("operations")
+        or cfg.get("processing_time_distributions"),
+        operation,
+        machine_id,
+    )
+    if op_dist:
+        return op_dist
+
+    for key in ("distribution", "processing_time_distribution", "default_distribution"):
+        value = cfg.get(key)
+        if _looks_like_distribution(value):
+            return value
+    if _looks_like_distribution(cfg):
+        return cfg
+    return None
+
+
+def _lookup_machine_distribution(mapping: Any, machine_id: int) -> Optional[dict]:
+    if not isinstance(mapping, dict):
+        return None
+    value = mapping.get(str(machine_id), mapping.get(machine_id))
+    return value if _looks_like_distribution(value) else None
+
+
+def _lookup_operation_distribution(mapping: Any, operation: Any, machine_id: int) -> Optional[dict]:
+    if not isinstance(mapping, dict):
+        return None
+    job_id = getattr(operation, "job_id", None)
+    op_id = getattr(operation, "op_id", None)
+    keys = [
+        f"{job_id}:{op_id}",
+        f"{job_id}.{op_id}",
+        f"{job_id}-{op_id}",
+        str(op_id),
+        op_id,
+    ]
+    for key in keys:
+        value = mapping.get(key)
+        if _looks_like_distribution(value):
+            return value
+        if isinstance(value, dict):
+            machine_value = _lookup_machine_distribution(
+                value.get("machine_distributions")
+                or value.get("distributions_by_machine")
+                or value.get("processing_time_distributions"),
+                machine_id,
+            )
+            if machine_value:
+                return machine_value
+            if _looks_like_distribution(value.get("distribution")):
+                return value.get("distribution")
+    return None
+
+
+def _looks_like_distribution(value: Any) -> bool:
+    return isinstance(value, dict) and isinstance(value.get("dist"), str)

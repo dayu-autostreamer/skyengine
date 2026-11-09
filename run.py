@@ -240,82 +240,86 @@ if __name__ == "__main__":
         transfer_time_estimator=transfer_estimator,
     )
 
-    # --- HTTP Solver 热身：等待微服务就绪 ---
-    import requests as _req
-    import time as _time
+    try:
+        # --- HTTP Solver 热身：等待微服务就绪 ---
+        import requests as _req
+        import time as _time
 
-    def _wait_for_service(name, url, max_wait=120):
-        """轮询直到服务返回 200，或超时报错"""
-        health_url = url.rstrip("/") + "/health"
-        deadline = _time.time() + max_wait
-        while _time.time() < deadline:
-            try:
-                resp = _req.get(health_url, timeout=5)
-                if resp.status_code == 200:
-                    print(f"[Warmup] {name} is ready ({url})")
-                    return True
-            except Exception:
-                pass
-            remaining = int(deadline - _time.time())
-            print(f"[Warmup] Waiting for {name} ({url})... {remaining}s remaining")
-            _time.sleep(2)
-        print(f"[Warmup] WARNING: {name} ({url}) did not become ready within {max_wait}s")
-        return False
+        def _wait_for_service(name, url, max_wait=120):
+            """轮询直到服务返回 200，或超时报错"""
+            health_url = url.rstrip("/") + "/health"
+            deadline = _time.time() + max_wait
+            while _time.time() < deadline:
+                try:
+                    resp = _req.get(health_url, timeout=5)
+                    if resp.status_code == 200:
+                        print(f"[Warmup] {name} is ready ({url})")
+                        return True
+                except Exception:
+                    pass
+                remaining = int(deadline - _time.time())
+                print(f"[Warmup] Waiting for {name} ({url})... {remaining}s remaining")
+                _time.sleep(2)
+            print(f"[Warmup] WARNING: {name} ({url}) did not become ready within {max_wait}s")
+            return False
 
-    if os.getenv("SOLVER_JOB", "greedy") == "http":
-        _wait_for_service("FJSP", os.getenv("FJSP_SERVICE_URL", "http://fjsp:8002"))
-    if os.getenv("SOLVER_ROUTE", "astar") == "http":
-        _wait_for_service("MAPF", os.getenv("MAPF_SERVICE_URL", "http://mapf:8001"))
+        if os.getenv("SOLVER_JOB", "greedy") == "http":
+            _wait_for_service("FJSP", os.getenv("FJSP_SERVICE_URL", "http://fjsp:8002"))
+        if os.getenv("SOLVER_ROUTE", "astar") == "http":
+            _wait_for_service("MAPF", os.getenv("MAPF_SERVICE_URL", "http://mapf:8001"))
 
-    # 测试多次步进
-    num_steps = int(os.getenv("NUM_STEPS", 1000))
-    print_interval = int(os.getenv("PRINT_INTERVAL", 50))  # 每 N 步打印一次指标
+        # 测试多次步进
+        num_steps = int(os.getenv("NUM_STEPS", 1000))
+        print_interval = int(os.getenv("PRINT_INTERVAL", 50))  # 每 N 步打印一次指标
 
-    for i in range(num_steps):
-        obs, rewards, terminations, truncations, infos = session.step()
+        for i in range(num_steps):
+            obs, rewards, terminations, truncations, infos = session.step()
 
-        # --- 运输感知反馈更新 ---
-        if transfer_estimator is not None:
-            for agent in obs.get("task_observation", {}).get("agents", []):
-                if agent.finished_tasks:
-                    for task in agent.finished_tasks:
-                        transfer_estimator.update_from_task(task)
+            # --- 运输感知反馈更新 ---
+            if transfer_estimator is not None:
+                for agent in obs.get("task_observation", {}).get("agents", []):
+                    if agent.finished_tasks:
+                        for task in agent.finished_tasks:
+                            transfer_estimator.update_from_task(task)
 
-        # --- 指标打印 ---
-        if (i + 1) % print_interval == 0 or terminations["job_done"]:
-            m = infos.get('metrics', {})
-            print(
-                f"[Step {i+1:>4d}]  "
-                f"machine_util={m.get('machine_utilization', 0):.3f}  "
-                f"op_queue_wait={m.get('operation_queue_waiting_time_mean', 0):.1f}  "
-                f"stationary={m.get('tasked_stationary_count', 0)}  "
-                f"swap_conflict={m.get('swap_conflict_count', 0)}  "
-                f"agv_loaded={m.get('agv_loaded_utilization', 0):.3f}  "
-                f"agv_busy={m.get('agv_busy_utilization', 0):.3f}  "
-                f"delay_ratio={m.get('transport_delay_ratio', 0):.3f}  "
-                f"inbound_wait={m.get('machine_waiting_for_inbound_transfer_ratio', 0):.3f}  "
-                f"reward={infos.get('metrics_reward', 0):.4f}"
-            )
+            # --- 指标打印 ---
+            if (i + 1) % print_interval == 0 or terminations["job_done"]:
+                m = infos.get('metrics', {})
+                print(
+                    f"[Step {i+1:>4d}]  "
+                    f"machine_util={m.get('machine_utilization', 0):.3f}  "
+                    f"op_queue_wait={m.get('operation_queue_waiting_time_mean', 0):.1f}  "
+                    f"stationary={m.get('tasked_stationary_count', 0)}  "
+                    f"swap_conflict={m.get('swap_conflict_count', 0)}  "
+                    f"agv_loaded={m.get('agv_loaded_utilization', 0):.3f}  "
+                    f"agv_busy={m.get('agv_busy_utilization', 0):.3f}  "
+                    f"delay_ratio={m.get('transport_delay_ratio', 0):.3f}  "
+                    f"inbound_wait={m.get('machine_waiting_for_inbound_transfer_ratio', 0):.3f}  "
+                    f"reward={infos.get('metrics_reward', 0):.4f}"
+                )
 
-        if terminations["job_done"]:
-            # 打印 episode 汇总
+            if terminations["job_done"]:
+                # 打印 episode 汇总
+                summary = env.metrics_hub.get_episode_summary()
+                print("\n===== Episode Summary =====")
+                for k, v in summary.items():
+                    print(f"  {k}: {v}")
+                print("===========================\n")
+                break
+
+            res = draw_svg_with_machines_and_targets(env.pogema_env, env.env_timeline)
+
+            # SVG 输出到 sky_logs/svg/
+            svg_dir = os.path.join(os.getenv("SKY_LOG_DIR", "./sky_logs"), "svg")
+            os.makedirs(svg_dir, exist_ok=True)
+            with open(f"{svg_dir}/{env.env_timeline}.svg", "w") as f:
+                f.write(res)
+        else:
+            # 没有 break（达到 max_steps 但未完成）
             summary = env.metrics_hub.get_episode_summary()
-            print("\n===== Episode Summary =====")
+            print(f"\n===== Episode ended at max_steps={num_steps} =====")
             for k, v in summary.items():
                 print(f"  {k}: {v}")
-            print("===========================\n")
-            break
 
-        res = draw_svg_with_machines_and_targets(env.pogema_env, env.env_timeline)
-
-        # SVG 输出到 sky_logs/svg/
-        svg_dir = os.path.join(os.getenv("SKY_LOG_DIR", "./sky_logs"), "svg")
-        os.makedirs(svg_dir, exist_ok=True)
-        with open(f"{svg_dir}/{env.env_timeline}.svg", "w") as f:
-            f.write(res)
-    else:
-        # 没有 break（达到 max_steps 但未完成）
-        summary = env.metrics_hub.get_episode_summary()
-        print(f"\n===== Episode ended at max_steps={num_steps} =====")
-        for k, v in summary.items():
-            print(f"  {k}: {v}")
+    finally:
+        session.close()

@@ -19,25 +19,32 @@ SkyEngine 仿真控制服务 (sim_server.py)
 import json
 import importlib
 import threading
+
 import asyncio
 import queue as thread_queue
 import time
-from collections import deque
 from copy import deepcopy
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
-from sky_executor.grid_factory.factory.Utils.structure import Job, Operation
-from sky_executor.grid_factory.factory.Component.Coordinator.coordinator import Coordinator
+from sky_executor.lifecycle import RunReplaced
 from sky_executor.grid_factory.factory.Component.RaceFMS.coordinator import RaceFMSCoordinator
 from sky_executor.grid_factory.factory.Component.RaceFMS.coupling import CounterfactualCouplingEstimator
 from sky_executor.grid_factory.factory.Component.RaceFMS.recovery import AdaptiveRecoveryGate, RecoveryScope
 from sky_executor.utils.diff import DiffEmitter, make_envelope
 from sky_executor.session import SimulationSession, create_env_from_config as shared_create_env_from_config
-from sky_executor.runtime_log import build_runtime_frame
 
-app = FastAPI()
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    try:
+        yield
+    finally:
+        await asyncio.to_thread(manager.shutdown)
+
+
+app = FastAPI(lifespan=_lifespan)
 
 
 class _SimulationRecoveryHandler:
@@ -47,13 +54,20 @@ class _SimulationRecoveryHandler:
         self.manager = manager
 
     def recover(self, decision, state, observation, delegate):
+        env = self.manager.env
+        worker = env.ensure_perception_worker()
         result = self.manager._recover_runtime(decision, delegate)
-        observation.update(self.manager.session.obs)
+        # Recovery used to update shared observation references. Refresh only
+        # the solver's private working copy after runtime-owned writes finish.
+        snapshot = worker.request_snapshot().result()
+        env.require_current_run(worker)
+        observation.clear()
+        observation.update(snapshot.observation)
         return result
 
 
 def create_env_from_config(config: dict, *, agent_observation_type: str = "default"):
-    """从 JSON 配置创建正式环境；车辆观测格式与算法名称独立。"""
+    """Create the shared environment using an explicit vehicle observation format."""
     return shared_create_env_from_config(config, agent_observation_type=agent_observation_type)
 
 
@@ -75,12 +89,16 @@ class SimulationManager:
         self.env = None
         self.session: SimulationSession | None = None
         self.coordinator = None
+        self._replay_enabled = False
+        self._replay_actions = []
+        self._policy_controller = None
         self.obs = None
         self._machine_metadata: dict[int, dict] = {}
 
         self.running = False
         self.paused = False
         self.step = 0
+        self._last_factory_event_epoch = 0
         self.max_steps = 1000
 
         self._thread = None
@@ -103,23 +121,10 @@ class SimulationManager:
         self._episode_status: str = "idle"  # idle | running | stopped
         self._event_history: list[dict] = []
         self._insert_lock = threading.Lock()
-        self._pending_inserts = deque()
-        self._insertion_requests: list[dict] = []
         self._next_insert_id = 1
         self._next_job_id = 0
-        self._plan_revision = 0
         self._fjsp_algorithm = ""
         self._assigner_name = ""
-        self._replay_actions = []
-        self._replay_enabled = False
-        self._policy_controller = None
-        self._insertion_metrics = {
-            "inserted_jobs_completed": 0,
-            "job_replan_count": 0,
-            "job_replan_failed": 0,
-            "job_replan_latency_ms": 0.0,
-            "urgent_response_time": 0.0,
-        }
         self._recovery_metrics = {
             "race_residual_replan_count": 0,
             "race_residual_replan_failed": 0,
@@ -284,11 +289,11 @@ class SimulationManager:
         if etype in {"temporary_obstacle", "obstacle_clear"}:
             cell = public_payload.get("cell")
             if isinstance(cell, (list, tuple)) and len(cell) >= 2:
-                public_payload["cell"] = self._to_public_xy(cell)
+                public_payload["cell"] = list(cell)
         if etype == "agv_breakdown":
             position = public_payload.get("position")
             if isinstance(position, (list, tuple)) and len(position) >= 2:
-                public_payload["position"] = self._to_public_xy(position)
+                public_payload["position"] = list(position)
         return public_payload
 
     def _public_exception_event(self, event: dict) -> dict:
@@ -301,10 +306,19 @@ class SimulationManager:
         return public_event
 
     def _emit_exception_events(self, events: list[dict], step: int):
-        """Emit ExceptionInjector records through the same canonical event stream."""
+        """Emit factory event records through the same canonical event stream."""
         if not events:
             return
         for raw_event in events:
+            # Business UI events retain the main frame-diff protocol.
+            if raw_event.get("type") not in {
+                "machine_breakdown", "machine_recovery", "agv_breakdown",
+                "agv_recovery", "temporary_obstacle", "obstacle_clear",
+            }:
+                continue
+            epoch = raw_event.get("event_epoch")
+            if epoch is not None and epoch <= self._last_factory_event_epoch:
+                continue
             event = self._public_exception_event(raw_event)
             etype = event.get("type", "exception")
             payload = event.get("payload") or {}
@@ -319,6 +333,8 @@ class SimulationManager:
                 payload=payload,
             )
             self._record_stream_event(envelope)
+            if epoch is not None:
+                self._last_factory_event_epoch = epoch
 
     def _normalize_manual_exception_event(self, event: dict) -> dict:
         normalized = deepcopy(event or {})
@@ -327,7 +343,7 @@ class SimulationManager:
         if normalized.get("type") == "temporary_obstacle" and normalized.get("cell") is not None:
             cell = normalized.get("cell")
             if isinstance(cell, (list, tuple)) and len(cell) >= 2:
-                normalized["cell"] = self._to_internal_xy(cell)
+                normalized["cell"] = list(cell)
         return normalized
 
     def _normalize_manual_exception_target(self, target: dict | None) -> dict:
@@ -335,7 +351,7 @@ class SimulationManager:
         if normalized.get("type") == "temporary_obstacle" and normalized.get("cell") is not None:
             cell = normalized.get("cell")
             if isinstance(cell, (list, tuple)) and len(cell) >= 2:
-                normalized["cell"] = self._to_internal_xy(cell)
+                normalized["cell"] = list(cell)
         return normalized
 
     def _broadcast_current_frame(self):
@@ -347,6 +363,7 @@ class SimulationManager:
             self._broadcast(self._state_subs, ("state", {"status": self._episode_status, "frame": frame}))
 
     def _emit_insert_event(self, etype: str, record: dict, **extra):
+        step = record["timeline"][-1]["step"]
         payload = {
             "request_id": record["request_id"],
             "job_ids": list(record.get("job_ids", [])),
@@ -363,12 +380,13 @@ class SimulationManager:
         }
         title, message = titles[etype]
         self._record_stream_event(make_envelope(
-            self.step, f"T+{self.step}s", etype=etype, title=title,
+            step, f"T+{step}s", etype=etype, title=title,
             message=message, level="error" if etype.endswith("failed") else "info",
             payload=payload,
         ))
 
     def _emit_insert_phase_event(self, record: dict):
+        step = record["timeline"][-1]["step"]
         phase = record.get("phase", "queued")
         labels = {
             "queued": "排队", "replanning": "重规划", "scheduled": "已排程",
@@ -387,12 +405,23 @@ class SimulationManager:
             "source": "manual",
         }
         self._record_stream_event(make_envelope(
-            self.step, f"T+{self.step}s", etype="job_insertion_phase_changed",
+            step, f"T+{step}s", etype="job_insertion_phase_changed",
             title="插单状态更新",
             message=f"{record.get('request_id')}：{labels.get(phase, phase)}",
             level="error" if phase == "failed" else ("success" if phase == "completed" else "info"),
             payload=payload,
         ))
+
+    def _publish_insertion_phase(self, record):
+        """Render a copied business update using the existing frontend event schema."""
+        self._emit_insert_phase_event(record)
+        if record["phase"] == "replanning":
+            self._emit_insert_event("job_replan_started", record)
+        elif record["phase"] == "scheduled":
+            self._emit_insert_event("urgent_job_arrival", record)
+            self._emit_insert_event("job_replan_completed", record)
+        elif record["phase"] == "failed":
+            self._emit_insert_event("job_replan_failed", record)
 
     @staticmethod
     def _validate_insert_job(raw_job, machine_count):
@@ -423,8 +452,8 @@ class SimulationManager:
     def enqueue_insert_jobs(self, body: dict) -> dict:
         if self.env is None or not self.running:
             return {"status": "error", "phase": "rejected", "message": "仿真未运行，无法插单"}
-        if self._policy_controller is not None or self._replay_enabled:
-            return {"status": "error", "phase": "rejected", "message": "该插单接口仅支持外部 PSO 服务模式"}
+        if self._replay_enabled or self._policy_controller is not None:
+            return {"status": "error", "phase": "rejected", "message": "策略或回放模式不支持手动插单"}
         if self._fjsp_algorithm.lower() != "pso" or self._assigner_name.lower() != "nearest":
             return {"status": "error", "phase": "rejected", "message": "第一版仅支持 PSO + nearest"}
         pogema = self.env.pogema_env
@@ -470,192 +499,120 @@ class SimulationManager:
             if not accepted:
                 return {"status": "error", "phase": "rejected", "request_id": request_id,
                         "accepted_step": accepted_step, "inserted": [], "rejected": rejected}
-            record = {
-                "request_id": request_id, "phase": "queued", "accepted_step": accepted_step,
-                "inserted": accepted, "rejected": rejected, "job_ids": [j["job_id"] for j in pending_jobs],
-                "timeline": [{"phase": "queued", "step": accepted_step}], "revision": None,
-                "latency_ms": None, "error": None, "_jobs": pending_jobs,
-            }
-            self._pending_inserts.append(record)
-            self._insertion_requests.append(record)
-        self._emit_insert_phase_event(record)
+        from sky_executor.perception.contracts import JobInsertionRequest
+        request = JobInsertionRequest(request_id, tuple(pending_jobs), accepted_step, tuple(accepted), tuple(rejected))
+        self.env.job_insertions.on_phase_change = self._publish_insertion_phase
+        result = self.session.submit_job_insertion(request)
+        if not result.applied:
+            return {"status": "error", "phase": "rejected", "request_id": request_id, "message": result.reason}
+        self.obs = self.session.obs
         self._broadcast_current_frame()
         return {"status": "partial" if rejected else "ok", "phase": "queued",
                 "request_id": request_id, "accepted_step": accepted_step,
                 "inserted": accepted, "rejected": rejected}
 
-    def _set_insert_phase(self, record, phase, **fields):
-        if record.get("phase") == phase:
-            return
-        record["phase"] = phase
-        record.update(fields)
-        record.setdefault("timeline", []).append({"phase": phase, "step": int(self.step)})
-        self._emit_insert_phase_event(record)
 
-    def _build_replan_problem(self, new_jobs):
-        problem: dict = self.session.residual_problem()
-        now: float = problem["current_step"]
-        problem_jobs: list = problem["jobs"]
-        materialized = []
-        for item in new_jobs:
-            ops = []
-            for op_id, alternatives in enumerate(item["operations"]):
-                pairs = [(int(alt["machine"]), float(alt["processing"])) for alt in alternatives]
-                ops.append(Operation(
-                    job_id=item["job_id"], op_id=op_id,
-                    machine_options=[mid for mid, _ in pairs], machine_options_with_time=pairs,
-                    proc_time=min(pt for _, pt in pairs), nominal_proc_time=min(pt for _, pt in pairs),
-                    release=now, due=item["due"], priority=item["priority"],
-                    request_id=item["request_id"],
-                ))
-            job = Job(job_id=item["job_id"], ops=ops, release=now, due=item["due"],
-                      priority=item["priority"], name=item["name"], request_id=item["request_id"])
-            materialized.append(job)
-            problem_jobs.append(self._problem_job(job, ops, now, -1))
-        return problem, materialized
-
-    @staticmethod
-    def _replanned_keys(problem):
-        return {
-            (job["job_id"], operation["op_id"])
-            for job in problem.get("jobs", [])
-            for operation in job.get("operations", [])
-        }
-
-    def _install_residual_plan(self, problem, new_jobs=()):
-        """Install local consequences only after the remote replan succeeded."""
-        replanned_keys = self._replanned_keys(problem)
-        self.session.insert_jobs(list(new_jobs), replanned_keys)
-        self.obs = self.session.obs
-        self._plan_revision += 1
-
-    def _reassign_unloaded_failed_agvs(self):
+    def _reassign_unloaded_failed_agvs(self, session, worker):
         """Return physically uncollected tasks to the assignment queue."""
-        pogema = self.env.pogema_env
-        blocked_loaded: int = sum(task is not None and pogema.agv_loaded[index] and pogema.agv_status[index] != "OK"
-                                  for index, task in enumerate(pogema.agv_current_task))
-        reassigned: int = pogema.release_failed_unloaded_transfers()
-        self.session.refresh_observation()
-        self.obs = self.session.obs
-        self._recovery_metrics["race_agv_reassign_count"] += reassigned
-        self._recovery_metrics["race_agv_reassign_blocked_loaded"] += blocked_loaded
+        env = session.env
+        with env.process_business_chain(run_worker=worker):
+            with env.state_lock:
+                agents = [agent_id for agent_id, task in enumerate(env.state.agv_current_task)
+                          if task is not None and env.state.agv_status[agent_id] != "OK"
+                          and not env.state.agv_loaded[agent_id]]
+                blocked_loaded = sum(task is not None and env.state.agv_status[i] != "OK"
+                                     and env.state.agv_loaded[i]
+                                     for i, task in enumerate(env.state.agv_current_task))
+            result = env.apply_reschedule({"release_agvs": agents}) if agents else None
+            reassigned = len(agents) if result is not None and result.applied else 0
+            if result is not None and not result.applied:
+                blocked_loaded += len(agents)
+        snapshot = worker.request_snapshot().result()
+        with env.read_state():
+            env.require_current_run(worker)
+            session.obs = snapshot.observation
+            self.obs = session.obs
+            self._recovery_metrics["race_agv_reassign_count"] += reassigned
+            self._recovery_metrics["race_agv_reassign_blocked_loaded"] += blocked_loaded
         return reassigned
 
     def _recover_runtime(self, decision, delegate):
         """Execute the smallest runtime recovery selected by the RACE gate."""
+        session = self.session
+        env = session.env
+        worker = env.ensure_perception_worker()
+        generation = self._run_generation
         scope = decision.scope
         if scope == RecoveryScope.PATH_REPLAN:
             # Route solvers consume the changed map observation on this same step.
             return None
         if scope == RecoveryScope.AGV_REASSIGN:
-            self._reassign_unloaded_failed_agvs()
+            with self._env_lock:
+                if generation != self._run_generation or self.session is not session:
+                    raise RunReplaced("recovery belongs to a reset or closed run")
+                self._reassign_unloaded_failed_agvs(session, worker)
         if scope not in {
             RecoveryScope.LOCAL_PRODUCTION_REPLAN,
             RecoveryScope.JOINT_ROLLING_REPLAN,
         }:
             return None
 
-        problem, _ = self._build_replan_problem([])
+        from sky_executor.job_insertion import build_replan_problem
+        with env.read_state():
+            problem, _ = build_replan_problem(env, env.scene_adapter.planning_time(), [])
+            total_unfinished = sum(operation.status != "FINISHED"
+                                   for job in env.pogema_env.jobs for operation in job.ops)
         if not problem["jobs"]:
             if scope == RecoveryScope.JOINT_ROLLING_REPLAN:
-                self._reassign_unloaded_failed_agvs()
+                with self._env_lock:
+                    if generation != self._run_generation or self.session is not session:
+                        raise RunReplaced("recovery belongs to a reset or closed run")
+                    self._reassign_unloaded_failed_agvs(session, worker)
             return None
-        replanned_count = len(self._replanned_keys(problem))
-        total_unfinished = sum(
-            operation.status != "FINISHED"
-            for job in self.env.pogema_env.jobs
-            for operation in job.ops
-        )
+        replanned_keys = frozenset((job["job_id"], op["op_id"]) for job in problem["jobs"] for op in job["operations"])
+        replanned_count = len(replanned_keys)
         started = time.perf_counter()
         try:
             result = delegate.job_solver.replan(problem)
-            self._install_residual_plan(problem)
-        except Exception:
-            self._recovery_metrics["race_residual_replan_failed"] += 1
+        except Exception as error:
+            with self._env_lock:
+                if generation != self._run_generation or self.session is not session:
+                    raise RunReplaced("late recovery failure from a reset or closed run") from error
+                with env.processing_lock:
+                    try:
+                        env.require_current_run(worker)
+                    except RunReplaced as replaced:
+                        raise replaced from error
+                    self._recovery_metrics["race_residual_replan_failed"] += 1
             raise
-        latency = float(result.get("latency_ms", (time.perf_counter() - started) * 1000))
-        self._recovery_metrics["race_residual_replan_count"] += 1
-        self._recovery_metrics["race_residual_replan_latency_ms"] += latency
-        self._recovery_metrics["race_replanned_operation_count"] += replanned_count
-        self._recovery_metrics["race_last_replanned_fraction"] = (
-            replanned_count / max(total_unfinished, 1)
-        )
-        if scope == RecoveryScope.JOINT_ROLLING_REPLAN:
-            # Reassign only after production replanning succeeds, so a failed
-            # remote solve cannot leave local transport ownership half-mutated.
-            self._reassign_unloaded_failed_agvs()
+        with self._env_lock:
+            if generation != self._run_generation or self.session is not session:
+                raise RunReplaced("late recovery plan from a reset or closed run")
+            from sky_executor.perception.contracts import JobPlanningUpdate
+            with env.processing_lock:
+                env.require_current_run(worker)
+                report = env.scene_adapter.job_report(JobPlanningUpdate(None, "scheduled", replanned_keys=replanned_keys))
+                handle = worker.submit_report(report)
+            applied = handle.result()
+            if not applied.applied:
+                error = RuntimeError("current recovery plan was rejected: " + applied.reason)
+                env.fail_execution(error)
+                raise error
+            observation = worker.request_snapshot().result().observation
+            with env.read_state():
+                env.require_current_run(worker)
+                session.obs = observation
+                self.obs = session.obs
+                latency = float(result.get("latency_ms", (time.perf_counter() - started) * 1000))
+                self._recovery_metrics["race_residual_replan_count"] += 1
+                self._recovery_metrics["race_residual_replan_latency_ms"] += latency
+                self._recovery_metrics["race_replanned_operation_count"] += replanned_count
+                self._recovery_metrics["race_last_replanned_fraction"] = replanned_count / max(total_unfinished, 1)
+            if scope == RecoveryScope.JOINT_ROLLING_REPLAN:
+                # Reassign only after the production plan has been accepted.
+                self._reassign_unloaded_failed_agvs(session, worker)
         return None
 
-    @staticmethod
-    def _problem_job(job, operations, ready_time, from_machine):
-        return {
-            "job_id": job.job_id, "ready_time": ready_time, "from_machine": from_machine,
-            "priority": getattr(job, "priority", 0), "due": job.due,
-            "request_id": getattr(job, "request_id", None),
-            "operations": [{
-                "op_id": op.op_id,
-                "alternatives": [{"machine": int(mid), "processing": float(pt)}
-                                 for mid, pt in (op.machine_options_with_time or [(op.assigned_machine, op.proc_time)])],
-            } for op in operations],
-        }
-
-    def _drain_insert_queue(self):
-        while True:
-            with self._insert_lock:
-                if not self._pending_inserts:
-                    return
-                record = self._pending_inserts.popleft()
-            self._set_insert_phase(record, "replanning")
-            self._emit_insert_event("job_replan_started", record)
-            started = time.perf_counter()
-            try:
-                problem, new_jobs = self._build_replan_problem(record.pop("_jobs"))
-                result = self.coordinator.job_solver.replan(problem)
-                latency = float(result.get("latency_ms", (time.perf_counter() - started) * 1000))
-                for job in new_jobs:
-                    job.request_id = record["request_id"]
-                    for op in job.ops:
-                        op.request_id = record["request_id"]
-                self._install_residual_plan(problem, new_jobs)
-                self._set_insert_phase(record, "scheduled", revision=self._plan_revision, latency_ms=latency)
-                self._insertion_metrics["job_replan_count"] += 1
-                self._insertion_metrics["job_replan_latency_ms"] += latency
-                self._emit_insert_event("urgent_job_arrival", record)
-                self._emit_insert_event("job_replan_completed", record)
-            except Exception as exc:
-                self._set_insert_phase(record, "failed", error=str(exc),
-                                       latency_ms=round((time.perf_counter() - started) * 1000, 3))
-                self._insertion_metrics["job_replan_failed"] += 1
-                self._emit_insert_event("job_replan_failed", record)
-
-    def _update_insert_phases(self):
-        if self.env is None:
-            return
-        pogema = self.env.pogema_env
-        active = {(t.job_id, t.op_id) for t in pogema.active_transfers}
-        jobs = {job.job_id: job for job in pogema.jobs}
-        order = {"queued": 0, "replanning": 1, "scheduled": 2,
-                 "transporting": 3, "processing": 4, "completed": 5, "failed": 99}
-        for record in self._insertion_requests:
-            if record["phase"] in {"queued", "replanning", "failed", "completed"}:
-                continue
-            tracked = [jobs[jid] for jid in record["job_ids"] if jid in jobs]
-            target = "scheduled"
-            if tracked and all(job.is_completed for job in tracked):
-                target = "completed"
-            elif any(op.status == "PROCESSING" for job in tracked for op in job.ops):
-                target = "processing"
-            elif any((job.job_id, op.op_id) in active for job in tracked for op in job.ops):
-                target = "transporting"
-            if order[target] > order.get(record["phase"], 0):
-                start_index = order.get(record["phase"], 0) + 1
-                for phase in ("scheduled", "transporting", "processing", "completed"):
-                    if start_index <= order[phase] <= order[target]:
-                        self._set_insert_phase(record, phase)
-                if target == "completed":
-                    self._insertion_metrics["inserted_jobs_completed"] += len(tracked)
-                    response = max(0, self.step - record["accepted_step"])
-                    self._insertion_metrics["urgent_response_time"] += response
 
     def inject_exception(self, event: dict) -> dict:
         if self.session is None:
@@ -663,6 +620,7 @@ class SimulationManager:
         normalized = self._normalize_manual_exception_event(event)
         with self._env_lock:
             result = self.session.inject_exception(normalized, self.step)
+            self.obs = self.session.obs
             raw_events = list(result.get("events", []))
             public_events = [self._public_exception_event(e) for e in raw_events]
             result["events"] = public_events
@@ -678,6 +636,7 @@ class SimulationManager:
         normalized_target = self._normalize_manual_exception_target(target)
         with self._env_lock:
             result = self.session.clear_exceptions(normalized_target, self.step)
+            self.obs = self.session.obs
             raw_events = list(result.get("events", []))
             public_events = [self._public_exception_event(e) for e in raw_events]
             result["events"] = public_events
@@ -718,10 +677,9 @@ class SimulationManager:
             for index, (config_key, machine) in enumerate(machines.items())
         }
 
-        # Native policies and replay provide all actions; only service mode
-        # needs a coordinator. Observation format is a separate protocol field.
-        native_actions: bool = self._policy_controller is not None or self._replay_enabled
-        agent_observation_type: str = str(config.get("agent_observation_type", "default"))
+        # 用 use_io.py 同款逻辑解析配置 → 创建环境
+        # Observation format is an explicit protocol field supplied by the caller.
+        native_actions = self._policy_controller is not None or self._replay_enabled
         with self._env_lock:
             self.session = SimulationSession.from_config(
                 factory_config,
@@ -729,7 +687,7 @@ class SimulationManager:
                 job_solver="http",
                 route_solver="http",
                 assigner=assigner,
-                agent_observation_type=agent_observation_type,
+                agent_observation_type=str(config.get("agent_observation_type", "default")),
                 job_solver_kwargs={
                     "service_url": "http://fjsp:8002",
                     "algorithm": fjsp_algo,
@@ -743,6 +701,8 @@ class SimulationManager:
             self.env = self.session.env
             self.obs = self.session.obs
 
+        # Coordinator: 固定用 HTTP 求解器，连接算法容器
+        # 算法容器在同一 Docker 网络，用容器名 DNS 通信
         base_coordinator = self.session.coordinator
         if base_coordinator is not None:
             base_coordinator.route_solver.pogema_env = self.env.pogema_env
@@ -778,16 +738,8 @@ class SimulationManager:
         self.obs = self.session.obs
         self.max_steps = self._parse_max_steps(factory_config)
         self.step = 0
-        self._next_job_id = max((job.job_id for job in self.env.pogema_env.jobs), default=-1) + 1
         self._next_insert_id = 1
-        self._plan_revision = 0
-        self._pending_inserts.clear()
-        self._insertion_requests = []
-        self._insertion_metrics = {
-            "inserted_jobs_completed": 0, "job_replan_count": 0,
-            "job_replan_failed": 0, "job_replan_latency_ms": 0.0,
-            "urgent_response_time": 0.0,
-        }
+        self._next_job_id = max((job.job_id for job in self.env.state._all_jobs), default=-1) + 1
         self._recovery_metrics = {
             "race_residual_replan_count": 0,
             "race_residual_replan_failed": 0,
@@ -806,6 +758,7 @@ class SimulationManager:
         self._heatmaps = None
         self._event_history = []
         self._diff.reset()
+        self._last_factory_event_epoch = 0
 
         max_steps_label = self.max_steps if self.max_steps is not None else "unlimited"
         print(f"[sim_server] 环境创建完成, fjsp={fjsp_algo}, mapf={mapf_algo}, assigner={assigner}, max_steps={max_steps_label}")
@@ -849,16 +802,8 @@ class SimulationManager:
                 self._episode_summary = None
                 self._heatmaps = None
                 self._event_history = []
-                self._pending_inserts.clear()
-                self._insertion_requests = []
-                self._next_job_id = max((job.job_id for job in self.env.pogema_env.jobs), default=-1) + 1
                 self._next_insert_id = 1
-                self._plan_revision = 0
-                self._insertion_metrics = {
-                    "inserted_jobs_completed": 0, "job_replan_count": 0,
-                    "job_replan_failed": 0, "job_replan_latency_ms": 0.0,
-                    "urgent_response_time": 0.0,
-                }
+                self._next_job_id = max((job.job_id for job in self.env.state._all_jobs), default=-1) + 1
                 self._recovery_metrics = {
                     "race_residual_replan_count": 0,
                     "race_residual_replan_failed": 0,
@@ -869,6 +814,7 @@ class SimulationManager:
                     "race_agv_reassign_blocked_loaded": 0,
                 }
                 self._diff.reset()
+                self._last_factory_event_epoch = 0
         print("[sim_server] 环境已重置")
 
     def stop(self):
@@ -876,18 +822,23 @@ class SimulationManager:
         self._episode_status = "stopped"
         print("[sim_server] 仿真停止")
 
-    def _stop_internal(self):
+    def shutdown(self):
+        self._stop_internal(wait=False)
+        if self.session is not None:
+            self.session.close()
+
+    def _stop_internal(self, *, wait=True):
         self._run_generation += 1
         self._stop_event.set()
         self._pause_event.set()
-        if self._thread:
+        if wait and self._thread:
             self._thread.join(timeout=10)
         self.running = False
         self._thread = None
 
     def _build_frame(self) -> dict:
-        self._update_insert_phases()
-        return build_runtime_frame(self.session, self._insertion_requests)
+        from sky_executor.runtime_log import build_runtime_frame
+        return build_runtime_frame(self.session)
 
     def _dump_agv_state(self, tag: str = ""):
         """诊断: 打印每个 AGV 的位置 + current_task，定位死锁。"""
@@ -920,24 +871,33 @@ class SimulationManager:
                 t0 = time.time()
                 print(f"[sim_server] step={self.step} 开始 step...", flush=True)
                 with self._env_lock:
-                    self._drain_insert_queue()
                     if self._stop_event.is_set() or generation != self._run_generation:
                         break
+                    session = self.session
+                    controller = self._policy_controller
+                    observation = self.obs
                     if self._replay_enabled and self.step >= len(self._replay_actions):
-                        self._stop_event.set()
-                        self.running = False
                         self._episode_status = "replay_exhausted"
+                        with self._subs_lock:
+                            self._broadcast(self._state_subs, ("state", {
+                                "status": "replay_exhausted", "frame": self._latest_frame,
+                            }))
                         break
-                    replay_action = self._replay_actions[self.step] if self._replay_enabled else None
-                    if replay_action is None and self._policy_controller is not None:
-                        replay_action = self._policy_controller.act(self.obs, None, deterministic=True)
-                    self.obs, rewards, terminations, truncations, infos = self.session.step(replay_action)
-                    self.step = self.session.step_index
+                    action = self._replay_actions[self.step] if self._replay_enabled else None
+                # Inference can block. Keep it outside the manager and core locks,
+                # and discard results from a run replaced by reset/create/stop.
+                if not self._replay_enabled and controller is not None:
+                    action = controller.act(observation, None, deterministic=True)
+                if self._stop_event.is_set() or generation != self._run_generation:
+                    break
+                result = session.step(action)
+                with self._env_lock:
                     if self._stop_event.is_set() or generation != self._run_generation:
                         break
+                    self.obs, rewards, terminations, truncations, infos = result
+                    self.step = session.step_index
                     elapsed = time.time() - t0
                     print(f"[sim_server] step={self.step} 完成 ({elapsed:.2f}s)", flush=True)
-
                     frame = self._build_frame()
                     self._latest_frame = frame
                 print(f"[sim_server] step={self.step} frame 已生成, "
@@ -945,7 +905,7 @@ class SimulationManager:
                       f"机器数={len(frame['machines'])}, "
                       f"transfers={len(frame['active_transfers'])}", flush=True)
 
-                # 异常事件（ExceptionInjector 主动扰动）与状态跃迁事件（DiffEmitter）共用前端 event stream。
+                # 异常事件（已提交的故障变化）与状态跃迁事件（DiffEmitter）共用前端 event stream。
                 self._emit_exception_events(infos.get("events", []), step=self.step)
 
                 # 派生业务事件（Rule 注册表 + 信封归一化）
@@ -955,7 +915,8 @@ class SimulationManager:
                 metrics_payload = dict(infos.get("metrics", {}) or {})
                 event_metrics_payload = dict(infos.get("event_metrics", {}) or {})
                 metrics_payload.update(event_metrics_payload)
-                metrics_payload.update(self._insertion_metrics)
+                with self.env.read_state():
+                    metrics_payload.update(self.env.job_insertions.metrics)
                 metrics_payload.update(self._recovery_metrics)
                 get_race_metrics = getattr(self.coordinator, "get_race_metrics", None)
                 if callable(get_race_metrics):
@@ -1016,7 +977,11 @@ class SimulationManager:
 
                 # 每步间隔，给前端渲染时间 + 避免 decide 过快压垮 fjsp/mapf
                 self._stop_event.wait(0.5)
+        except RunReplaced:
+            return
         except Exception as e:
+            if generation != self._run_generation:
+                return
             # _run_loop 线程异常退出（如 coordinator.decide 连不上 fjsp/mapf）。
             # 必须重置 running flag，否则后续 play() 会走 if self.running: return
             # 直接返回，仿真永远无法重启。
@@ -1041,7 +1006,7 @@ manager = SimulationManager()
 async def create_sim(config: dict):
     try:
         manager.create(config)
-    except ValueError as exc:
+    except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return {"status": "ok"}
 
@@ -1091,7 +1056,8 @@ async def get_state():
             "max_steps": manager.max_steps, "fjsp_algorithm": manager._fjsp_algorithm,
             "race_fms_enabled": isinstance(manager.coordinator, RaceFMSCoordinator),
             "assigner": manager._assigner_name, "supports_job_insertion": (
-                manager._fjsp_algorithm.lower() == "pso" and manager._assigner_name.lower() == "nearest"
+                not manager._replay_enabled and manager._policy_controller is None
+                and manager._fjsp_algorithm.lower() == "pso" and manager._assigner_name.lower() == "nearest"
             )}
 
 

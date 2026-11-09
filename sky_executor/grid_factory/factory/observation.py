@@ -5,6 +5,9 @@ from copy import copy, deepcopy
 
 
 def observable_state(env) -> dict:
+    requests = {(task.job_id, task.op_id): task
+                for name in ("pending_transfers", "buffered_tasks", "transfers_to_assign", "active_transfers")
+                for task in getattr(env, name) if task.kind == "operation"}
     jobs: list = []
     operations: dict = {}
     for source in env.jobs:
@@ -12,7 +15,13 @@ def observable_state(env) -> dict:
         job.ops = []
         for original in source.ops:
             operation = deepcopy(original)
-            nominal: float = float(original.nominal_proc_time or original.proc_time)
+            task = requests.get((source.job_id, original.op_id))
+            operation.transfer_requested = task is not None or original.assigned_machine is not None
+            if task is not None and operation.assigned_machine is None:
+                destination = env.hash_machines.get(task.destination)
+                if destination is not None:
+                    operation.assigned_machine = destination.id
+            nominal = float(original.nominal_proc_time if original.nominal_proc_time is not None else original.proc_time)
             operation.remaining_proc_time = max(0.0, nominal - original.processed_time)
             if original.status != "FINISHED":
                 operation.proc_time = nominal

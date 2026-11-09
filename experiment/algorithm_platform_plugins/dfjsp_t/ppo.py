@@ -799,7 +799,8 @@ class FrozenDFJSPTPPOPolicy:
         self,
         request: DecisionRequest[Mapping[str, object]],
     ) -> DecisionResponse[dict[str, object]]:
-        policy_observation = {"planning_observation": request.observation["planning_observation"]}
+        # Requests are deeply frozen; the algorithm owns and copies its input.
+        policy_observation = {"planning_observation": to_jsonable(request.observation["planning_observation"])}
         native_action = self._policy.act(
             policy_observation,
             deterministic=True,

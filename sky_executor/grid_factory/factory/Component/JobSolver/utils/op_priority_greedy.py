@@ -46,6 +46,7 @@ def priority_greedy(
     priority_rule: str = "SPT",
     transfer_time_estimator: Callable[[int, int], float] = lambda a, b: 0.0,
 ):
+    jobs_by_id = {job.job_id: job for job in jobs}
     # machine available times
     m_avail = {m.id: 0.0 for m in machines}
     op_meta = {}
@@ -139,8 +140,8 @@ def priority_greedy(
         )
 
         # push successor op if exists
-        if op.op_id + 1 < len(jobs[j].ops):
-            next_op = jobs[j].ops[op.op_id + 1]
+        if op.op_id + 1 < len(jobs_by_id[j].ops):
+            next_op = jobs_by_id[j].ops[op.op_id + 1]
             ready.append(next_op)
 
         remaining -= 1

@@ -2,53 +2,69 @@
 from __future__ import annotations
 
 import unittest
-from pogema import GridConfig
-from sky_executor.grid_factory.factory.assign_env import PogemaLifeLongWithAssign
-from sky_executor.grid_factory.factory.Utils.structure import Job, Machine, Operation, RoutingTask
+from sky_executor.session import SimulationSession
+from sky_executor.grid_factory.factory.Utils.structure import RoutingTask
 from experiment.algorithm_platform_plugins.dfjsp_t.buffer_safety import safe_to_admit
 from experiment.algorithm_platform_plugins.dfjsp_t.pibt import PIBTRouter
 
 
 class BaselineDeadlocksTest(unittest.TestCase):
-    def make_environment(self) -> PogemaLifeLongWithAssign:
-        env = PogemaLifeLongWithAssign(
-            GridConfig(map=[[0] * 5 for _ in range(5)], agents_xy=[(2, 2)], targets_xy=[(2, 2)],
-                       obs_radius=2, on_target="restart", seed=7),
-            material_handling_config={"raw_material_source": [2, 2], "finished_goods_destination": [4, 4]},
-        )
-        env.grid_config.possible_targets_xy = [(2, 2)]
-        env.reset(seed=7)
-        env.machine_reset([Machine(0, (2, 2))])
-        env.job_reset([Job(0, [Operation(0, 0, [0], [(0, 2)], proc_time=2, priority=200)], priority=200)])
-        return env
+    def make_environment(self) -> SimulationSession:
+        config = {
+            "seed": 7, "obs_radius": 2,
+            "map": "\n".join(["....."] * 5),
+            "topology": {"gridWidth": 5, "gridHeight": 5,
+                         "machines": {"M0": {"location": [2, 2]}}},
+            "agvs": [{"id": 0, "initialLocation": [2, 2]}],
+            "jobs": {"job_list": [
+                {"job_id": 0, "priority": 200,
+                 "operations": [{"machine_options_with_time": [[0, 2]]}]},
+                {"job_id": 1, "priority": 100,
+                 "operations": [{"machine_options_with_time": [[0, 10]]}]},
+            ]},
+            "material_handling_config": {"raw_material_source": [2, 2],
+                                         "finished_goods_destination": [4, 4]},
+        }
+        session = SimulationSession.from_config(config, native_actions=True, headless=True)
+        self.addCleanup(session.close)
+        return session
 
     def test_same_machine_urgent_arrival_releases_reservation(self):
-        env = self.make_environment()
-        env.job_step({"transfer_requests": [{"task_id": 0, "job_id": 0, "op_id": 0,
-                      "source": (2, 2), "destination": (2, 2), "ready_time": 0, "priority": 200}]})
-        self.assertEqual(env.machines[0].urgent_reservations, {(0, 0)})
-        env.task_step({})
-        self.assertEqual(env.machines[0].urgent_reservations, set())
-        env.machine_process()
-        normal = Operation(1, 0, [0], [(0, 10)], proc_time=10, nominal_proc_time=10)
-        env.machines[0].input_queue.append(normal)
-        env.machine_process()
+        session = self.make_environment()
+        requests = [{"task_id": jid, "job_id": jid, "op_id": 0,
+                     "source": (2, 2), "destination": (2, 2), "ready_time": 0,
+                     "priority": priority} for jid, priority in ((0, 200), (1, 100))]
+        session.step({"job_actions": {"transfer_requests": requests}})
+        state = session.env.state
+        self.assertEqual(state.machines[0].urgent_reservations, set())
+        self.assertEqual(state.jobs[0].ops[0].status, "PROCESSING")
+        session.step({})
+        self.assertEqual(state.jobs[0].ops[0].status, "FINISHED")
+        session.step({})
+        normal = state.jobs[1].ops[0]
         self.assertEqual(normal.status, "PROCESSING")
+        self.assertIs(state.machines[0].current_op, normal)
 
     def test_full_dropoff_does_not_lock_vehicle_on_port(self):
-        env = self.make_environment()
+        session = self.make_environment()
+        env = session.env.state
         machine = env.machines[0]
         machine.buffer_capacity = 1
         machine.buffer_jobs = {9}
-        task = RoutingTask(task_id=0, job_id=0, op_id=0, source=(0, 0), destination=(2, 2), ready_time=0)
+        task = RoutingTask(task_id=0, job_id=0, op_id=0, source=(0, 0),
+                           destination=(2, 2), ready_time=0, assigned_agent_id=0)
         env.agv_current_task[0] = task
+        env.active_transfers.append(task)
         env.agv_loaded[0] = True
         env.agv_task_phase[0] = "TO_DROPOFF"
-        env._settle_arrival(0)
+        env.jobs[0].carrier_id = 0
+        env.jobs[0].material_location = None
+        env.jobs[0].transport_task_id = task.task_id
+        session.step({"agent_actions": [0]})
         self.assertEqual(env.agv_task_phase[0], "TO_DROPOFF")
         self.assertEqual(env.agv_handling_remaining[0], 0)
         before = tuple(env.grid.positions_xy[0])
-        env.step([1])
+        session.step({"agent_actions": [1]})
         self.assertNotEqual(tuple(env.grid.positions_xy[0]), before)
         self.assertTrue(env.agv_loaded[0])
         self.assertEqual(machine.buffer_jobs, {9})

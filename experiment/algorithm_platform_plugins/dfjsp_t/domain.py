@@ -452,6 +452,9 @@ class DFJSPTOnlineSession:
         self,
         action: Mapping[str, object],
     ) -> StepResult[dict[str, object], dict[str, object]]:
+        # DecisionResponse freezes nested mappings. The core owns a mutable
+        # copy of the formal action and must never receive those wrappers.
+        action = to_jsonable(action)
         if "native_action" in action:
             formal_action = self._expand_native_action(action["native_action"])
         else:
@@ -1025,10 +1028,9 @@ def _domain_events(
     simulation_time: float,
     state_hash: str,
 ) -> tuple[DomainEvent, ...]:
-    values = [
-        *(frame.get("events", ()) or ()),
-        *(info.get("events", ()) or ()),
-    ]
+    # The formal environment publishes the same committed events in both
+    # outputs. Use one authoritative window instead of recording each twice.
+    values = info.get("events", frame.get("events", ())) or ()
     events = [
         DomainEvent(
             event_type="runtime_frame",

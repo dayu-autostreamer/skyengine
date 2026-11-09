@@ -1,5 +1,1 @@
-"""Exception injection system for GridFactoryEnv."""
-
-from .exception_injector import ExceptionInjector
-
-__all__ = ["ExceptionInjector"]
+"""Factory event support lives in sky_executor.events and sky_executor.faults."""

@@ -51,9 +51,8 @@ class Operation:
     wait_for_machine_time: float = 0.0  # 在机器前的排队时间
     remaining_proc_time: Optional[float] = None  # 被特急任务暂停后尚需加工的时间
     accumulated_process_time: float = 0.0  # 抢占前已完成的加工时间
+    processed_time: float = 0.0  # 执行反馈确认的累计实际加工量
     preemption_count: int = 0
-    processed_time: float = 0.0  # 已实际获得的加工服务量，不含停机
-    transfer_requested: bool = False
     deviation_reported: bool = False
 
 
@@ -93,13 +92,13 @@ class Machine:
         # ----------- 异常事件状态 -----------
         self.status: str = "OK"  # OK, DOWN, MAINTENANCE
         self.repair_remaining: int = 0
+        self.down_elapsed: float = 0
         self.down_reason: Optional[str] = None
-        self.down_elapsed: int = 0
         self.buffer_capacity: int = 4
         self.buffer_jobs: set[int] = set()
         self.buffer_blocked_steps: int = 0
         # ----------- 指标记录 -----------
-        self.total_work_time: int = 0  # 累计工作时间 (用于计算利用率)
+        self.total_work_time: float = 0.0  # 累计实际加工量 (用于计算利用率)
         self.processed_ops_count: int = 0  # 完成工序数量
         self.history_ops: List[Tuple[int, int, float, float]] = (
             []
@@ -211,8 +210,8 @@ class AGV(BaseModel):
     current_task: Optional[RoutingTask]  # 正在执行的任务 或 None
     finished_tasks: list[RoutingTask]  # 已完成任务（可选）
     status: str = "OK"  # OK, DOWN
-    repair_remaining: Optional[int] = None  # 仅内部真值；算法观测中为 None
-    down_elapsed: int = 0
+    repair_remaining: Optional[int] = None
+    down_elapsed: float = 0
     down_reason: Optional[str] = None
     task_phase: str = "IDLE"
     handling_remaining: int = 0

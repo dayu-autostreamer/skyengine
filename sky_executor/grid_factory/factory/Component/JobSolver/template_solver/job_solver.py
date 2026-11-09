@@ -37,3 +37,7 @@ class JobSolver:
         ]
         """
         pass
+
+    def replan(self, problem: dict) -> dict:
+        """Optional online insertion; ordinary plan implementations stay unchanged."""
+        raise NotImplementedError("this job solver does not support online replanning")

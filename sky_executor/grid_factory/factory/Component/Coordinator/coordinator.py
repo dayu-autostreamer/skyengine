@@ -72,6 +72,13 @@ class Coordinator:
         else:
             self.assigner = AssignerFactory.create("random")
 
+    def reset(self):
+        """Reset components that keep episode-local state."""
+        for component in (self.job_solver, self.route_solver, self.assigner):
+            reset = getattr(component, "reset", None)
+            if reset is not None:
+                reset()
+
     def decide(self, obs):
         # 解包输入
         job_observation = obs.get("job_observation", None)  # 当前的Job，解析出任务
